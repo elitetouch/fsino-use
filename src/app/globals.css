@@ -39,6 +39,22 @@
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
                BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
                Arial, sans-serif;
+
+  /* Fluid type — scales smoothly from 320px viewport to 1920px without
+     stepped breakpoints. clamp(min, preferred, max) lets the headline
+     grow proportionally with the viewport instead of jumping at lg:. */
+  --text-hero: clamp(1.75rem, 1.2rem + 2.5vw, 3.5rem);    /* 28→56 px */
+  --text-h1:   clamp(1.5rem,  1.1rem + 1.8vw, 2.5rem);    /* 24→40 px */
+  --text-h2:   clamp(1.25rem, 1rem + 1.2vw, 1.875rem);    /* 20→30 px */
+  --text-lead: clamp(0.9375rem, 0.85rem + 0.35vw, 1.125rem); /* 15→18 px */
+
+  /* Page-level container width — caps sprawl on 4K/ultrawide.
+     Anything wider gets centered with side padding. */
+  --container-page: 1760px;
+
+  /* Ultra-wide breakpoint — Tailwind v4 honors this @theme key
+     and emits a `3xl:` modifier across all utilities. */
+  --breakpoint-3xl: 1920px;
 }
 
 html,

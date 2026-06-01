@@ -69,14 +69,20 @@ export function OtpInput({
   }
 
   return (
-    // Grid columns equal the OTP length so each cell flexes within the
-    // capped container. `aspect-square` keeps cells square at any width.
-    // The container caps via `max-w-*` so cells stop growing on tablet+
-    // (otherwise a 448px container produces awkward 70px cells).
+    // Grid columns equal the OTP length so cells flex with the
+    // container width. aspect-square keeps them square at any size.
+    // Container caps growth at larger breakpoints so a 4K monitor
+    // doesn't produce 120px input boxes that look comically large.
     <div
       className={cn(
-        'mx-auto grid w-full gap-2 sm:gap-3',
-        length >= 6 ? 'max-w-[320px] sm:max-w-sm' : 'max-w-[260px]',
+        'mx-auto grid w-full',
+        // Mobile: tight, fits a 320px iPhone SE.
+        'gap-2 sm:gap-3 xl:gap-4',
+        // Width caps scale up across breakpoints — bigger cells on
+        // bigger screens, never absurdly so.
+        length >= 6
+          ? 'max-w-[320px] sm:max-w-sm xl:max-w-md 3xl:max-w-lg'
+          : 'max-w-[260px] sm:max-w-xs xl:max-w-sm',
       )}
       style={{ gridTemplateColumns: `repeat(${length}, minmax(0, 1fr))` }}
     >
@@ -96,7 +102,7 @@ export function OtpInput({
           disabled={disabled}
           className={cn(
             'aspect-square w-full min-w-0 rounded-2xl border-2 border-[var(--color-brand-input-border)] bg-white text-center font-bold text-[var(--color-brand-fg)]',
-            'text-xl sm:text-2xl',
+            'text-xl sm:text-2xl xl:text-[28px] 3xl:text-3xl',
             'transition focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20',
             'disabled:cursor-not-allowed disabled:opacity-60',
           )}

@@ -47,10 +47,16 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-[26px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+      <h1
+        className="font-extrabold tracking-tight text-[var(--color-brand-fg)]"
+        style={{ fontSize: 'var(--text-h1)' }}
+      >
         Welcome back
       </h1>
-      <p className="mt-1 text-sm text-[var(--color-brand-muted)]">
+      <p
+        className="mt-2 text-[var(--color-brand-muted)]"
+        style={{ fontSize: 'var(--text-lead)' }}
+      >
         Sign in to keep managing your farm.
       </p>
 

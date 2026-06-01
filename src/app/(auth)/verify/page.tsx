@@ -85,10 +85,16 @@ export default function VerifyPage() {
         Email verification
       </div>
 
-      <h1 className="text-[26px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+      <h1
+        className="font-extrabold tracking-tight text-[var(--color-brand-fg)]"
+        style={{ fontSize: 'var(--text-h1)' }}
+      >
         Verify your email
       </h1>
-      <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-brand-muted)]">
+      <p
+        className="mt-2 leading-relaxed text-[var(--color-brand-muted)]"
+        style={{ fontSize: 'var(--text-lead)' }}
+      >
         We sent a {CODE_LENGTH}-digit code to{' '}
         <strong className="text-[var(--color-brand-fg)]">{maskEmail(email)}</strong>.
         Enter it below to confirm your account.
