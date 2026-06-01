@@ -57,7 +57,19 @@ export function apiErrorMessage(err: unknown, fallback = 'Something went wrong.'
 }
 
 // -----------------------------------------------------------------------
-// Auth endpoints — match the existing tenant API on /api/v1
+// Auth endpoints — wired to the tenant API on /api/v1.
+//
+// Verified against:
+//   POST /api/v1/register                          public
+//   POST /api/v1/login                             public
+//   POST /api/v1/auth/verify-email                 authenticated (bearer)
+//   POST /api/v1/auth/resend-verification-code     authenticated (bearer)
+//
+// Backend rules (RegisterRequest):
+//   name              required, max:255
+//   email             required, email, unique
+//   phone             required, digits_between:7,20, unique  (digits only!)
+//   password          required, min:8, confirmed              (=> password_confirmation)
 // -----------------------------------------------------------------------
 
 export type RegisterPayload = {
@@ -68,36 +80,56 @@ export type RegisterPayload = {
   password_confirmation: string;
 };
 
+export type AppUserDto = {
+  id: string | number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  emailVerifiedAt?: string | null;
+  phoneVerifiedAt?: string | null;
+  photoUrl?: string | null;
+};
+
 export type AuthSession = {
-  user: {
-    id: string | number;
-    name: string;
-    email: string;
-    phone?: string | null;
-    emailVerifiedAt?: string | null;
-    phoneVerifiedAt?: string | null;
-  };
+  user: AppUserDto;
   token: string;
 };
 
+/**
+ * Strip every non-digit so the value satisfies digits_between:7,20.
+ * Accepts inputs like "+234 701-234-5678" → "2347012345678".
+ */
+export function normalisePhone(input: string): string {
+  return input.replace(/\D/g, '');
+}
+
 export const endpoints = {
   register: (payload: RegisterPayload) =>
-    unwrap<AuthSession>(api.post('/register', payload)),
+    unwrap<AuthSession>(
+      api.post('/register', { ...payload, phone: normalisePhone(payload.phone) }),
+    ),
 
   login: (email: string, password: string) =>
     unwrap<AuthSession>(api.post('/login', { email, password })),
 
   logout: () => api.post('/logout'),
 
-  profile: () => unwrap<{ user: AuthSession['user'] }>(api.get('/profile')),
+  profile: () => unwrap<AppUserDto>(api.get('/profile')),
 
-  /** Request a verification code (email or phone — backend decides channel). */
-  resendVerificationCode: (channel: 'email' | 'phone' = 'phone') =>
-    api.post('/resend-otp', { channel }),
-
-  /** Submit the 4-6 digit code to verify the account. */
-  verifyCode: (code: string, channel: 'email' | 'phone' = 'phone') =>
-    unwrap<{ user: AuthSession['user'] }>(
-      api.post('/verify-email', { code, channel }),
+  /**
+   * Verify the email by submitting the 6-digit code emailed via
+   * EmailVerificationCodeMail. Authenticated route — the bearer issued
+   * by /register must be present (axios interceptor handles it).
+   */
+  verifyEmail: (code: string) =>
+    unwrap<{ verified: boolean; user: AppUserDto }>(
+      api.post('/auth/verify-email', { code }),
     ),
+
+  /**
+   * Trigger a fresh 6-digit code to the user's email. No body —
+   * server already knows who the bearer belongs to.
+   */
+  resendVerificationCode: () =>
+    api.post('/auth/resend-verification-code'),
 };

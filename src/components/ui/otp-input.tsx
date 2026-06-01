@@ -69,7 +69,7 @@ export function OtpInput({
   }
 
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className={cn('flex items-center justify-center', length >= 6 ? 'gap-2 sm:gap-3' : 'gap-3')}>
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
@@ -85,7 +85,12 @@ export function OtpInput({
           onKeyDown={(e) => handleKeyDown(e, i)}
           disabled={disabled}
           className={cn(
-            'h-16 w-14 rounded-2xl border-2 border-[var(--color-brand-input-border)] bg-white text-center text-2xl font-bold text-[var(--color-brand-fg)]',
+            // Cells stay square via aspect-ratio. Width caps narrower for
+            // 6-digit layouts so the row fits on a 320px iPhone SE.
+            'aspect-square rounded-2xl border-2 border-[var(--color-brand-input-border)] bg-white text-center font-bold text-[var(--color-brand-fg)]',
+            length >= 6
+              ? 'h-14 w-[44px] text-xl sm:h-16 sm:w-12 sm:text-2xl'
+              : 'h-16 w-14 text-2xl',
             'transition focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20',
             'disabled:cursor-not-allowed disabled:opacity-60',
           )}

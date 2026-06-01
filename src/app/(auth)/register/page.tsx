@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
-import { apiErrorMessage, endpoints, type RegisterPayload } from '@/lib/api';
+import { apiErrorMessage, endpoints, normalisePhone, type RegisterPayload } from '@/lib/api';
 import { writeToken, writeUser } from '@/lib/auth';
 
 const schema = z
@@ -20,8 +20,16 @@ const schema = z
     phone: z
       .string()
       .trim()
-      .min(10, 'Enter a valid phone number')
-      .regex(/^[+]?\d[\d\s-]+$/, 'Numbers only — you can include +'),
+      .min(7, 'Enter a valid phone number')
+      // Be permissive on display (allow +, spaces, dashes) — we strip them
+      // before posting. Backend rule is digits_between:7,20.
+      .refine(
+        (v) => {
+          const digits = v.replace(/\D/g, '');
+          return digits.length >= 7 && digits.length <= 20;
+        },
+        { message: 'Enter a valid phone number (7–20 digits)' },
+      ),
     password: z.string().min(8, 'Use at least 8 characters'),
     password_confirmation: z.string(),
     accepted: z.literal(true, {
@@ -61,7 +69,7 @@ export default function RegisterPage() {
         emailVerifiedAt: session.user.emailVerifiedAt ?? null,
         phoneVerifiedAt: session.user.phoneVerifiedAt ?? null,
       });
-      toast.success('Account created — verify your phone to continue.');
+      toast.success('Account created — check your email for the code.');
       router.push('/verify');
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not create account.')),
@@ -71,7 +79,8 @@ export default function RegisterPage() {
     register.mutate({
       name: values.name,
       email: values.email,
-      phone: values.phone.replace(/[\s-]/g, ''),
+      // Strip every non-digit — backend rule is digits_between:7,20.
+      phone: normalisePhone(values.phone),
       password: values.password,
       password_confirmation: values.password_confirmation,
     });
