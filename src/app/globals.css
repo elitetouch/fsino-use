@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+
+/*
+  Farm Support Innovation — farmer-facing web app theme.
+
+  Visual language is borrowed from the mobile app: bold pill buttons,
+  vivid kelly-green primary, soft mint backgrounds for empty states,
+  generous tap targets, friendly rounded type. Same color family as the
+  super-admin portal so a farmer who toggles between the two apps still
+  feels at home — but warmer and more confident on this side because
+  farmers are the customer, not the operator.
+*/
+
+@theme {
+  /* Primary palette — kelly green for CTAs, deep forest for backgrounds. */
+  --color-brand-primary: #15a34a;        /* button / CTA */
+  --color-brand-primary-deep: #0f7c39;   /* button:hover, dark blocks */
+  --color-brand-primary-dark: #0a4d24;   /* hero blocks */
+  --color-brand-accent: #a7f3c2;         /* soft mint backgrounds */
+
+  /* Neutrals */
+  --color-brand-bg: #fafdf8;             /* page background — almost-white with a green undertone */
+  --color-brand-surface: #ffffff;        /* cards */
+  --color-brand-fg: #0d1f14;             /* body text */
+  --color-brand-muted: #5b6b5f;          /* supporting text */
+  --color-brand-border: #e3eadf;
+  --color-brand-input-border: #d4dcce;
+
+  /* States */
+  --color-brand-danger: #c1272d;
+  --color-brand-warning: #d97706;
+
+  /* Radii — mobile-app generous */
+  --radius-button: 999px;                /* pill */
+  --radius-card: 16px;
+  --radius-input: 12px;
+
+  /* Type stack — Plus Jakarta Sans for warmth + readability across devices. */
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
+               BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+               Arial, sans-serif;
+}
+
+html,
+body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Stronger focus ring for tap-first audience — visible without being ugly. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Prevent iOS double-tap zoom on form fields without disabling pinch zoom elsewhere. */
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+/* iOS Safari quirk: prevent input zoom by forcing >= 16px on form fields. */
+@media (max-width: 640px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='password'],
+  input[type='number'],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
