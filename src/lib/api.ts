@@ -3,11 +3,18 @@
 import axios, { AxiosError } from 'axios';
 import { clearToken, readToken } from './auth';
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.fsinnovation.net/api/v1';
+/**
+ * NEXT_PUBLIC_API_BASE_URL is the API **host root** (e.g.
+ * `https://api.fsinnovation.net`) — NOT the full /api/v1 path. We
+ * prepend the version path ourselves so this env var matches the
+ * super-admin portal's convention (one shared truth, no duplicate vars).
+ */
+const HOST = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.fsinnovation.net'
+).replace(/\/+$/, '');
 
 export const api = axios.create({
-  baseURL,
+  baseURL: `${HOST}/api/v1`,
   timeout: 25_000,
   headers: { Accept: 'application/json' },
 });
