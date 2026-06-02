@@ -2,6 +2,7 @@
 
 import axios, { AxiosError } from 'axios';
 import { clearToken, readToken } from './auth';
+import { readCurrentFarmId } from './farm-context';
 
 /**
  * NEXT_PUBLIC_API_BASE_URL is the API **host root** (e.g.
@@ -25,12 +26,18 @@ export const api = axios.create({
   headers: { Accept: 'application/json' },
 });
 
-// Attach bearer on every request when present. SSR pages call client-side
-// from useEffect/queries so this runs in the browser.
+// Attach bearer + current-farm-id on every request. SSR pages call
+// client-side from useEffect/queries so this runs in the browser.
 api.interceptors.request.use((config) => {
   const token = readToken();
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // X-Farm-ID is required by farm.context-protected routes (pens, flocks,
+  // daily records). Routes that don't need it ignore the header safely.
+  const farmId = readCurrentFarmId();
+  if (farmId && config.headers && !config.headers['X-Farm-ID']) {
+    config.headers['X-Farm-ID'] = farmId;
   }
   return config;
 });
@@ -145,4 +152,140 @@ export const endpoints = {
    */
   resendVerificationCode: () =>
     api.post('/auth/resend-verification-code'),
+
+  // ───────────── Farms ─────────────
+  listFarms: () => unwrap<{ farms: FarmDto[] }>(api.get('/farms')),
+
+  createFarm: (payload: CreateFarmPayload) =>
+    unwrap<{ farm: FarmDto }>(api.post('/farms', payload)),
+
+  showFarm: (id: string) =>
+    unwrap<{ farm: FarmDto }>(api.get(`/farms/${id}`)),
+
+  // ───────────── Pens (require X-Farm-ID — auto-injected) ─────────────
+  listPens: () => unwrap<{ pens: PenDto[] }>(api.get('/pens')),
+
+  createPen: (payload: CreatePenPayload) =>
+    unwrap<{ pen: PenDto }>(api.post('/pens', payload)),
+
+  // ───────────── Flocks (require X-Farm-ID) ─────────────
+  listFlocks: () => unwrap<{ flocks: FlockDto[] }>(api.get('/flocks')),
+
+  createFlock: (payload: CreateFlockPayload) =>
+    unwrap<{ flock: FlockDto }>(api.post('/flocks', payload)),
+
+  // ───────────── Reference data ─────────────
+  listBreeds: (params?: { production_type?: string; search?: string; country?: string }) =>
+    unwrap<{ breeds: BreedDto[] }>(api.get('/breeds', { params })),
+
+  listHatcheries: (params?: { country?: string; search?: string }) =>
+    unwrap<{ hatcheries: HatcheryDto[] }>(api.get('/hatcheries', { params })),
+};
+
+// ─────────────────────── DTOs ───────────────────────
+
+export type FarmDto = {
+  id: string;
+  accountId: string;
+  name: string;
+  state?: string | null;
+  address?: string | null;
+  lga?: string | null;
+  countryCode?: string | null;
+  timezone?: string | null;
+  farmType?: string | null;
+  primaryProduction?: 'broiler' | 'layer' | 'mixed' | null;
+  estimatedCapacity?: number | null;
+  targetMarket?: string | null;
+  isActive: boolean;
+  logoUrl?: string | null;
+  farmStat?: {
+    activeFlocksCount?: number;
+    activePensCount?: number;
+    occupiedPensCount?: number;
+    freePens?: number;
+  };
+  canCreateFlock?: boolean;
+};
+
+export type CreateFarmPayload = {
+  farm_name: string;
+  state?: string;
+  address?: string;
+  lga?: string;
+  timezone?: string;
+  farm_type?: string;
+  primary_production?: 'broiler' | 'layer' | 'mixed';
+  estimated_capacity?: number;
+  target_market?: string;
+};
+
+export type PenDto = {
+  id: string;
+  farmId: string;
+  name: string;
+  penType?: string | null;
+  capacity?: number | null;
+  houseCode?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  occupancy?: {
+    status: 'free' | 'occupied';
+    activeFlock?: null | {
+      id: string;
+      name: string;
+      productionType: string;
+      currentBirds: number;
+      validUntil: string | null;
+    };
+  };
+};
+
+export type CreatePenPayload = {
+  name: string;
+  pen_type?: string;
+  capacity?: number;
+  house_code?: string;
+  notes?: string;
+};
+
+export type FlockDto = {
+  id: string;
+  farmId: string;
+  penId?: string | null;
+  name?: string | null;
+  productionType: 'broiler' | 'layer' | 'dual_purpose';
+  breed: string;
+  placedBirds: number;
+  currentBirds: number | null;
+  ageDays: number | null;
+  cycleWeeks: number | null;
+  startDate: string;
+  validUntil?: string | null;
+};
+
+export type CreateFlockPayload = {
+  pen_id?: string;
+  production_type: 'broiler' | 'layer' | 'dual_purpose';
+  placed_birds: number;
+  breed: string;
+  breed_id?: string;
+  hatchery_id?: string;
+  age_when_placed: number;
+  flock_price: number;
+  start_date: string; // YYYY-MM-DD
+  tier: 'basic' | 'premium';
+};
+
+export type BreedDto = {
+  id: string;
+  name: string;
+  productionType?: 'broiler' | 'layer' | 'dual_purpose';
+  breederCompany?: string | null;
+};
+
+export type HatcheryDto = {
+  id: string;
+  name: string;
+  country?: string;
 };
