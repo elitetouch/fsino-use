@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Egg, Wheat, Syringe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PlayStoreButton } from './play-store-button';
 
 /**
  * Marketing hero — left column holds the headline + CTA, right column
@@ -60,20 +61,20 @@ export function MarketingHero() {
             style={{ fontSize: 'var(--text-lead)' }}
           >
             Track every flock, every feed bag, every vaccine in minutes a day.
-            Real cost-per-bird visibility. Country-tuned vaccination schedules
-            so nothing slips through.
+            On the web in the office, on Android in the pen — one account,
+            always in sync.
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* Dual CTA: web app sign-up + Play Store. Both have equal
+              visual weight so we don't favour one surface over the other. */}
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
             <Button asChild size="lg" className="group h-14 px-7 text-[16px] sm:h-[60px]">
               <Link href="/register">
-                Start free
+                Start on the web
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="h-14 px-7 text-[16px] sm:h-[60px]">
-              <Link href="#how">See how it works</Link>
-            </Button>
+            <PlayStoreButton />
           </div>
 
           <ul className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-[var(--color-brand-muted)]">

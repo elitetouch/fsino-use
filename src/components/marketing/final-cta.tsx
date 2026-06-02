@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PlayStoreButton } from './play-store-button';
 
 export function FinalCTA() {
   return (
@@ -58,20 +59,22 @@ export function FinalCTA() {
             always yours.
           </p>
 
-          <div className="relative mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="relative mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
             <Button asChild variant="secondary" size="lg" className="group h-14 px-7 text-[16px] sm:h-[60px]">
               <Link href="/register">
-                Create your account
+                Open the web app
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
-            <Link
-              href="/login"
-              className="text-sm font-semibold text-white/85 underline-offset-4 hover:underline"
-            >
-              I already have an account →
-            </Link>
+            <PlayStoreButton tone="light" />
           </div>
+
+          <p className="relative mt-6 text-sm text-white/75">
+            Already on FarmSpeak?{' '}
+            <Link href="/login" className="font-semibold text-white underline-offset-4 hover:underline">
+              Log in →
+            </Link>
+          </p>
         </div>
       </div>
     </section>

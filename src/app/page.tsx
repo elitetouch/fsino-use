@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { MarketingNav } from '@/components/marketing/nav';
 import { MarketingHero } from '@/components/marketing/hero';
 import { StatsBar } from '@/components/marketing/stats';
+import { Platforms } from '@/components/marketing/platforms';
 import { Features } from '@/components/marketing/features';
 import { HowItWorks } from '@/components/marketing/how-it-works';
 import { Audience } from '@/components/marketing/audience';
@@ -38,6 +39,7 @@ export default function LandingPage() {
       <main>
         <MarketingHero />
         <StatsBar />
+        <Platforms />
         <Features />
         <HowItWorks />
         <Audience />

@@ -35,7 +35,7 @@ const NAV_LINKS: Array<{ label: string; href: string }> = [
 
 const PRODUCT_LINKS: Array<{ label: string; href: string; body?: string }> = [
   { label: 'Web app', href: '/register', body: 'Manage your farm in the browser.' },
-  { label: 'Mobile app', href: 'https://fsinnovation.net', body: 'On the go, on Android.' },
+  { label: 'Android app', href: '#platforms', body: 'Get it free on the Play Store.' },
   { label: 'For cooperatives', href: '#audience', body: 'Onboard members in minutes.' },
 ];
 
