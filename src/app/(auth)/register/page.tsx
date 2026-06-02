@@ -88,17 +88,20 @@ export default function RegisterPage() {
 
   return (
     <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
+        Get started
+      </p>
       <h1
-        className="font-extrabold tracking-tight text-[var(--color-brand-fg)]"
+        className="mt-2 font-extrabold tracking-tight text-[var(--color-brand-fg)]"
         style={{ fontSize: 'var(--text-h1)' }}
       >
-        Create account
+        Create your account
       </h1>
       <p
         className="mt-2 text-[var(--color-brand-muted)]"
         style={{ fontSize: 'var(--text-lead)' }}
       >
-        Tell us about yourself.
+        Two minutes from here, your first flock is live.
       </p>
 
       <form className="mt-7 space-y-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
