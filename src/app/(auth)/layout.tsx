@@ -25,8 +25,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         className="animate-blob [animation-delay:6s] pointer-events-none absolute -bottom-40 -right-32 h-[32rem] w-[32rem] rounded-full bg-[var(--color-brand-accent)] opacity-60 blur-3xl"
       />
 
-      {/* Header */}
-      <header className="relative z-10 mx-auto flex h-16 items-center justify-between px-5 sm:h-[72px] sm:px-8 lg:px-12" style={{ maxWidth: 'var(--container-wide)' }}>
+      {/* Slim header — back link only; brand lives right above the card. */}
+      <header
+        className="relative z-10 mx-auto flex h-16 items-center px-5 sm:h-[72px] sm:px-8 lg:px-12"
+        style={{ maxWidth: 'var(--container-wide)' }}
+      >
         <Link
           href="/"
           aria-label="Back to home"
@@ -35,15 +38,21 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <ArrowLeft className="h-4 w-4" />
           <span className="hidden sm:inline">Back</span>
         </Link>
-        <Link href="/" aria-label="Home">
-          <Logo size={108} />
-        </Link>
-        <span className="w-16" aria-hidden />
       </header>
 
-      {/* Centered card */}
-      <main className="relative z-10 flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-10 sm:px-8 md:py-14 lg:py-16">
+      {/* Centered logo + card stack */}
+      <main className="relative z-10 flex min-h-[calc(100vh-72px)] items-center justify-center px-5 pb-10 pt-2 sm:px-8 md:pb-14 lg:pb-16">
         <div className="animate-fade-up w-full max-w-[460px] sm:max-w-[480px]">
+          {/* Logo sits directly above the card so the brand identifies
+              the auth surface without a heavy top-of-page header. */}
+          <Link
+            href="/"
+            aria-label="Home"
+            className="mx-auto mb-5 block w-fit transition-opacity hover:opacity-90 sm:mb-6"
+          >
+            <Logo size={92} className="sm:!w-[108px]" />
+          </Link>
+
           <div className="rounded-[28px] border border-[var(--color-brand-border)] bg-white p-6 shadow-[0_30px_80px_-30px_rgba(15,80,30,0.18)] sm:p-9 md:p-10">
             {children}
           </div>
