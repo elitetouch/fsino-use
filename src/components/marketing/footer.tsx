@@ -70,7 +70,7 @@ export function MarketingFooter() {
           style={{ maxWidth: 'var(--container-page)' }}
         >
           <p>© {year} {brand.name}. All rights reserved.</p>
-          <p>Made in Lagos, for poultry farmers across Africa.</p>
+          <p>Made in Nigeria, for poultry farmers across Africa.</p>
         </div>
       </div>
     </footer>
