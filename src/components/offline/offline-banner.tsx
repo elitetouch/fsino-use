@@ -1,7 +1,7 @@
 'use client';
 
 import { useOnlineTransition, useOutboxCounts, forceNetworkProbe } from '@/lib/offline';
-import { CloudOff, CloudCheck, Loader2, RefreshCw } from 'lucide-react';
+import { CloudOff, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 /**
@@ -31,7 +31,7 @@ export function OfflineBanner() {
   }
 
   let tone: 'red' | 'amber' | 'green' = 'green';
-  let icon = <CloudCheck className="h-4 w-4" />;
+  let icon = <CheckCircle2 className="h-4 w-4" />;
   let message: React.ReactNode = 'Back online';
   let action: React.ReactNode = null;
 
@@ -75,7 +75,7 @@ export function OfflineBanner() {
     message = `Syncing ${pending} ${pending === 1 ? 'change' : 'changes'}…`;
   } else if (justReconnected) {
     tone = 'green';
-    icon = <CloudCheck className="h-4 w-4" />;
+    icon = <CheckCircle2 className="h-4 w-4" />;
     message = 'Back online — all changes synced';
   }
 
