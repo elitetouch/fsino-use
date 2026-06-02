@@ -25,11 +25,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       }}
     >
       <div
-        className="relative mx-auto grid min-h-screen w-full lg:grid-cols-[1fr_1.1fr] xl:grid-cols-[1fr_1.15fr]"
+        className="relative mx-auto grid min-h-screen w-full md:grid-cols-[1fr_1.1fr] xl:grid-cols-[1fr_1.15fr]"
         style={{ maxWidth: 'var(--container-page)' }}
       >
-        {/* Mobile/tablet header — replaced by brand sidebar at lg+. */}
-        <header className="sticky top-0 z-20 col-span-full flex items-center justify-between border-b border-[var(--color-brand-border)]/70 bg-white/85 px-5 py-3 backdrop-blur lg:hidden">
+        {/* Mobile header — replaced by brand sidebar at md+. */}
+        <header className="sticky top-0 z-20 col-span-full flex items-center justify-between border-b border-[var(--color-brand-border)]/70 bg-white/85 px-5 py-3 backdrop-blur md:hidden">
           <Link
             href="/"
             aria-label="Back"
@@ -43,7 +43,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* ──────────────── DESKTOP BRAND PANEL ──────────────── */}
         <aside
-          className="relative hidden flex-col justify-between overflow-hidden p-12 text-white lg:flex xl:p-16 3xl:p-20"
+          className="relative hidden flex-col justify-between overflow-hidden p-10 text-white md:flex lg:p-14 xl:p-16 3xl:p-20"
           style={{
             background:
               'linear-gradient(160deg, #15a34a 0%, #0f7c39 55%, #0a4d24 100%)',
@@ -118,7 +118,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* ──────────────── FORM COLUMN ──────────────── */}
         <section className="flex flex-col bg-[var(--color-brand-bg)]">
-          <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12 lg:max-w-md lg:items-center lg:justify-center lg:px-12 lg:py-16 xl:max-w-lg xl:px-16 3xl:max-w-xl">
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12 md:items-center md:justify-center md:px-10 md:py-12 lg:px-14 lg:py-16 xl:max-w-lg xl:px-16 3xl:max-w-xl">
             <div className="w-full">{children}</div>
           </div>
         </section>
