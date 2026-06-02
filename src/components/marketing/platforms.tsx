@@ -83,10 +83,10 @@ export function Platforms() {
             <PlayStoreLink />
           </div>
 
-          {/* Offline hint */}
+          {/* Offline hint — now true for both surfaces */}
           <p className="mt-5 flex items-center gap-2 text-xs text-[var(--color-brand-muted)]">
             <Wifi className="h-3.5 w-3.5" />
-            Works offline on Android — logs sync the moment you reconnect.
+            Works offline on web and Android — logs sync the moment you reconnect.
           </p>
         </div>
       </div>
