@@ -50,7 +50,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             aria-label="Home"
             className="mx-auto mb-5 block w-fit transition-opacity hover:opacity-90 sm:mb-6"
           >
-            <Logo size={92} className="sm:!w-[108px]" />
+            <Logo height={32} className="sm:hidden" />
+            <Logo height={36} className="hidden sm:block" />
           </Link>
 
           <div className="rounded-[28px] border border-[var(--color-brand-border)] bg-white p-6 shadow-[0_30px_80px_-30px_rgba(15,80,30,0.18)] sm:p-9 md:p-10">

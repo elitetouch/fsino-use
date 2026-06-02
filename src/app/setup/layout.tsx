@@ -46,8 +46,9 @@ export default function SetupLayout({ children }: { children: React.ReactNode })
         className="relative z-10 mx-auto flex h-16 items-center justify-between px-5 sm:h-[72px] sm:px-8 lg:px-12"
         style={{ maxWidth: 'var(--container-wide)' }}
       >
-        <Link href="/" aria-label="Home">
-          <Logo size={92} className="sm:!w-[108px]" />
+        <Link href="/" aria-label="Home" className="inline-flex items-center">
+          <Logo height={32} className="sm:hidden" />
+          <Logo height={36} className="hidden sm:block" />
         </Link>
         <button
           type="button"

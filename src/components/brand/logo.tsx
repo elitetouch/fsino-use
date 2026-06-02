@@ -8,7 +8,11 @@ type Tone = 'color' | 'white';
 
 interface Props {
   className?: string;
+  /** Width in px. Height auto-scales to preserve aspect ratio. */
   size?: number;
+  /** Optional fixed height instead of width — useful when you need pixel-perfect
+   *  vertical alignment in a topbar of a known height. */
+  height?: number;
   tone?: Tone;
 }
 
@@ -21,17 +25,25 @@ interface Props {
  * `tone="white"` recolours opaque pixels to white via filter chain — same
  * geometry, pure white tone, for use on dark/photographic backgrounds.
  */
-export function Logo({ className, size = 120, tone = 'color' }: Props) {
+export function Logo({ className, size = 120, height, tone = 'color' }: Props) {
   const [src, setSrc] = useState<string>('/logo.png');
+
+  // When `height` is provided we lock vertical size and let width auto-scale —
+  // this is what topbars need for pixel-perfect alignment. When only `size`
+  // is provided we lock the width and the height adjusts (the older API).
+  const inlineStyle: React.CSSProperties =
+    height !== undefined
+      ? { height: `${height}px`, width: 'auto' }
+      : { height: 'auto' };
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={brand.name}
-      width={size}
+      {...(height !== undefined ? {} : { width: size })}
       style={{
-        height: 'auto',
+        ...inlineStyle,
         ...(tone === 'white'
           ? {
               filter:
@@ -39,7 +51,7 @@ export function Logo({ className, size = 120, tone = 'color' }: Props) {
             }
           : null),
       }}
-      className={cn('block select-none', className)}
+      className={cn('block select-none object-contain', className)}
       onError={() => {
         if (src !== '/logo.svg') setSrc('/logo.svg');
       }}
