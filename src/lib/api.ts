@@ -5,16 +5,22 @@ import { clearToken, readToken } from './auth';
 
 /**
  * NEXT_PUBLIC_API_BASE_URL is the API **host root** (e.g.
- * `https://api.fsinnovation.net`) — NOT the full /api/v1 path. We
- * prepend the version path ourselves so this env var matches the
- * super-admin portal's convention (one shared truth, no duplicate vars).
+ * `https://api.fsinnovation.net`). The code prepends `/api/v1` itself.
+ *
+ * Defensive: if the env var was set the old way (with `/api/v1` already
+ * appended), we strip it before re-adding — so a misconfigured Vercel
+ * env doesn't double up to `/api/v1/api/v1/...`. Either form works.
  */
-const HOST = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.fsinnovation.net'
-).replace(/\/+$/, '');
+function resolveBase(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.fsinnovation.net').trim();
+  const trimmed = raw.replace(/\/+$/, '');
+  // Strip a trailing /api/v1 (or /api) if present so we can safely re-add it.
+  const host = trimmed.replace(/\/api(?:\/v\d+)?$/i, '');
+  return `${host}/api/v1`;
+}
 
 export const api = axios.create({
-  baseURL: `${HOST}/api/v1`,
+  baseURL: resolveBase(),
   timeout: 25_000,
   headers: { Accept: 'application/json' },
 });
