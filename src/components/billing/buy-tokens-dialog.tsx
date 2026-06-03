@@ -96,10 +96,12 @@ export function BuyTokensDialog({
       quantity: Number(quantity || 0),
       provider,
       currency: matchingPrice?.currency,
-      // Send the farmer back to the wallet page so we can poll the
-      // reference and reflect SUCCESS / FAILED.
+      // Send the farmer back to the wallet page. The gateway appends
+      // its own params (Paystack: reference / trxref; Flutterwave:
+      // tx_ref / transaction_id) — the poller reads whichever it
+      // finds, and falls back to sessionStorage if all are stripped.
       callback_url: typeof window !== 'undefined'
-        ? `${window.location.origin}/wallet?ref=__REF__`
+        ? `${window.location.origin}/wallet`
         : undefined,
     }),
     onSuccess: (purchase) => {

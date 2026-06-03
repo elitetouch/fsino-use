@@ -224,10 +224,32 @@ function PurchasePoller({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter();
 
   useEffect(() => {
-    const refFromUrl = search?.get('ref');
+    // Gateways append their reference under different param names.
+    // Read whichever is present, with this priority:
+    //   reference  — Paystack's primary
+    //   trxref     — Paystack's mirror
+    //   tx_ref     — Flutterwave's primary
+    //   transaction_id — Flutterwave's mirror (numeric, but we treat
+    //                    as opaque string; backend reference is what
+    //                    our DB indexes on)
+    //   ref        — our own legacy placeholder (kept for older redirects)
+    // Fall back to sessionStorage if all are stripped (some networks
+    // intercept the redirect and drop query params).
+    const fromUrl =
+      search?.get('reference')
+      ?? search?.get('trxref')
+      ?? search?.get('tx_ref')
+      ?? search?.get('ref');
+
     let refFromStorage: string | null = null;
     try { refFromStorage = window.sessionStorage.getItem('fsm.pendingPurchaseRef'); } catch {}
-    const ref = refFromUrl && refFromUrl !== '__REF__' ? refFromUrl : refFromStorage;
+
+    // Guard against the old `__REF__` literal sneaking through a
+    // stale bookmark.
+    const ref =
+      fromUrl && fromUrl !== '__REF__' && fromUrl !== ''
+        ? fromUrl
+        : refFromStorage;
     if (!ref) return;
 
     let alive = true;
