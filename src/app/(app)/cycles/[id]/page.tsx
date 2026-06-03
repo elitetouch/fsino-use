@@ -59,8 +59,14 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-5">
-      {/* Header strip — the dark-green "Cycle results" bar from mobile. */}
-      <section className="overflow-hidden rounded-xl bg-[var(--color-brand-primary-dark)] text-white shadow-[0_10px_30px_-15px_rgba(15,80,30,0.40)]">
+      {/* Header strip — the dark-green "Cycle results" bar from mobile.
+          NOTE: no `overflow-hidden` here. The CyclePicker dropdown is
+          absolutely-positioned and drops down PAST the section edge;
+          a clipping ancestor (overflow-hidden) would chop the menu
+          to an invisible sliver of white space. `rounded-xl` alone
+          still clips the background fill via border-radius — we only
+          lose decorative-overflow clipping, of which there is none. */}
+      <section className="rounded-xl bg-[var(--color-brand-primary-dark)] text-white shadow-[0_10px_30px_-15px_rgba(15,80,30,0.40)]">
         <div className="px-4 py-3 sm:px-5">
           <div className="flex items-center justify-between gap-3">
             <Link
