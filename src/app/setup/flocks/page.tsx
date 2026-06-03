@@ -7,10 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Loader2, Plus, Bird } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Plus, Bird, AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
+import { BuyTokensDialog } from '@/components/billing/buy-tokens-dialog';
 import {
   apiErrorMessage,
   endpoints,
@@ -18,6 +19,7 @@ import {
   type FlockDto,
   type PenDto,
   type BreedDto,
+  type TokenBalanceDto,
 } from '@/lib/api';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
@@ -122,6 +124,28 @@ export default function SetupFlocksPage() {
   });
 
   const productionType = form.watch('production_type');
+  const selectedTier = form.watch('tier');
+  const placedBirds = Number(form.watch('placed_birds') || 0);
+  const [openBuy, setOpenBuy] = useState(false);
+
+  // Map broiler/layer to backend token_type — dual_purpose flocks debit
+  // broiler tokens by convention (matches backend behaviour).
+  const tokenType: 'broiler' | 'layer' =
+    productionType === 'layer' ? 'layer' : 'broiler';
+
+  const balances = useQuery({
+    queryKey: ['token-balances'],
+    queryFn: () => endpoints.listBalances(),
+    enabled: !!farmId,
+  });
+
+  const currentBalance: TokenBalanceDto | undefined =
+    balances.data?.balances.find((b) => b.tokenType === tokenType && b.tier === selectedTier);
+  const balance = currentBalance?.balance ?? 0;
+  const shortBy = Math.max(0, placedBirds - balance);
+  const freemiumLeft =
+    balances.data?.freemium?.enabled && !balances.data.freemium.used && placedBirds <= 100;
+  const blocked = shortBy > 0 && !freemiumLeft;
 
   const breeds = useQuery({
     queryKey: ['breeds', { production_type: productionType }],
@@ -396,6 +420,74 @@ export default function SetupFlocksPage() {
 
           {step === 'tokens' && (
             <>
+              {/* Token-balance status — shown before they hit submit so
+                  they don't get an opaque server error mid-payment. */}
+              <div
+                className={cn(
+                  'rounded-xl border p-3.5',
+                  blocked
+                    ? 'border-amber-300 bg-amber-50'
+                    : freemiumLeft
+                      ? 'border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-accent)]/40'
+                      : 'border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]',
+                )}
+              >
+                <div className="flex items-start gap-2.5">
+                  <span className={cn(
+                    'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+                    blocked
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-[var(--color-brand-primary)]/15 text-[var(--color-brand-primary-deep)]',
+                  )}>
+                    {blocked ? <AlertTriangle className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    {blocked ? (
+                      <>
+                        <p className="text-[13px] font-bold text-amber-900">
+                          {balance === 0
+                            ? `You have no ${tokenType} / ${selectedTier} tokens yet`
+                            : `You're ${shortBy.toLocaleString()} tokens short`}
+                        </p>
+                        <p className="mt-0.5 text-[11.5px] text-amber-800">
+                          One token = one bird. Top up to place {placedBirds.toLocaleString()} birds.
+                        </p>
+                      </>
+                    ) : freemiumLeft ? (
+                      <>
+                        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+                          Free first flock available
+                        </p>
+                        <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+                          We&rsquo;ll cover this placement up to 100 birds — no tokens needed.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+                          {balance.toLocaleString()} {tokenType} / {selectedTier} tokens available
+                        </p>
+                        <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+                          Placing {placedBirds.toLocaleString()} birds will leave you with{' '}
+                          {(balance - placedBirds).toLocaleString()}.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  {blocked && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setOpenBuy(true)}
+                      className="h-9 shrink-0"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Buy tokens
+                    </Button>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="flock_price">Total cost of the placement *</Label>
                 <Input
@@ -458,7 +550,11 @@ export default function SetupFlocksPage() {
                 Back
               </Button>
             )}
-            <Button type="submit" className="sm:flex-1" disabled={create.isPending}>
+            <Button
+              type="submit"
+              className="sm:flex-1"
+              disabled={create.isPending || (step === 'tokens' && blocked)}
+            >
               {create.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
               {step === 'tokens' ? (
                 <>
@@ -475,6 +571,22 @@ export default function SetupFlocksPage() {
           </div>
         </form>
       </div>
+
+      {/* Buy-tokens dialog — opens from the inline prompt when balance
+          is insufficient. Refetches balances on close so the warning
+          clears once the purchase completes. */}
+      <BuyTokensDialog
+        open={openBuy}
+        onClose={() => {
+          setOpenBuy(false);
+          void balances.refetch();
+        }}
+        initial={{
+          tokenType,
+          tier: selectedTier,
+          quantity: Math.max(100, shortBy || placedBirds || 100),
+        }}
+      />
 
       <Button
         type="button"

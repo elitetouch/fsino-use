@@ -180,6 +180,70 @@ export const endpoints = {
 
   listHatcheries: (params?: { country?: string; search?: string }) =>
     unwrap<{ hatcheries: HatcheryDto[] }>(api.get('/hatcheries', { params })),
+
+  // ───────────── Billing — token wallet ─────────────
+  listBalances: () =>
+    unwrap<{ balances: TokenBalanceDto[]; freemium: { enabled: boolean; used: boolean } }>(
+      api.get('/billing/balances'),
+    ),
+
+  listPrices: () => unwrap<{ prices: TokenPriceDto[] }>(api.get('/billing/prices')),
+
+  listPurchases: () =>
+    unwrap<{ purchases: TokenPurchaseDto[] }>(api.get('/billing/purchases')),
+
+  showPurchase: (reference: string) =>
+    unwrap<{ purchase: TokenPurchaseDto }>(api.get(`/billing/purchases/${reference}`)),
+
+  initializePurchase: (payload: InitializePurchasePayload) =>
+    unwrap<TokenPurchaseDto>(api.post('/billing/purchases', payload)),
+};
+
+// ────────────── Billing DTOs ──────────────
+
+export type TokenType = 'broiler' | 'layer';
+export type TokenTier = 'basic' | 'premium';
+
+export type TokenBalanceDto = {
+  tokenType: TokenType;
+  tier: TokenTier;
+  balance: number;
+  updatedAt?: string | null;
+};
+
+export type TokenPriceDto = {
+  id?: string;
+  tokenType: TokenType;
+  tier: TokenTier;
+  unitPriceMinor: number;
+  currency: string;
+};
+
+export type TokenPurchaseDto = {
+  id?: string;
+  reference: string;
+  provider: 'paystack' | 'flutterwave';
+  tokenType: TokenType;
+  tier: TokenTier;
+  quantity: number;
+  amountMinor: number;
+  feeMinor?: number | null;
+  totalChargedMinor: number;
+  currency: string;
+  status: 'pending' | 'success' | 'failed' | 'abandoned';
+  authorizationUrl?: string | null;
+  createdAt?: string | null;
+  failedAt?: string | null;
+  succeededAt?: string | null;
+};
+
+export type InitializePurchasePayload = {
+  token_type: TokenType;
+  tier: TokenTier;
+  quantity: number;
+  provider: 'paystack' | 'flutterwave';
+  currency?: string;
+  callback_url?: string;
 };
 
 // ─────────────────────── DTOs ───────────────────────

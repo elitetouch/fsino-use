@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, ShoppingBag, Info, Phone, MessageCircle, ChevronRight,
+  CreditCard, ShoppingBag, Info, Phone, MessageCircle, ChevronRight, Wallet,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,7 @@ const GROUPS: Group[] = [
       { href: '/pens-flocks',   label: 'Pens and flocks', icon: Bird },
       { href: '/users',         label: 'Users',          icon: Users2 },
       { href: '/settings',      label: 'Settings',       icon: Settings },
+      { href: '/wallet',        label: 'Wallet',          icon: Wallet },
       { href: '/subscription',  label: 'Subscription',   icon: CreditCard },
     ],
   },

@@ -18,6 +18,7 @@ const TITLE_BY_PATH: Record<string, string> = {
   '/cycles':      'Cycles',
   '/users':       'Users',
   '/settings':    'Settings',
+  '/wallet':      'Wallet',
   '/subscription':'Subscription',
   '/shop':        'Shop',
   '/about':       'About this app',
