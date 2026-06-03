@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    title: 'FarmSpeak',
+    title: 'Farm Support Innovation',
     statusBarStyle: 'default',
   },
   formatDetection: {
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             but a couple of older bits live outside the metadata API). */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="FarmSpeak" />
+        <meta name="apple-mobile-web-app-title" content="Farm Support Innovation" />
         <meta name="mobile-web-app-capable" content="yes" />
         {/* Safari + iOS pinned-tab colour. */}
         <link rel="mask-icon" href="/logo.svg" color="#15a34a" />

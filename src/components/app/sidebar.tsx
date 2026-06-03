@@ -21,7 +21,7 @@ type Group = { heading: string; items: Item[] };
 
 const GROUPS: Group[] = [
   {
-    heading: 'Farmspeak',
+    heading: 'Farm Support Innovation',
     items: [
       { href: '/home',    label: 'Dashboard', icon: LayoutDashboard },
       { href: '/reports', label: 'Reports',   icon: BarChart3 },
@@ -58,9 +58,11 @@ const GROUPS: Group[] = [
 export function Sidebar() {
   return (
     <aside className="hidden h-screen w-[240px] shrink-0 flex-col border-r border-[var(--color-brand-border)] bg-white lg:flex">
-      <div className="flex h-[60px] items-center px-5">
+      {/* Sidebar logo — matches the super-admin dashboard sizing so the
+          brand is visually present without crowding the nav. */}
+      <div className="flex h-[72px] items-center px-5">
         <Link href="/home" aria-label="Dashboard" className="inline-flex items-center">
-          <Logo height={28} />
+          <Logo height={44} />
         </Link>
       </div>
 
@@ -77,7 +79,7 @@ export function Sidebar() {
 
       <div className="border-t border-[var(--color-brand-border)] px-5 py-3">
         <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-brand-muted-soft)]">
-          Farmspeak is registered in Nigeria
+          FS Innovation is registered in Nigeria
         </p>
       </div>
     </aside>

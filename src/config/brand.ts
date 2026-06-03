@@ -4,7 +4,7 @@
  */
 export const brand = {
   name: 'Farm Support Innovation',
-  shortName: 'FarmSpeak',
+  shortName: 'Farm Support Innovation',
   tagline: 'Manage your poultry farm with ease',
   subtagline: 'Solve your spend on poultry',
 };

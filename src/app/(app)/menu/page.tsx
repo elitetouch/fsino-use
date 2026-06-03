@@ -28,7 +28,7 @@ export default function MenuPage() {
       <MenuList
         groups={[
           {
-            heading: 'Farmspeak',
+            heading: 'Farm Support Innovation',
             items: [
               { href: '/home',    label: 'Dashboard', icon: LayoutDashboard, hint: 'Current cycle results' },
               { href: '/reports', label: 'Reports',   icon: BarChart3,      hint: 'PDFs and exports for the bank' },

@@ -70,7 +70,7 @@ export function FinalCTA() {
           </div>
 
           <p className="relative mt-6 text-sm text-white/75">
-            Already on FarmSpeak?{' '}
+            Already on Farm Support Innovation?{' '}
             <Link href="/login" className="font-semibold text-white underline-offset-4 hover:underline">
               Log in →
             </Link>

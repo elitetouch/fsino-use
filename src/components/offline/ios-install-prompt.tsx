@@ -63,7 +63,7 @@ export function IosInstallPrompt() {
   return (
     <div
       role="dialog"
-      aria-label="Install FarmSpeak"
+      aria-label="Install Farm Support Innovation"
       className="animate-fade-up fixed inset-x-4 bottom-4 z-[55] mx-auto max-w-md rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 shadow-[0_20px_60px_-20px_rgba(15,80,30,0.30)]"
     >
       <div className="flex items-start gap-3">
@@ -72,7 +72,7 @@ export function IosInstallPrompt() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-bold text-[var(--color-brand-fg)]">
-            Install FarmSpeak on this iPhone
+            Install Farm Support Innovation on this iPhone
           </p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-brand-muted)]">
             Tap{' '}

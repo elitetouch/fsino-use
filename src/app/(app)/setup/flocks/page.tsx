@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
 import { BuyTokensDialog } from '@/components/billing/buy-tokens-dialog';
+import { AddPenInline } from '@/components/app/add-pen-inline';
 import {
   apiErrorMessage,
   endpoints,
@@ -337,9 +338,17 @@ export default function SetupFlocksPage() {
                 </select>
                 {freePens.length === 0 && (
                   <p className="mt-1.5 text-xs text-[var(--color-brand-muted)]">
-                    No free pens — flock will be unassigned until you free one up.
+                    No free pens yet — create one below or leave unassigned.
                   </p>
                 )}
+                {/* Inline pen creator — keeps the user in flow without
+                    bouncing them out to /setup/pens. New pen is
+                    auto-selected once saved. */}
+                <AddPenInline
+                  onCreated={(pen) => {
+                    form.setValue('pen_id', pen.id, { shouldValidate: true });
+                  }}
+                />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

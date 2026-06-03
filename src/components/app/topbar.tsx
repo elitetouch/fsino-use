@@ -75,7 +75,7 @@ export function Topbar({
             <Menu className="h-[18px] w-[18px]" />
           </button>
           <Link href="/home" aria-label="Dashboard" className="inline-flex shrink-0 lg:hidden">
-            <Logo height={26} />
+            <Logo height={36} />
           </Link>
           {title && (
             <h1 className="hidden truncate text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] lg:block">

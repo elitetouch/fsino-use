@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -223,18 +223,28 @@ function PurchasePoller({ onSuccess }: { onSuccess?: () => void }) {
   const search = useSearchParams();
   const router = useRouter();
 
+  // Ref-set tracking which references we've already finalised in this
+  // page lifetime. Required because:
+  //   1. The parent passes an inline arrow as onSuccess → reference
+  //      identity changes every render → this effect's deps re-fire.
+  //   2. React 19 StrictMode mounts effects twice in development.
+  //   3. The setTimeout-recursive poll could overlap on rapid effect
+  //      re-runs, firing the same toast multiple times.
+  // The dedupe set guarantees a given reference only ever toasts /
+  // calls onSuccess / clears storage once per page visit.
+  const finalisedRefs = useRef<Set<string>>(new Set());
+
+  // Stash the latest onSuccess in a ref so the effect doesn't depend
+  // on it (it would otherwise change every render).
+  const onSuccessRef = useRef(onSuccess);
+  useEffect(() => { onSuccessRef.current = onSuccess; }, [onSuccess]);
+
   useEffect(() => {
     // Gateways append their reference under different param names.
-    // Read whichever is present, with this priority:
-    //   reference  — Paystack's primary
-    //   trxref     — Paystack's mirror
-    //   tx_ref     — Flutterwave's primary
-    //   transaction_id — Flutterwave's mirror (numeric, but we treat
-    //                    as opaque string; backend reference is what
-    //                    our DB indexes on)
-    //   ref        — our own legacy placeholder (kept for older redirects)
-    // Fall back to sessionStorage if all are stripped (some networks
-    // intercept the redirect and drop query params).
+    // Priority: reference (Paystack primary), trxref (Paystack mirror),
+    // tx_ref (Flutterwave primary), transaction_id (Flutterwave
+    // mirror), ref (our legacy). Fall back to sessionStorage if every
+    // param was stripped by a captive portal.
     const fromUrl =
       search?.get('reference')
       ?? search?.get('trxref')
@@ -244,43 +254,54 @@ function PurchasePoller({ onSuccess }: { onSuccess?: () => void }) {
     let refFromStorage: string | null = null;
     try { refFromStorage = window.sessionStorage.getItem('fsm.pendingPurchaseRef'); } catch {}
 
-    // Guard against the old `__REF__` literal sneaking through a
-    // stale bookmark.
     const ref =
       fromUrl && fromUrl !== '__REF__' && fromUrl !== ''
         ? fromUrl
         : refFromStorage;
     if (!ref) return;
 
+    // Already handled this reference in this page session → no-op.
+    // This is what stops the 3× toast (StrictMode + dep churn + race).
+    if (finalisedRefs.current.has(ref)) return;
+
     let alive = true;
     let attempts = 0;
+
+    const finalise = (cb: () => void) => {
+      if (finalisedRefs.current.has(ref)) return;
+      finalisedRefs.current.add(ref);
+      try { window.sessionStorage.removeItem('fsm.pendingPurchaseRef'); } catch {}
+      cb();
+      router.replace('/wallet');
+    };
+
     const poll = async () => {
       if (!alive) return;
       try {
         const res = await endpoints.showPurchase(ref);
         const p = res.purchase;
         if (p.status === 'success') {
-          toast.success(`Purchase confirmed — ${p.quantity.toLocaleString()} ${p.tokenType}/${p.tier} tokens added.`);
-          try { window.sessionStorage.removeItem('fsm.pendingPurchaseRef'); } catch {}
-          onSuccess?.();
-          router.replace('/wallet');
+          finalise(() => {
+            toast.success(`Purchase confirmed — ${p.quantity.toLocaleString()} ${p.tokenType}/${p.tier} tokens added.`);
+            onSuccessRef.current?.();
+          });
           return;
         }
         if (p.status === 'failed' || p.status === 'abandoned') {
-          toast.error(`Payment ${p.status}.`);
-          try { window.sessionStorage.removeItem('fsm.pendingPurchaseRef'); } catch {}
-          router.replace('/wallet');
+          finalise(() => toast.error(`Payment ${p.status}.`));
           return;
         }
         attempts++;
         if (attempts < 15) setTimeout(poll, 2_000);
       } catch (err) {
-        if (attempts === 0) toast.error(apiErrorMessage(err, 'Could not verify the payment yet.'));
+        if (attempts === 0 && !finalisedRefs.current.has(ref)) {
+          toast.error(apiErrorMessage(err, 'Could not verify the payment yet.'));
+        }
       }
     };
     void poll();
     return () => { alive = false; };
-  }, [search, router, onSuccess]);
+  }, [search, router]);
 
   return null;
 }
