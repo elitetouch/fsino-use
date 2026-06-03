@@ -169,7 +169,20 @@ export const endpoints = {
     unwrap<{ pen: PenDto }>(api.post('/pens', payload)),
 
   // ───────────── Flocks (require X-Farm-ID) ─────────────
-  listFlocks: () => unwrap<{ flocks: FlockDto[] }>(api.get('/flocks')),
+  /**
+   * List flocks for the current farm. By default returns active only.
+   * Pass `pen_id` to scope to a single pen and `includeArchived` to get
+   * the full history (used by the pen-detail page).
+   */
+  listFlocks: (params?: { pen_id?: string; includeArchived?: boolean }) =>
+    unwrap<{ flocks: FlockDto[] }>(
+      api.get('/flocks', {
+        params: {
+          ...(params?.pen_id ? { pen_id: params.pen_id } : {}),
+          ...(params?.includeArchived ? { include_archived: 1 } : {}),
+        },
+      }),
+    ),
 
   createFlock: (payload: CreateFlockPayload) =>
     unwrap<{ flock: FlockDto }>(api.post('/flocks', payload)),
@@ -360,6 +373,8 @@ export type FlockDto = {
   cycleWeeks: number | null;
   startDate: string;
   validUntil?: string | null;
+  isActive?: boolean;
+  archivedAt?: string | null;
 };
 
 export type CreateFlockPayload = {
