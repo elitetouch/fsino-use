@@ -54,7 +54,12 @@ const schema = z.object({
   production_type: z.enum(['broiler', 'layer', 'dual_purpose'], {
     errorMap: () => ({ message: 'Pick a production type' }),
   }),
-  pen_id: z.string().optional().or(z.literal('')),
+  // pen_id is required client-side even though the backend allows
+  // unassigned flocks — keeping bird ownership to a pen from day one
+  // is much cleaner data and avoids mid-cycle "where are these birds
+  // actually housed" confusion. Inline pen creator lets the user
+  // make a pen on the fly without leaving the form.
+  pen_id: z.string().uuid('Pick a pen to house this flock'),
   start_date: z.string().min(1, 'Pick the placement date'),
   age_when_placed: z
     .union([z.string(), z.number()])
@@ -322,13 +327,13 @@ export default function SetupFlocksPage() {
               </div>
 
               <div>
-                <Label htmlFor="pen_id">Place in pen</Label>
+                <Label htmlFor="pen_id">Place in pen *</Label>
                 <select
                   id="pen_id"
                   {...form.register('pen_id')}
                   className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[15px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
                 >
-                  <option value="">Unassigned (you can move them later)</option>
+                  <option value="">{freePens.length === 0 ? 'No free pens yet — create one below' : 'Pick a pen…'}</option>
                   {freePens.map((p: PenDto) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -336,9 +341,10 @@ export default function SetupFlocksPage() {
                     </option>
                   ))}
                 </select>
+                <FieldError message={form.formState.errors.pen_id?.message} />
                 {freePens.length === 0 && (
                   <p className="mt-1.5 text-xs text-[var(--color-brand-muted)]">
-                    No free pens yet — create one below or leave unassigned.
+                    A pen keeps your birds&rsquo; records clean from day one. Create one below.
                   </p>
                 )}
                 {/* Inline pen creator — keeps the user in flow without

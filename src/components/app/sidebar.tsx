@@ -57,12 +57,11 @@ const GROUPS: Group[] = [
 
 export function Sidebar() {
   return (
-    <aside className="hidden h-screen w-[240px] shrink-0 flex-col border-r border-[var(--color-brand-border)] bg-white lg:flex">
-      {/* Sidebar logo — matches the super-admin dashboard sizing so the
-          brand is visually present without crowding the nav. */}
-      <div className="flex h-[72px] items-center px-5">
+    <aside className="hidden h-screen w-[260px] shrink-0 flex-col border-r border-[var(--color-brand-border)] bg-white lg:flex">
+      {/* Sidebar logo — matches the super-admin dashboard sizing. */}
+      <div className="flex h-[88px] items-center px-5">
         <Link href="/home" aria-label="Dashboard" className="inline-flex items-center">
-          <Logo height={44} />
+          <Logo height={56} />
         </Link>
       </div>
 

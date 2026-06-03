@@ -69,8 +69,8 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
     <div className="fixed inset-0 z-50 lg:hidden">
       <div aria-hidden className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} />
       <aside className="animate-fade-up absolute left-0 top-0 flex h-full w-[280px] flex-col border-r border-[var(--color-brand-border)] bg-white">
-        <div className="flex h-[72px] items-center justify-between px-4">
-          <Logo height={40} />
+        <div className="flex h-[80px] items-center justify-between px-4">
+          <Logo height={48} />
           <button
             type="button"
             aria-label="Close"
