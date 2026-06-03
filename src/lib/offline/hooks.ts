@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { countByStatus, getAllEntries, onOutboxChange } from './queue';
 import type { OutboxStatus } from './db';
 

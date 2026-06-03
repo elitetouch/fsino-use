@@ -94,7 +94,7 @@ export async function mutateOffline<T = unknown>(input: MutateInput): Promise<Mu
         timeout: 25_000,
       });
       return { key, sentNow: true, data: res.data };
-    } catch (err) {
+    } catch {
       // Transient failure online → queue for retry. We give it a fresh
       // outbox entry (which generates its own key, also valid) since the
       // server may have processed the first request.

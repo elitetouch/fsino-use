@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowRight, Loader2, Plus, Warehouse, Trash2 } from 'lucide-react';
+import { ArrowRight, Loader2, Plus, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';

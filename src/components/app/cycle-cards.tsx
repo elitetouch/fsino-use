@@ -178,6 +178,7 @@ export function MortalityCard({ rate, dailyDeaths }: { rate?: number | null; dai
 export function EggCollectionCard({ daily }: { daily?: Array<{ date: string; n: number }> | null }) {
   const items = daily ?? [];
   const empty = items.length === 0;
+  const totalEggs = items.reduce((s, x) => s + x.n, 0);
   return (
     <Card>
       <CardHeader
@@ -186,7 +187,7 @@ export function EggCollectionCard({ daily }: { daily?: Array<{ date: string; n: 
         rightSlot={
           !empty && (
             <span className="rounded-md bg-[var(--color-brand-primary-dark)] px-2 py-0.5 text-[11px] font-bold text-white">
-              {sumEggs(items).toLocaleString()} eggs
+              {totalEggs.toLocaleString()} eggs
             </span>
           )
         }
@@ -373,6 +374,3 @@ function averageMl(items: Array<{ ml: number }>): number {
   return Math.round(items.reduce((s, x) => s + x.ml, 0) / items.length);
 }
 
-function sumEggs(items: Array<{ ml: number }>): number {
-  return items.reduce((s, x) => s + x.ml, 0);
-}
