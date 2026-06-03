@@ -51,32 +51,32 @@ export function Topbar({
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--color-brand-border)] bg-white/85 backdrop-blur-lg">
-      <div className="flex h-[72px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      <div className="flex h-[60px] items-center justify-between gap-3 px-4 sm:px-5 lg:px-6">
         {/* Left: mobile hamburger + (mobile-only) logo, OR (desktop) title */}
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <button
             type="button"
             onClick={onOpenDrawer}
             aria-label="Open menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-brand-fg)] transition-colors hover:bg-[var(--color-brand-surface-soft)] lg:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-brand-fg)] transition-colors hover:bg-[var(--color-brand-surface-soft)] lg:hidden"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-[18px] w-[18px]" />
           </button>
           <Link href="/home" aria-label="Dashboard" className="inline-flex shrink-0 lg:hidden">
-            <Logo height={30} />
+            <Logo height={26} />
           </Link>
           {title && (
-            <h1 className="hidden truncate text-xl font-extrabold tracking-tight text-[var(--color-brand-fg)] lg:block">
+            <h1 className="hidden truncate text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] lg:block">
               {title}
             </h1>
           )}
         </div>
 
         {/* Right: online indicator + quick add + user menu */}
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-2">
           <span
             className={cn(
-              'hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider sm:inline-flex',
+              'hidden items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider sm:inline-flex',
               online
                 ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                 : 'bg-amber-50 text-amber-700',
@@ -86,9 +86,9 @@ export function Topbar({
             {online ? 'Online' : 'Offline'}
           </span>
 
-          <Button asChild size="sm" className="hidden h-10 px-4 sm:inline-flex">
+          <Button asChild size="sm" className="hidden h-9 px-3.5 text-[13px] sm:inline-flex">
             <Link href="/setup/flocks">
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               New flock
             </Link>
           </Button>
@@ -98,16 +98,16 @@ export function Topbar({
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-brand-border)] bg-white p-1.5 pr-3 transition-all hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-brand-surface-soft)]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-border)] bg-white p-1 pr-2.5 transition-all hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-brand-surface-soft)]"
               aria-expanded={menuOpen}
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-[12px] font-bold text-white">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-[11px] font-bold text-white">
                 {initial}
               </span>
-              <span className="hidden text-sm font-semibold text-[var(--color-brand-fg)] sm:inline">
+              <span className="hidden text-[13px] font-semibold text-[var(--color-brand-fg)] sm:inline">
                 {user?.name?.split(' ')[0] ?? 'Farmer'}
               </span>
-              <ChevronDown className="hidden h-4 w-4 text-[var(--color-brand-muted)] sm:inline" />
+              <ChevronDown className="hidden h-3.5 w-3.5 text-[var(--color-brand-muted)] sm:inline" />
             </button>
 
             {menuOpen && (

@@ -62,7 +62,7 @@ export default function SetupLayout({ children }: { children: React.ReactNode })
 
       <main className="relative z-10 flex min-h-[calc(100vh-72px)] items-start justify-center px-5 pb-12 pt-2 sm:items-center sm:px-8">
         <div className="animate-fade-up w-full max-w-2xl">
-          <div className="rounded-[28px] border border-[var(--color-brand-border)] bg-white p-6 shadow-[0_30px_80px_-30px_rgba(15,80,30,0.18)] sm:p-9 md:p-10">
+          <div className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5 shadow-[0_24px_60px_-30px_rgba(15,80,30,0.15)] sm:p-7">
             {children}
           </div>
         </div>

@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
  * for farmers on phones with thumb-only input.
  */
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-base font-semibold tracking-tight ring-offset-white transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-55',
+  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold tracking-tight ring-offset-white transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-55',
   {
     variants: {
       variant: {
@@ -27,10 +27,10 @@ const buttonVariants = cva(
           'h-auto rounded-none p-0 text-[var(--color-brand-primary)] underline-offset-4 hover:underline',
       },
       size: {
-        sm: 'h-10 px-4 text-sm',
-        default: 'h-12 px-5',
-        lg: 'h-14 px-6 text-[17px] xl:h-16 xl:px-7 xl:text-lg',
-        block: 'h-14 w-full px-6 text-[17px] xl:h-16 xl:text-lg',
+        sm:      'h-9 px-3.5 text-[13px]',
+        default: 'h-10 px-4 text-[13px]',
+        lg:      'h-12 px-5 text-[14px]',
+        block:   'h-12 w-full px-5 text-[14px]',
       },
     },
     defaultVariants: { variant: 'primary', size: 'default' },

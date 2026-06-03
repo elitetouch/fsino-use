@@ -43,20 +43,20 @@ const FOOTER_NAV: Array<{ href: string; label: string; icon: React.ElementType }
  */
 export function Sidebar() {
   return (
-    <aside className="hidden h-screen w-[260px] flex-col border-r border-[var(--color-brand-border)] bg-white lg:flex">
+    <aside className="hidden h-screen w-[240px] flex-col border-r border-[var(--color-brand-border)] bg-white lg:flex">
       {/* Logo block — fixed height so it always lines up with the topbar. */}
-      <div className="flex h-[72px] items-center px-6">
+      <div className="flex h-[60px] items-center px-5">
         <Link href="/home" aria-label="Dashboard" className="inline-flex items-center">
-          <Logo height={36} />
+          <Logo height={28} />
         </Link>
       </div>
 
       {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 pt-1">
-        <NavGroup label="Workspace" items={PRIMARY} />
-        <NavGroup label="Records" items={SECONDARY} className="mt-6" />
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 pt-2">
+        <NavGroup label="Farmspeak" items={PRIMARY} />
+        <NavGroup label="Records" items={SECONDARY} className="mt-5" />
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto pt-5">
           <NavGroup items={FOOTER_NAV} />
         </div>
       </nav>
@@ -74,9 +74,9 @@ function NavGroup({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col', className)}>
+    <div className={cn('flex flex-col gap-0.5', className)}>
       {label && (
-        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-brand-muted-soft)]">
+        <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
           {label}
         </p>
       )}
@@ -92,7 +92,7 @@ function NavLink({ href, label, icon: Icon }: { href: string; label: string; ico
     <Link
       href={href}
       className={cn(
-        'group relative flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all',
+        'group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-colors',
         active
           ? 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-primary-deep)]'
           : 'text-[var(--color-brand-fg-soft)] hover:bg-[var(--color-brand-surface-soft)] hover:text-[var(--color-brand-fg)]',
@@ -101,12 +101,12 @@ function NavLink({ href, label, icon: Icon }: { href: string; label: string; ico
       {active && (
         <span
           aria-hidden
-          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--color-brand-primary)]"
+          className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-r-full bg-[var(--color-brand-primary)]"
         />
       )}
       <Icon
         className={cn(
-          'h-[18px] w-[18px] shrink-0 transition-colors',
+          'h-4 w-4 shrink-0 transition-colors',
           active ? 'text-[var(--color-brand-primary-deep)]' : 'text-[var(--color-brand-muted)] group-hover:text-[var(--color-brand-fg-soft)]',
         )}
         strokeWidth={2}

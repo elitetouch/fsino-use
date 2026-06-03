@@ -17,9 +17,11 @@
   --color-brand-accent-strong: #a7f3c2; /* mint pop */
 
   /* Neutrals */
-  --color-brand-bg: #ffffff;
+  /* Neutral surface — matches the #EFF1F3 page bg shown in the Figma
+     color picker. White cards float over it cleanly. */
+  --color-brand-bg: #eff1f3;
   --color-brand-surface: #ffffff;
-  --color-brand-surface-soft: #f7faf6;  /* alternating section bg */
+  --color-brand-surface-soft: #f6f8fa;
   --color-brand-fg: #0b1410;
   --color-brand-fg-soft: #1f2a24;
   --color-brand-muted: #5b6b5f;
@@ -42,12 +44,21 @@
                BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
                Arial, sans-serif;
 
-  /* Fluid type scale */
-  --text-display: clamp(2.5rem, 1.7rem + 4vw, 5rem);   /* 40→80 */
-  --text-hero:    clamp(2rem,   1.4rem + 3vw, 3.75rem); /* 32→60 */
-  --text-h1:      clamp(1.625rem, 1.2rem + 1.8vw, 2.5rem); /* 26→40 */
-  --text-h2:      clamp(1.25rem, 1rem + 1vw, 1.75rem);  /* 20→28 */
-  --text-lead:    clamp(1rem, 0.9rem + 0.4vw, 1.1875rem); /* 16→19 */
+  /* Stepped type scale — aligned to the mobile Figma design.
+     Mobile-first; sm + lg adjustments stay modest so the web app
+     never feels chunky vs the mobile mockups.
+
+     Marketing surfaces (landing hero, final CTA) keep their own larger
+     hero token because they're a different surface.
+   */
+  --text-display: 32px;   /* landing hero only */
+  --text-hero:    22px;   /* sm: 24px */
+  --text-h1:      18px;   /* sm: 20px — page headers */
+  --text-h2:      15px;   /* section headers */
+  --text-lead:    14px;   /* lead paragraphs / descriptions */
+  --text-body:    14px;   /* body */
+  --text-small:   13px;
+  --text-micro:   11px;   /* eyebrow / labels */
 
   /* Container */
   --container-page: 1280px;

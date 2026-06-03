@@ -68,10 +68,10 @@ export default function HomePage() {
   const greeting = pickGreeting();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Hero greeting card */}
       <section
-        className="relative overflow-hidden rounded-3xl border border-[var(--color-brand-border)] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-dark)] p-6 text-white sm:p-8"
+        className="relative overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-dark)] p-5 text-white sm:p-6"
       >
         {/* Mesh + grain overlays */}
         <div
@@ -93,33 +93,30 @@ export default function HomePage() {
           }}
         />
 
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/75">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/75">
               {greeting} · {todayLabel()}
             </p>
-            <h1
-              className="mt-2 font-extrabold leading-tight tracking-tight text-white"
-              style={{ fontSize: 'var(--text-hero)' }}
-            >
+            <h1 className="mt-1.5 text-[18px] font-bold leading-tight tracking-tight text-white sm:text-[22px]">
               {user?.name?.split(' ')[0] ?? 'Welcome'}, {farm ? `here's ${farm.name}` : 'set up your farm'}
             </h1>
             {farm && (
-              <p className="mt-2 text-base text-white/85">
+              <p className="mt-1.5 text-[13px] text-white/85">
                 {[farm.state, farm.address].filter(Boolean).join(' · ') || 'Set a location in settings to localise alerts.'}
               </p>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button asChild size="lg" variant="secondary" className="h-12 px-5">
+            <Button asChild size="default" variant="secondary">
               <Link href="/setup/flocks">
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 Place flock
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="h-12 border-white/30 bg-white/10 px-5 text-white hover:bg-white/15 hover:text-white">
+            <Button asChild variant="outline" size="default" className="border-white/30 bg-white/10 text-white hover:bg-white/15 hover:text-white">
               <Link href="/records">
-                <ClipboardList className="h-4 w-4" />
+                <ClipboardList className="h-3.5 w-3.5" />
                 Log records
               </Link>
             </Button>

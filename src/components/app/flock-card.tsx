@@ -32,42 +32,42 @@ export function FlockCard({ flock, className }: { flock: FlockDto; className?: s
         className,
       )}
     >
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
-              <Bird className="h-5 w-5" strokeWidth={2.2} />
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
+              <Bird className="h-4 w-4" strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-[var(--color-brand-fg)]">
+              <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
                 {flock.breed}
               </p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
                 {labelForProduction(flock.productionType)}
               </p>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-[var(--color-brand-muted-soft)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-brand-primary-deep)]" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-brand-muted-soft)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-brand-primary-deep)]" />
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-2 gap-3">
           <Stat label="Birds" value={birds.toLocaleString()} />
           <Stat label="Day" value={`${age}/${baseline}`} />
         </div>
 
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--color-brand-muted)]">
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[10px] font-semibold text-[var(--color-brand-muted)]">
             <span>Cycle</span>
             <span>{pct}%</span>
           </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--color-brand-accent)]">
+          <div className="mt-1 h-1 overflow-hidden rounded-full bg-[var(--color-brand-accent)]">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] transition-all duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
           {remaining > 0 && (
-            <p className="mt-2 text-[11px] text-[var(--color-brand-muted)]">
+            <p className="mt-1.5 text-[10px] text-[var(--color-brand-muted)]">
               {remaining} days to go
             </p>
           )}
@@ -80,8 +80,8 @@ export function FlockCard({ flock, className }: { flock: FlockDto; className?: s
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">{label}</p>
-      <p className="mt-0.5 text-base font-bold text-[var(--color-brand-fg)]">{value}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted-soft)]">{label}</p>
+      <p className="mt-0.5 text-[14px] font-bold text-[var(--color-brand-fg)]">{value}</p>
     </div>
   );
 }

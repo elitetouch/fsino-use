@@ -54,7 +54,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <Logo height={36} className="hidden sm:block" />
           </Link>
 
-          <div className="rounded-[28px] border border-[var(--color-brand-border)] bg-white p-6 shadow-[0_30px_80px_-30px_rgba(15,80,30,0.18)] sm:p-9 md:p-10">
+          <div className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5 shadow-[0_24px_60px_-30px_rgba(15,80,30,0.15)] sm:p-7">
             {children}
           </div>
         </div>

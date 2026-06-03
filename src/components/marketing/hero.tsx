@@ -47,8 +47,7 @@ export function MarketingHero() {
           </span>
 
           <h1
-            className="mt-6 font-extrabold leading-[1.02] tracking-tight text-[var(--color-brand-fg)]"
-            style={{ fontSize: 'var(--text-display)' }}
+            className="mt-6 text-[34px] font-extrabold leading-[1.05] tracking-tight text-[var(--color-brand-fg)] sm:text-[44px] lg:text-[56px]"
           >
             Run a tighter farm.{' '}
             <span className="bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-dark)] bg-clip-text text-transparent">
