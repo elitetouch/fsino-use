@@ -17,11 +17,13 @@ import { cn } from '@/lib/utils';
  */
 
 type Item = { href: string; label: string; icon: React.ElementType };
-type Group = { heading: string; items: Item[] };
+type Group = { heading?: string; items: Item[] };
 
 const GROUPS: Group[] = [
   {
-    heading: 'Farm Support Innovation',
+    // First group has no heading — the brand block above the nav
+    // already identifies the workspace, so a "Farm Support Innovation"
+    // label here just sits awkwardly close to the logo wordmark.
     items: [
       { href: '/home',    label: 'Dashboard', icon: LayoutDashboard },
       { href: '/reports', label: 'Reports',   icon: BarChart3 },
@@ -69,10 +71,12 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 pb-6 pt-2">
         {GROUPS.map((group, gi) => (
-          <div key={group.heading} className={gi > 0 ? 'mt-5' : ''}>
-            <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
-              {group.heading}
-            </p>
+          <div key={group.heading ?? `g-${gi}`} className={gi > 0 ? 'mt-5' : ''}>
+            {group.heading && (
+              <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+                {group.heading}
+              </p>
+            )}
             {group.items.map((item) => <SidebarLink key={item.href} {...item} />)}
           </div>
         ))}

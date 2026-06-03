@@ -11,11 +11,12 @@ import { Logo } from '@/components/brand/logo';
 import { cn } from '@/lib/utils';
 
 const GROUPS: Array<{
-  heading: string;
+  heading?: string;
   items: Array<{ href: string; label: string; icon: React.ElementType }>;
 }> = [
   {
-    heading: 'Farm Support Innovation',
+    // First group has no heading — the brand block above already
+    // identifies the workspace; a redundant label crowds the logo.
     items: [
       { href: '/home',    label: 'Dashboard', icon: LayoutDashboard },
       { href: '/reports', label: 'Reports',   icon: BarChart3 },
@@ -82,10 +83,12 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
         </div>
         <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
           {GROUPS.map((group, gi) => (
-            <div key={group.heading} className={gi > 0 ? 'mt-5' : ''}>
-              <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
-                {group.heading}
-              </p>
+            <div key={group.heading ?? `g-${gi}`} className={gi > 0 ? 'mt-5' : ''}>
+              {group.heading && (
+                <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+                  {group.heading}
+                </p>
+              )}
               {group.items.map((item) => {
                 const active = pathname === item.href || (item.href !== '/home' && pathname?.startsWith(item.href));
                 return (
