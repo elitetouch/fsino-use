@@ -1,49 +1,81 @@
 'use client';
 
-import { use, useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  CheckCircle2, AlertTriangle, Loader2, ShieldCheck, Building2, Mail, ArrowRight,
+  CheckCircle2, AlertTriangle, Loader2, ShieldCheck, Mail, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
+import { Logo } from '@/components/brand/logo';
 import {
   apiErrorMessage, endpoints, normalisePhone,
   type InvitePreviewDto,
 } from '@/lib/api';
 import { readToken, writeToken, writeUser } from '@/lib/auth';
+import { brand } from '@/config/brand';
 import { normalisePermissions, PERMISSION_GROUPS } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 /**
  * Staff-invite landing page.
  *
+ * URL: /invite/accept?token=<rawToken>
+ * (Matches the backend's `INVITE_ACCEPT_URL` builder in
+ * StaffInviteController::store, which appends `?token=…` to the
+ * configured base.)
+ *
  * Three sub-flows driven by `nextAction.type` from the preview endpoint:
  *
  * - `accept`   → user is logged in and their account email matches the
  *                invite. One-click accept.
- * - `login`    → an FSManager account with this email already exists.
- *                Send them to login with a return-to that brings them back
- *                here so the accept call fires after sign-in.
+ * - `login`    → an account with this email already exists. Send them
+ *                to login with a return-to that brings them back here
+ *                so the accept call fires after sign-in.
  * - `register` → no account yet. Inline form collects name, phone +
  *                password and calls /accept-and-register, which both
- *                creates the user, marks the invite accepted, and returns
- *                a session token.
+ *                creates the user, marks the invite accepted, and
+ *                returns a session token.
  *
  * The token is the only thing in the URL — everything else comes from
  * the public preview endpoint (no auth required).
  */
-export default function InvitePage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = use(params);
+export default function InviteAcceptPage() {
+  return (
+    // useSearchParams() must run inside a Suspense boundary in app router
+    <Suspense fallback={
+      <Shell>
+        <div className="flex flex-col items-center gap-3 py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand-primary)]" />
+        </div>
+      </Shell>
+    }>
+      <InviteAcceptInner />
+    </Suspense>
+  );
+}
+
+function InviteAcceptInner() {
+  const search = useSearchParams();
+  const token = (search.get('token') ?? '').trim();
 
   const preview = useQuery({
     queryKey: ['invite-preview', token],
     queryFn: () => endpoints.previewInvite(token),
+    enabled: token.length > 0,
     retry: false,
   });
+
+  if (!token) {
+    return (
+      <Shell>
+        <ErrorState message="No invite token in the link. Please open the link from your email." />
+      </Shell>
+    );
+  }
 
   if (preview.isLoading) {
     return (
@@ -80,16 +112,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="min-h-svh bg-[var(--color-brand-surface-soft)] px-4 py-10 sm:py-16">
       <div className="mx-auto w-full max-w-[560px]">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]"
-        >
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-white">
-            <Building2 className="h-3.5 w-3.5" />
-          </span>
-          Farm Support
+        <Link href="/" className="inline-flex items-center justify-center">
+          <Logo size={180} />
         </Link>
-        <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.18)]">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.18)]">
           {children}
         </div>
         <p className="mt-4 text-center text-[11px] text-[var(--color-brand-muted)]">
@@ -114,7 +140,7 @@ function ErrorState({ message }: { message: string }) {
         Ask the farm owner to send you a fresh link.
       </p>
       <Button asChild variant="outline" size="sm" className="mt-5 h-9">
-        <Link href="/login">Sign in to FSManager</Link>
+        <Link href="/login">Sign in to {brand.name}</Link>
       </Button>
     </div>
   );
@@ -204,6 +230,7 @@ function Pill({
 function ActionPanel({ data, token }: { data: InvitePreviewDto; token: string }) {
   const router = useRouter();
   const loggedIn = !!readToken();
+  const returnTo = `/invite/accept?token=${encodeURIComponent(token)}`;
 
   // If the server says "accept" but locally we have no token, the
   // session was wiped — fall back to login.
@@ -242,10 +269,10 @@ function ActionPanel({ data, token }: { data: InvitePreviewDto; token: string })
     return (
       <div className="px-6 py-6">
         <p className="text-[13px] text-[var(--color-brand-muted)]">
-          You already have an FSManager account with this email. Sign in to accept the invite.
+          You already have an account with this email. Sign in to accept the invite.
         </p>
         <Button asChild size="block" className="mt-4">
-          <Link href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}>
+          <Link href={`/login?next=${encodeURIComponent(returnTo)}`}>
             <Mail className="h-4 w-4" />
             Sign in to accept
           </Link>
@@ -264,6 +291,7 @@ function ActionPanel({ data, token }: { data: InvitePreviewDto; token: string })
 
 function RegisterPanel({ data, token }: { data: InvitePreviewDto; token: string }) {
   const router = useRouter();
+  const returnTo = `/invite/accept?token=${encodeURIComponent(token)}`;
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -311,12 +339,13 @@ function RegisterPanel({ data, token }: { data: InvitePreviewDto; token: string 
       noValidate
       onSubmit={(e) => { e.preventDefault(); if (validate()) submit.mutate(); }}
     >
-      <p className="text-[13px] text-[var(--color-brand-muted)]">
-        Create your FSManager account to accept this invite. You&rsquo;ll sign in with{' '}
-        <strong className="text-[var(--color-brand-fg)]">{data.invite.email}</strong> from now on.
-      </p>
+      <div className="mb-4 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-accent)]/40 px-3.5 py-3 text-[12.5px] text-[var(--color-brand-fg)]">
+        <strong className="text-[var(--color-brand-primary-deep)]">First time on {brand.name}?</strong>{' '}
+        Set up your account in 30 seconds. You&rsquo;ll sign in with{' '}
+        <strong>{data.invite.email}</strong> from now on.
+      </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="space-y-4">
         <div>
           <Label htmlFor="name">Full name *</Label>
           <Input
@@ -381,7 +410,7 @@ function RegisterPanel({ data, token }: { data: InvitePreviewDto; token: string 
       <p className="mt-3 text-center text-[11.5px] text-[var(--color-brand-muted)]">
         Already have an account?{' '}
         <Link
-          href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}
+          href={`/login?next=${encodeURIComponent(returnTo)}`}
           className="font-semibold text-[var(--color-brand-primary)] hover:underline"
         >
           Sign in instead
