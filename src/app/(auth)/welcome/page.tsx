@@ -1,17 +1,50 @@
 'use client';
 
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { canCreateFarm, endpoints } from '@/lib/api';
 
 /**
  * Welcome / verification successful — a celebratory moment.
  *
  * Light theme to match the rest of the auth flow, with an animated
  * checkmark medallion as the focal point. Concentric pulse rings give
- * a quiet "ta-da" without confetti chaos. Single primary CTA.
+ * a quiet "ta-da" without confetti chaos.
+ *
+ * Two branches based on whether the freshly-verified user already
+ * belongs to a farm:
+ *
+ *  - Zero memberships  → normal first-time-owner flow: nudge them to
+ *                        the 3-step setup with the "Set up my farm" CTA.
+ *
+ *  - One+ memberships  → this is an invited staff member who just
+ *                        verified. Showing them a "Set up my farm"
+ *                        button is wrong: they joined an existing
+ *                        farm, and the backend's CreateFarmRequest
+ *                        authorize() will 403 them anyway. So we
+ *                        instead route them straight to the dashboard
+ *                        and tweak the copy to welcome them to the
+ *                        farm they joined.
+ *
+ * (The backend authorisation in CreateFarmRequest is the authoritative
+ * line — this page just makes the UI honest about it.)
  */
 export default function WelcomePage() {
+  const farms = useQuery({
+    queryKey: ['farms'],
+    queryFn: () => endpoints.listFarms(),
+    staleTime: 30_000,
+  });
+
+  // Mirror the backend's CreateFarmRequest::authorize() policy. If they
+  // can't create, they're either invited staff or a member-only user
+  // — show them the dashboard CTA instead of leading them to a 403.
+  const allowedToSetUp = canCreateFarm(farms.data?.farms);
+  const hasMemberships = (farms.data?.farms.length ?? 0) > 0;
+  const firstFarmName = farms.data?.farms[0]?.name;
+
   return (
     <div className="text-center">
       {/* Animated checkmark medallion with pulse rings */}
@@ -38,25 +71,56 @@ export default function WelcomePage() {
       >
         You&rsquo;re verified
       </h1>
-      <p
-        className="mt-3 leading-relaxed text-[var(--color-brand-muted)]"
-        style={{ fontSize: 'var(--text-lead)' }}
-      >
-        Welcome to the farmer community. Let&rsquo;s set up your farm, pens
-        and flocks — three quick steps and you&rsquo;re live.
-      </p>
 
-      <div className="mt-8 flex flex-col gap-3">
-        <Button asChild size="block">
-          <Link href="/setup/farm">Set up my farm</Link>
-        </Button>
-        <Link
-          href="/home"
-          className="text-sm font-medium text-[var(--color-brand-muted)] underline-offset-4 hover:underline"
-        >
-          I&rsquo;ll do this later
-        </Link>
-      </div>
+      {farms.isLoading ? (
+        <p className="mt-6 inline-flex items-center gap-2 text-[var(--color-brand-muted)]" style={{ fontSize: 'var(--text-lead)' }}>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading your farms…
+        </p>
+      ) : hasMemberships || !allowedToSetUp ? (
+        <>
+          <p
+            className="mt-3 leading-relaxed text-[var(--color-brand-muted)]"
+            style={{ fontSize: 'var(--text-lead)' }}
+          >
+            Welcome aboard.{' '}
+            {firstFarmName ? (
+              <>You now have access to <strong className="text-[var(--color-brand-fg)]">{firstFarmName}</strong>.</>
+            ) : (
+              <>You now have access to your farm.</>
+            )}{' '}
+            Let&rsquo;s take you to the dashboard.
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3">
+            <Button asChild size="block">
+              <Link href="/home">Go to dashboard</Link>
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p
+            className="mt-3 leading-relaxed text-[var(--color-brand-muted)]"
+            style={{ fontSize: 'var(--text-lead)' }}
+          >
+            Welcome to the farmer community. Let&rsquo;s set up your farm, pens
+            and flocks — three quick steps and you&rsquo;re live.
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3">
+            <Button asChild size="block">
+              <Link href="/setup/farm">Set up my farm</Link>
+            </Button>
+            <Link
+              href="/home"
+              className="text-sm font-medium text-[var(--color-brand-muted)] underline-offset-4 hover:underline"
+            >
+              I&rsquo;ll do this later
+            </Link>
+          </div>
+        </>
+      )}
     </div>
   );
 }

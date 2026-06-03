@@ -5,27 +5,36 @@ import { useQuery } from '@tanstack/react-query';
 import { Tractor, Plus, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
-import { endpoints, type FarmDto } from '@/lib/api';
+import { canCreateFarm, endpoints, type FarmDto } from '@/lib/api';
 import { readCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
 export default function FarmsPage() {
   const farms = useQuery({ queryKey: ['farms'], queryFn: () => endpoints.listFarms() });
   const current = readCurrentFarmId();
+  // Mirror the backend authorization — invited staff can only switch
+  // between farms they belong to, not start new ones.
+  const allowedToCreate = canCreateFarm(farms.data?.farms);
 
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Farms"
         title="Your farms"
-        description="Switch between your farms or add a new one."
+        description={
+          allowedToCreate
+            ? 'Switch between your farms or add a new one.'
+            : 'Switch between the farms you belong to.'
+        }
         actions={
-          <Button asChild size="sm" className="h-10">
-            <Link href="/setup/farm">
-              <Plus className="h-4 w-4" />
-              New farm
-            </Link>
-          </Button>
+          allowedToCreate ? (
+            <Button asChild size="sm" className="h-10">
+              <Link href="/setup/farm">
+                <Plus className="h-4 w-4" />
+                New farm
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 

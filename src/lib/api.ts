@@ -358,7 +358,38 @@ export type FarmDto = {
     freePens?: number;
   };
   canCreateFlock?: boolean;
+  /**
+   * The pivot for the currently-authenticated user on this farm.
+   * Returned by FarmResource when the row was fetched via the
+   * user-scoped relation (e.g. /api/v1/farms). Absent on admin-side
+   * fetches.
+   */
+  membership?: {
+    role: 'owner' | 'manager' | 'staff' | null;
+    status: 'invited' | 'active' | 'suspended' | null;
+    permissions: Record<string, unknown> | null;
+  } | null;
 };
+
+/**
+ * Mirror of the backend's CreateFarmRequest::authorize() policy, used
+ * to hide "New farm" / "Set up my farm" UI surfaces from users who'd
+ * be 403'd anyway.
+ *
+ * A user MAY create a farm if either
+ *   (a) they're already the owner of at least one farm (so an Account
+ *       exists in their name — multi-farm operators land here), OR
+ *   (b) they have zero farm memberships (the brand-new first-time
+ *       signup where the controller auto-creates the Account).
+ *
+ * The bug this guards against: an invited staff member has farms in
+ * their list but is NOT an owner of any. Without this check the UI
+ * would offer them a "Create farm" CTA that the backend would 403.
+ */
+export function canCreateFarm(farms: FarmDto[] | undefined | null): boolean {
+  if (!farms || farms.length === 0) return true;
+  return farms.some((f) => f.membership?.role === 'owner');
+}
 
 export type CreateFarmPayload = {
   farm_name: string;

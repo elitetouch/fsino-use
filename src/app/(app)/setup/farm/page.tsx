@@ -1,16 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowRight, Loader2, Beef, Egg } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
-import { apiErrorMessage, endpoints, type CreateFarmPayload } from '@/lib/api';
+import { apiErrorMessage, canCreateFarm, endpoints, type CreateFarmPayload } from '@/lib/api';
 import { writeCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +64,29 @@ type FormValues = z.infer<typeof schema>;
 export default function SetupFarmPage() {
   const router = useRouter();
 
+  // Route guard — the backend (CreateFarmRequest::authorize) is the
+  // authoritative line, but we redirect early so a user who joined a
+  // farm via invite never sees the setup form. They can't have a farm
+  // here unless the policy permits it (own an account OR have zero
+  // memberships). If they have memberships and don't own an account,
+  // submitting would 403 anyway — better to send them home with a
+  // friendly toast than show an empty-state form.
+  const farms = useQuery({
+    queryKey: ['farms'],
+    queryFn: () => endpoints.listFarms(),
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (farms.isLoading || !farms.data) return;
+    if (!canCreateFarm(farms.data.farms)) {
+      // Invited-staff path: they have memberships but no owner role,
+      // so the backend would 403 a POST /farms. Send them home.
+      toast.info('You already have access to a farm — opening your dashboard.');
+      router.replace('/home');
+    }
+  }, [farms.data, farms.isLoading, router]);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -105,6 +129,16 @@ export default function SetupFarmPage() {
 
   const meat = form.watch('produces_meat');
   const eggs = form.watch('produces_eggs');
+
+  // Don't flash the form while we're deciding whether this user even
+  // belongs here. The useEffect above redirects when they can't create.
+  if (farms.isLoading || (farms.data && !canCreateFarm(farms.data.farms))) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-[var(--color-brand-primary)]" />
+      </div>
+    );
+  }
 
   return (
     <div>
