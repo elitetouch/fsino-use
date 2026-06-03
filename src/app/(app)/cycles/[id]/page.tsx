@@ -2,9 +2,12 @@
 
 import { use, useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 import {
-  ArrowLeft, Calendar, MapPin, Plus, ChevronRight,
+  ArrowLeft, Calendar, MapPin, Plus, ChevronRight, Archive, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CyclePicker } from '@/components/app/cycle-picker';
@@ -12,8 +15,9 @@ import {
   BreedSummaryCard, FeedConsumptionCard, WaterConsumptionCard,
   MortalityCard, EggCollectionCard, VaccinationCard,
 } from '@/components/app/cycle-cards';
-import { endpoints, type FlockDto, type PenDto } from '@/lib/api';
+import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { readCurrentFarmId } from '@/lib/farm-context';
+import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 type Tab = 'results' | 'climate' | 'finance';
@@ -126,11 +130,36 @@ function ResultsTab({
   pen?: PenDto;
   ordinal: number;
 }) {
+  const router = useRouter();
+  const qc = useQueryClient();
+  const [confirmingArchive, setConfirmingArchive] = useState(false);
+
   const completedDate = cycle.validUntil ?? cycle.startDate;
+
+  const archive = useMutation({
+    mutationFn: () => endpoints.archiveFlock(cycle.id, true),
+    onSuccess: () => {
+      toast.success(`Cycle ${ordinal} archived — pen ${pen?.name ?? ''} is now free.`);
+      qc.invalidateQueries({ queryKey: ['flocks'] });
+      qc.invalidateQueries({ queryKey: ['pens'] });
+      router.push('/cycles');
+    },
+    onError: (err) => {
+      const ax = err as AxiosError<{ data?: { code?: string } }>;
+      // 409 = warning, expected first time. Open the confirm dialog
+      // so the user can force=true on the next click.
+      if (ax.response?.status === 409) {
+        setConfirmingArchive(true);
+        return;
+      }
+      toast.error(apiErrorMessage(err, 'Could not archive this cycle.'));
+    },
+  });
+
   return (
     <>
       {/* Cycle meta row */}
-      <article className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
+      <article className="flex flex-col gap-3 rounded-xl border border-[var(--color-brand-border)] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
             <Calendar className="h-4 w-4" strokeWidth={2.2} />
@@ -138,8 +167,8 @@ function ResultsTab({
           <div className="min-w-0">
             <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Cycle {ordinal}</p>
             <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">
-              Started {cycle.startDate}
-              {completedDate && completedDate !== cycle.startDate ? ` · ends ${completedDate}` : ''}
+              Started {fmtDate(cycle.startDate)}
+              {completedDate && completedDate !== cycle.startDate ? ` · ends ${fmtDate(completedDate)}` : ''}
               {pen && (
                 <>
                   {' · '}<MapPin className="inline h-3 w-3" /> {pen.name}
@@ -148,8 +177,47 @@ function ResultsTab({
             </p>
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-[var(--color-brand-muted-soft)]" />
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 self-start text-[var(--color-brand-danger)] sm:self-auto"
+          onClick={() => archive.mutate()}
+          disabled={archive.isPending}
+        >
+          {archive.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
+          Archive cycle
+        </Button>
       </article>
+
+      {confirmingArchive && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-[13px] font-bold text-amber-900">This cycle is still active</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-amber-800">
+            Archiving will end tracking, free pen <strong>{pen?.name ?? '—'}</strong>, and stop
+            future records from being attached to this cycle. The data stays on file.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={() => setConfirmingArchive(false)}
+              disabled={archive.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-9 bg-[var(--color-brand-danger)] hover:bg-[#a72027]"
+              onClick={() => archive.mutate()}
+              disabled={archive.isPending}
+            >
+              {archive.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
+              Yes, archive cycle
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* 2-up card grid */}
       <div className="grid gap-3 lg:grid-cols-2">

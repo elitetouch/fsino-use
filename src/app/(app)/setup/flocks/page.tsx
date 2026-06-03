@@ -13,6 +13,7 @@ import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
 import { BuyTokensDialog } from '@/components/billing/buy-tokens-dialog';
 import { AddPenInline } from '@/components/app/add-pen-inline';
+import { fmtDate } from '@/lib/format';
 import {
   apiErrorMessage,
   endpoints,
@@ -269,7 +270,7 @@ export default function SetupFlocksPage() {
                     {f.breed} · {capitalise(f.productionType)}
                   </p>
                   <p className="text-xs text-[var(--color-brand-muted)]">
-                    {f.placedBirds.toLocaleString()} birds · placed {f.startDate}
+                    {f.placedBirds.toLocaleString()} birds · placed {fmtDate(f.startDate)}
                   </p>
                 </div>
               </li>

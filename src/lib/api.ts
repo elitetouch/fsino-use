@@ -174,6 +174,14 @@ export const endpoints = {
   createFlock: (payload: CreateFlockPayload) =>
     unwrap<{ flock: FlockDto }>(api.post('/flocks', payload)),
 
+  /**
+   * Archive a flock. Backend warns with 409 + FLOCK_ARCHIVE_WARNING if
+   * the flock is still active (has birds or is in-date) unless `force`
+   * is true — pass true once the user confirms.
+   */
+  archiveFlock: (id: string, force = false) =>
+    api.delete(`/flocks/${id}`, { params: force ? { force: 'true' } : undefined }),
+
   // ───────────── Reference data ─────────────
   listBreeds: (params?: { production_type?: string; search?: string; country?: string }) =>
     unwrap<{ breeds: BreedDto[] }>(api.get('/breeds', { params })),

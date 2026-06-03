@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Check, Bird } from 'lucide-react';
 import type { FlockDto, PenDto } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 /**
@@ -104,7 +105,7 @@ export function CyclePicker({
                               Cycle {cycleOrdinal(c, items, i)} · {c.breed}
                             </p>
                             <p className="truncate text-[11px] text-[var(--color-brand-muted)]">
-                              {labelForProduction(c.productionType)} · {c.placedBirds.toLocaleString()} birds · placed {c.startDate}
+                              {labelForProduction(c.productionType)} · {c.placedBirds.toLocaleString()} birds · placed {fmtDate(c.startDate)}
                             </p>
                           </div>
                           {active && (
