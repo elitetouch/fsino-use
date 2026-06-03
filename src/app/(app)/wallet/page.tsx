@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -25,8 +25,6 @@ import { cn } from '@/lib/utils';
  */
 export default function WalletPage() {
   const qc = useQueryClient();
-  const router = useRouter();
-  const search = useSearchParams();
   const [openBuy, setOpenBuy] = useState(false);
   const [buyDefaults, setBuyDefaults] = useState<{ tokenType?: TokenType; tier?: TokenTier; quantity?: number } | undefined>();
 
@@ -40,48 +38,6 @@ export default function WalletPage() {
     queryFn: () => endpoints.listPurchases(),
   });
 
-  // Post-redirect polling — pick up the reference passed in the URL
-  // (callback_url) OR fall back to sessionStorage if the gateway
-  // stripped query params.
-  useEffect(() => {
-    const refFromUrl = search?.get('ref');
-    let refFromStorage: string | null = null;
-    try { refFromStorage = window.sessionStorage.getItem('fsm.pendingPurchaseRef'); } catch {}
-    const ref = refFromUrl && refFromUrl !== '__REF__' ? refFromUrl : refFromStorage;
-    if (!ref) return;
-
-    let alive = true;
-    let attempts = 0;
-    const poll = async () => {
-      if (!alive) return;
-      try {
-        const res = await endpoints.showPurchase(ref);
-        const p = res.purchase;
-        if (p.status === 'success') {
-          toast.success(`Purchase confirmed — ${p.quantity.toLocaleString()} ${p.tokenType}/${p.tier} tokens added.`);
-          qc.invalidateQueries({ queryKey: ['token-balances'] });
-          qc.invalidateQueries({ queryKey: ['token-purchases'] });
-          try { window.sessionStorage.removeItem('fsm.pendingPurchaseRef'); } catch {}
-          router.replace('/wallet');
-          return;
-        }
-        if (p.status === 'failed' || p.status === 'abandoned') {
-          toast.error(`Payment ${p.status}.`);
-          try { window.sessionStorage.removeItem('fsm.pendingPurchaseRef'); } catch {}
-          router.replace('/wallet');
-          return;
-        }
-        // Still pending — back off and try again, up to ~30s total.
-        attempts++;
-        if (attempts < 15) setTimeout(poll, 2_000);
-      } catch (err) {
-        if (attempts === 0) toast.error(apiErrorMessage(err, 'Could not verify the payment yet.'));
-      }
-    };
-    void poll();
-    return () => { alive = false; };
-  }, [search, qc, router]);
-
   const totalBirds = (balances.data?.balances ?? []).reduce((s, b) => s + b.balance, 0);
 
   function openBuyFor(b?: TokenBalanceDto) {
@@ -91,6 +47,18 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-5">
+      {/* useSearchParams must be wrapped in Suspense — Next.js requires
+          this so client-only hooks don't break static prerender. The
+          poller runs invisibly inside it. */}
+      <Suspense fallback={null}>
+        <PurchasePoller
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ['token-balances'] });
+            qc.invalidateQueries({ queryKey: ['token-purchases'] });
+          }}
+        />
+      </Suspense>
+
       <PageHeader
         eyebrow="Wallet"
         title="Tokens & purchases"
@@ -238,6 +206,61 @@ function PurchaseRow({ purchase, divider }: { purchase: TokenPurchaseDto; divide
       </div>
     </div>
   );
+}
+
+/**
+ * Post-redirect purchase poller. Reads ?ref= from the URL (with a
+ * sessionStorage fallback for gateways that strip query params), polls
+ * /billing/purchases/{ref} every 2s up to 15 attempts, and surfaces
+ * the outcome via toast.
+ *
+ * Lives in its own component so that useSearchParams (a CSR-only hook)
+ * sits inside the Suspense boundary the page provides — Next.js's
+ * static prerender otherwise errors with "should be wrapped in a
+ * suspense boundary".
+ */
+function PurchasePoller({ onSuccess }: { onSuccess?: () => void }) {
+  const search = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const refFromUrl = search?.get('ref');
+    let refFromStorage: string | null = null;
+    try { refFromStorage = window.sessionStorage.getItem('fsm.pendingPurchaseRef'); } catch {}
+    const ref = refFromUrl && refFromUrl !== '__REF__' ? refFromUrl : refFromStorage;
+    if (!ref) return;
+
+    let alive = true;
+    let attempts = 0;
+    const poll = async () => {
+      if (!alive) return;
+      try {
+        const res = await endpoints.showPurchase(ref);
+        const p = res.purchase;
+        if (p.status === 'success') {
+          toast.success(`Purchase confirmed — ${p.quantity.toLocaleString()} ${p.tokenType}/${p.tier} tokens added.`);
+          try { window.sessionStorage.removeItem('fsm.pendingPurchaseRef'); } catch {}
+          onSuccess?.();
+          router.replace('/wallet');
+          return;
+        }
+        if (p.status === 'failed' || p.status === 'abandoned') {
+          toast.error(`Payment ${p.status}.`);
+          try { window.sessionStorage.removeItem('fsm.pendingPurchaseRef'); } catch {}
+          router.replace('/wallet');
+          return;
+        }
+        attempts++;
+        if (attempts < 15) setTimeout(poll, 2_000);
+      } catch (err) {
+        if (attempts === 0) toast.error(apiErrorMessage(err, 'Could not verify the payment yet.'));
+      }
+    };
+    void poll();
+    return () => { alive = false; };
+  }, [search, router, onSuccess]);
+
+  return null;
 }
 
 function capitalize(s: string): string {
