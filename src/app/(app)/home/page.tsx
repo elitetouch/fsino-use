@@ -1,33 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Bird, Warehouse, Wallet, TrendingUp, Plus, Syringe, ClipboardList,
+  Bird, Warehouse, Wallet, TrendingUp, Plus, ClipboardList,
   ArrowRight, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
-import { FlockCard } from '@/components/app/flock-card';
+import { CyclePicker } from '@/components/app/cycle-picker';
+import {
+  BreedSummaryCard, FeedConsumptionCard, WaterConsumptionCard,
+  MortalityCard, VaccinationCard,
+} from '@/components/app/cycle-cards';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { readUser } from '@/lib/auth';
 import { readCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 
 /**
- * Dashboard — the landing page after onboarding.
+ * Dashboard — cycle-aware.
  *
- * Structure:
- *   - Greeting hero with current farm + quick CTAs
- *   - 4-up stat row
- *   - Today's task list (vaccines due, weigh-ins) — placeholder for
- *     when the schedule API ships
- *   - Active flocks grid
- *   - Recent activity feed
+ * The mobile design organises everything around the current cycle. The
+ * web translates that by leading the page with a cycle picker, then
+ * showing the same cycle-results cards. Farm-level stats sit underneath
+ * for quick context.
  *
- * If user has no farm, route to /setup/farm to close the loop.
+ * If the farm has no cycles yet, we show a friendly onboarding nudge
+ * instead of empty cards.
  */
 export default function HomePage() {
   const router = useRouter();
@@ -35,7 +37,6 @@ export default function HomePage() {
 
   const farms = useQuery({ queryKey: ['farms'], queryFn: () => endpoints.listFarms() });
 
-  // Auto-pick first farm if context unset; redirect to setup if none.
   useEffect(() => {
     if (!farms.data) return;
     const current = readCurrentFarmId();
@@ -60,184 +61,121 @@ export default function HomePage() {
     enabled: !!currentFarmId,
   });
 
+  // Default to most-recently-placed flock as the "current cycle".
+  const cycle = useMemo<FlockDto | undefined>(() => {
+    const items = flocks.data?.flocks ?? [];
+    if (items.length === 0) return undefined;
+    return items.slice().sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''))[0];
+  }, [flocks.data]);
+
   const totalBirds = (flocks.data?.flocks ?? []).reduce(
     (s, f) => s + (f.currentBirds ?? f.placedBirds ?? 0),
     0,
   );
   const freePens = (pens.data?.pens ?? []).filter((p: PenDto) => p.occupancy?.status !== 'occupied').length;
-  const greeting = pickGreeting();
 
   return (
-    <div className="space-y-6">
-      {/* Hero greeting card */}
-      <section
-        className="relative overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-dark)] p-5 text-white sm:p-6"
-      >
-        {/* Mesh + grain overlays */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(50% 35% at 18% 12%, rgba(167, 243, 194, 0.22) 0%, transparent 60%),
-              radial-gradient(40% 28% at 85% 88%, rgba(255, 255, 255, 0.10) 0%, transparent 65%)
-            `,
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.7) 1px, transparent 1px)',
-            backgroundSize: '22px 22px',
-          }}
-        />
-
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/75">
-              {greeting} · {todayLabel()}
-            </p>
-            <h1 className="mt-1.5 text-[18px] font-bold leading-tight tracking-tight text-white sm:text-[22px]">
-              {user?.name?.split(' ')[0] ?? 'Welcome'}, {farm ? `here's ${farm.name}` : 'set up your farm'}
-            </h1>
-            {farm && (
-              <p className="mt-1.5 text-[13px] text-white/85">
-                {[farm.state, farm.address].filter(Boolean).join(' · ') || 'Set a location in settings to localise alerts.'}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild size="default" variant="secondary">
-              <Link href="/setup/flocks">
-                <Plus className="h-3.5 w-3.5" />
-                Place flock
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="default" className="border-white/30 bg-white/10 text-white hover:bg-white/15 hover:text-white">
-              <Link href="/records">
-                <ClipboardList className="h-3.5 w-3.5" />
-                Log records
-              </Link>
-            </Button>
-          </div>
+    <div className="space-y-5">
+      {/* Greeting + cycle picker */}
+      <section className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+            {pickGreeting()} · {todayLabel()}
+          </p>
+          <h1 className="mt-1 text-[20px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[22px]">
+            {user?.name?.split(' ')[0] ?? 'Welcome'}
+            {farm ? ` — ${farm.name}` : ''}
+          </h1>
         </div>
+        {(flocks.data?.flocks ?? []).length > 0 && (
+          <CyclePicker
+            cycles={flocks.data?.flocks ?? []}
+            pens={pens.data?.pens ?? []}
+            currentCycleId={cycle?.id}
+          />
+        )}
       </section>
 
       {/* Stat row */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={Bird}
-          label="Active birds"
-          value={totalBirds.toLocaleString()}
-          sub={`Across ${flocks.data?.flocks.length ?? 0} flocks`}
-          tone="mint"
-        />
-        <StatCard
-          icon={Warehouse}
-          label="Pens"
-          value={pens.data?.pens.length ?? 0}
-          sub={`${freePens} free for placement`}
-          tone="sky"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Avg FCR"
-          value="—"
-          sub="Tracks once records flow"
-          tone="amber"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Cost so far"
-          value="—"
-          sub="Updates as you log expenses"
-          tone="rose"
-        />
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={Bird}       label="Active birds" value={totalBirds.toLocaleString()}
+                  sub={`Across ${flocks.data?.flocks.length ?? 0} cycles`} tone="mint" />
+        <StatCard icon={Warehouse}  label="Pens"         value={pens.data?.pens.length ?? 0}
+                  sub={`${freePens} free for placement`} tone="sky" />
+        <StatCard icon={TrendingUp} label="Avg FCR"      value="—"
+                  sub="Tracks once records flow" tone="amber" />
+        <StatCard icon={Wallet}     label="Cost so far"  value="—"
+                  sub="Updates as you log expenses" tone="rose" />
       </section>
 
-      {/* Today's tasks */}
-      <section>
-        <PageHeader
-          eyebrow="Today"
-          title="What needs doing"
-          description="Smart reminders will appear here as your flocks age into their schedules."
-        />
-        <div className="mt-5 rounded-3xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-6 text-center">
-          <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
-            <Syringe className="h-5 w-5" />
-          </span>
-          <p className="mt-4 text-sm font-bold text-[var(--color-brand-fg)]">
-            No tasks scheduled yet
-          </p>
-          <p className="mt-1 text-xs text-[var(--color-brand-muted)]">
-            Once a flock is past day 5, your country-tuned vaccine schedule kicks in here.
-          </p>
-        </div>
-      </section>
+      {/* Cycle results — same cards as /cycles/[id] */}
+      {cycle ? (
+        <>
+          <PageHeader
+            eyebrow="Current cycle"
+            title={`Cycle results · ${cycle.breed}`}
+            description={`${(cycle.ageDays ?? 0)} days old · ${cycle.placedBirds.toLocaleString()} birds placed`}
+            actions={
+              <Button asChild variant="outline" size="sm" className="h-9">
+                <Link href={`/cycles/${cycle.id}`}>
+                  Open cycle
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            }
+          />
 
-      {/* Active flocks */}
-      <section>
-        <PageHeader
-          eyebrow="Flocks"
-          title="Active right now"
-          actions={
-            <Button asChild variant="outline" size="sm" className="h-10">
-              <Link href="/flocks">
-                View all
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          }
-        />
-        <div className="mt-5">
-          {(flocks.data?.flocks ?? []).length === 0 ? (
-            <EmptyFlocks />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {(flocks.data?.flocks ?? []).slice(0, 6).map((f: FlockDto) => (
-                <FlockCard key={f.id} flock={f} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Coming-soon banner */}
-      <section className="overflow-hidden rounded-3xl border border-[var(--color-brand-border)] bg-white p-6">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
-              <Sparkles className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-sm font-bold text-[var(--color-brand-fg)]">
-                Daily logs, FCR & cost analytics coming next
-              </p>
-              <p className="mt-0.5 text-xs text-[var(--color-brand-muted)]">
-                Feed, water, vaccines, mortality — log in seconds, watch your margins grow.
-              </p>
-            </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <BreedSummaryCard flock={cycle} />
+            <FeedConsumptionCard fcr={null} />
+            <WaterConsumptionCard daily={null} />
+            <MortalityCard rate={null} />
+            <VaccinationCard schedule={[]} />
           </div>
+        </>
+      ) : (
+        <EmptyCycleNudge />
+      )}
+
+      {/* Quick add */}
+      <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div className="flex-1">
+            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+              Daily logs, FCR &amp; cost analytics coming next
+            </p>
+            <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+              Feed, water, vaccines, mortality — log in seconds, watch your margins grow.
+            </p>
+          </div>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/records">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Log
+            </Link>
+          </Button>
         </div>
       </section>
     </div>
   );
 }
 
-function EmptyFlocks() {
+function EmptyCycleNudge() {
   return (
-    <div className="rounded-3xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
+    <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
       <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
         <Bird className="h-5 w-5" />
       </span>
-      <p className="mt-4 text-sm font-bold text-[var(--color-brand-fg)]">No flocks placed yet</p>
-      <p className="mt-1 text-xs text-[var(--color-brand-muted)]">
-        Place your first flock to start tracking feed, vaccines, and margin.
+      <p className="mt-4 text-[14px] font-bold text-[var(--color-brand-fg)]">No active cycle yet</p>
+      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+        Place your first flock to start tracking feed, vaccines and margin.
       </p>
-      <Button asChild size="lg" className="mt-5 h-12 px-5">
+      <Button asChild size="sm" className="mt-4">
         <Link href="/setup/flocks">
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
           Place a flock
         </Link>
       </Button>
@@ -253,9 +191,5 @@ function pickGreeting(): string {
 }
 
 function todayLabel(): string {
-  return new Date().toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  return new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 }
