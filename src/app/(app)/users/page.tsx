@@ -14,6 +14,7 @@ import {
   apiErrorMessage, endpoints,
   type FarmMemberDto, type StaffInviteDto,
 } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { fmtDate } from '@/lib/format';
 import { STAFF_DEFAULT_PRESET, type FarmRole } from '@/lib/permissions';
@@ -54,10 +55,12 @@ export default function UsersPage() {
         title="Farm members"
         description="Owners, managers and staff who can access this farm. Permissions are farm-scoped — adding someone here only grants access to this one farm."
         actions={
-          <Button size="sm" className="h-10" onClick={() => setOpenInvite(true)}>
-            <Plus className="h-3.5 w-3.5" />
-            Invite member
-          </Button>
+          <Gate perm="staff_manage.create">
+            <Button size="sm" className="h-10" onClick={() => setOpenInvite(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Invite member
+            </Button>
+          </Gate>
         }
       />
 
@@ -173,16 +176,18 @@ function InviteRow({ invite, divider }: { invite: StaffInviteDto; divider: boole
         <Clock className="h-2.5 w-2.5" />
         Pending
       </span>
-      <Button
-        size="sm"
-        variant="outline"
-        className="h-9"
-        disabled={revoke.isPending}
-        onClick={() => revoke.mutate()}
-      >
-        {revoke.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-        <span className="hidden sm:inline">Revoke</span>
-      </Button>
+      <Gate perm="staff_manage.delete">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-9"
+          disabled={revoke.isPending}
+          onClick={() => revoke.mutate()}
+        >
+          {revoke.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">Revoke</span>
+        </Button>
+      </Gate>
     </div>
   );
 }

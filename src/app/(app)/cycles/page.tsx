@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/app/page-header';
 import { endpoints, type FlockDto, type PenDto } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
@@ -45,12 +46,14 @@ export default function CyclesPage() {
         title="Select a cycle"
         description="Open a cycle to see its results, climate and finances."
         actions={
-          <Button asChild size="sm">
-            <Link href="/setup/flocks">
-              <Plus className="h-3.5 w-3.5" />
-              Place flock
-            </Link>
-          </Button>
+          <Gate perm="flocks.create">
+            <Button asChild size="sm">
+              <Link href="/setup/flocks">
+                <Plus className="h-3.5 w-3.5" />
+                Place flock
+              </Link>
+            </Button>
+          </Gate>
         }
       />
 
@@ -168,11 +171,13 @@ function Empty() {
       <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
         Place a flock to start a new cycle.
       </p>
-      <Button asChild size="sm" className="mt-4">
-        <Link href="/setup/flocks">
-          <Plus className="h-3.5 w-3.5" /> Place a flock
-        </Link>
-      </Button>
+      <Gate perm="flocks.create">
+        <Button asChild size="sm" className="mt-4">
+          <Link href="/setup/flocks">
+            <Plus className="h-3.5 w-3.5" /> Place a flock
+          </Link>
+        </Button>
+      </Gate>
     </div>
   );
 }

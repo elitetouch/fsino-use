@@ -17,6 +17,7 @@ import {
   MortalityCard, VaccinationCard,
 } from '@/components/app/cycle-cards';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readUser } from '@/lib/auth';
 import { readCurrentFarmId, useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 
@@ -155,12 +156,14 @@ export default function HomePage() {
               Feed, water, vaccines, mortality — log in seconds, watch your margins grow.
             </p>
           </div>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/records">
-              <ClipboardList className="h-3.5 w-3.5" />
-              Log
-            </Link>
-          </Button>
+          <Gate perm="flocks.records.create">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/records">
+                <ClipboardList className="h-3.5 w-3.5" />
+                Log
+              </Link>
+            </Button>
+          </Gate>
         </div>
       </section>
     </div>
@@ -177,12 +180,14 @@ function EmptyCycleNudge() {
       <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
         Place your first flock to start tracking feed, vaccines and margin.
       </p>
-      <Button asChild size="sm" className="mt-4">
-        <Link href="/setup/flocks">
-          <Plus className="h-3.5 w-3.5" />
-          Place a flock
-        </Link>
-      </Button>
+      <Gate perm="flocks.create">
+        <Button asChild size="sm" className="mt-4">
+          <Link href="/setup/flocks">
+            <Plus className="h-3.5 w-3.5" />
+            Place a flock
+          </Link>
+        </Button>
+      </Gate>
     </div>
   );
 }

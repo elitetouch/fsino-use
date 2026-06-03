@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { FlockCard } from '@/components/app/flock-card';
 import { endpoints, type PenDto, type FlockDto } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
@@ -47,18 +48,22 @@ export default function PensFlocksPage() {
         description="The physical pens you run and the cycles of birds inside them."
         actions={
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="h-10">
-              <Link href="/setup/pens">
-                <Plus className="h-3.5 w-3.5" />
-                New pen
-              </Link>
-            </Button>
-            <Button asChild size="sm" className="h-10">
-              <Link href="/setup/flocks">
-                <Plus className="h-3.5 w-3.5" />
-                Place flock
-              </Link>
-            </Button>
+            <Gate perm="pens.create">
+              <Button asChild variant="outline" size="sm" className="h-10">
+                <Link href="/setup/pens">
+                  <Plus className="h-3.5 w-3.5" />
+                  New pen
+                </Link>
+              </Button>
+            </Gate>
+            <Gate perm="flocks.create">
+              <Button asChild size="sm" className="h-10">
+                <Link href="/setup/flocks">
+                  <Plus className="h-3.5 w-3.5" />
+                  Place flock
+                </Link>
+              </Button>
+            </Gate>
           </div>
         }
       />
@@ -140,6 +145,7 @@ function PensView({ pens, loading }: { pens: PenDto[]; loading: boolean }) {
         body="A pen is a house, cage or section where a flock lives."
         ctaHref="/setup/pens"
         ctaLabel="Add a pen"
+        ctaPerm="pens.create"
       />
     );
   }
@@ -205,6 +211,7 @@ function FlocksView({ flocks, loading }: { flocks: FlockDto[]; loading: boolean 
         body="Place a flock in a pen to start a new cycle."
         ctaHref="/setup/flocks"
         ctaLabel="Place a flock"
+        ctaPerm="flocks.create"
       />
     );
   }
@@ -216,13 +223,15 @@ function FlocksView({ flocks, loading }: { flocks: FlockDto[]; loading: boolean 
 }
 
 function Empty({
-  icon: Icon, title, body, ctaHref, ctaLabel,
+  icon: Icon, title, body, ctaHref, ctaLabel, ctaPerm,
 }: {
   icon: typeof Warehouse;
   title: string;
   body: string;
   ctaHref: string;
   ctaLabel: string;
+  /** Only show the create-CTA if the user has this permission. */
+  ctaPerm: 'pens.create' | 'flocks.create';
 }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
@@ -231,12 +240,14 @@ function Empty({
       </span>
       <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
       <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">{body}</p>
-      <Button asChild size="sm" className="mt-4 h-9">
-        <Link href={ctaHref}>
-          <Plus className="h-3.5 w-3.5" />
-          {ctaLabel}
-        </Link>
-      </Button>
+      <Gate perm={ctaPerm}>
+        <Button asChild size="sm" className="mt-4 h-9">
+          <Link href={ctaHref}>
+            <Plus className="h-3.5 w-3.5" />
+            {ctaLabel}
+          </Link>
+        </Button>
+      </Gate>
     </div>
   );
 }

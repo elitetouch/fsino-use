@@ -16,6 +16,7 @@ import {
   MortalityCard, EggCollectionCard, VaccinationCard,
 } from '@/components/app/cycle-cards';
 import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -177,16 +178,18 @@ function ResultsTab({
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 self-start text-[var(--color-brand-danger)] sm:self-auto"
-          onClick={() => archive.mutate()}
-          disabled={archive.isPending}
-        >
-          {archive.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
-          Archive cycle
-        </Button>
+        <Gate perm="flocks.archive">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 self-start text-[var(--color-brand-danger)] sm:self-auto"
+            onClick={() => archive.mutate()}
+            disabled={archive.isPending}
+          >
+            {archive.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
+            Archive cycle
+          </Button>
+        </Gate>
       </article>
 
       {confirmingArchive && (
@@ -238,12 +241,14 @@ function ResultsTab({
               Log feed, water, mortality and vaccines for this cycle.
             </p>
           </div>
-          <Button asChild size="sm">
-            <Link href="/records">
-              <Plus className="h-3.5 w-3.5" />
-              Add record
-            </Link>
-          </Button>
+          <Gate perm="flocks.records.create">
+            <Button asChild size="sm">
+              <Link href="/records">
+                <Plus className="h-3.5 w-3.5" />
+                Add record
+              </Link>
+            </Button>
+          </Gate>
         </div>
       </section>
     </>

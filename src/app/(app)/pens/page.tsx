@@ -6,6 +6,7 @@ import { Warehouse, Plus, Check, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { endpoints, type PenDto } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
@@ -24,12 +25,14 @@ export default function PensPage() {
         title="All pens"
         description="Houses, cages and sections that hold your flocks."
         actions={
-          <Button asChild size="sm" className="h-10">
-            <Link href="/setup/pens">
-              <Plus className="h-4 w-4" />
-              Add pen
-            </Link>
-          </Button>
+          <Gate perm="pens.create">
+            <Button asChild size="sm" className="h-10">
+              <Link href="/setup/pens">
+                <Plus className="h-4 w-4" />
+                Add pen
+              </Link>
+            </Button>
+          </Gate>
         }
       />
 
@@ -107,11 +110,13 @@ function Empty() {
       </span>
       <p className="mt-4 text-sm font-bold text-[var(--color-brand-fg)]">No pens yet</p>
       <p className="mt-1 text-xs text-[var(--color-brand-muted)]">Add a pen so you have somewhere to place flocks.</p>
-      <Button asChild size="lg" className="mt-5">
-        <Link href="/setup/pens">
-          <Plus className="h-4 w-4" /> Add a pen
-        </Link>
-      </Button>
+      <Gate perm="pens.create">
+        <Button asChild size="lg" className="mt-5">
+          <Link href="/setup/pens">
+            <Plus className="h-4 w-4" /> Add a pen
+          </Link>
+        </Button>
+      </Gate>
     </div>
   );
 }

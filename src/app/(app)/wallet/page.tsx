@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { BuyTokensDialog } from '@/components/billing/buy-tokens-dialog';
+import { Gate } from '@/lib/access';
 import {
   apiErrorMessage, endpoints,
   type TokenBalanceDto, type TokenPurchaseDto, type TokenType, type TokenTier,
@@ -74,10 +75,12 @@ export default function WalletPage() {
               <RefreshCw className="h-3.5 w-3.5" />
               Refresh
             </Button>
-            <Button size="sm" className="h-10" onClick={() => openBuyFor()}>
-              <Plus className="h-3.5 w-3.5" />
-              Buy tokens
-            </Button>
+            <Gate perm="billing.manage">
+              <Button size="sm" className="h-10" onClick={() => openBuyFor()}>
+                <Plus className="h-3.5 w-3.5" />
+                Buy tokens
+              </Button>
+            </Gate>
           </div>
         }
       />
@@ -167,13 +170,15 @@ function BalanceCard({ balance, onTopUp }: { balance: TokenBalanceDto; onTopUp: 
       <p className="text-[22px] font-extrabold leading-none tracking-tight text-[var(--color-brand-fg)]">
         {balance.balance.toLocaleString()}
       </p>
-      <button
-        type="button"
-        onClick={onTopUp}
-        className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
-      >
-        <Plus className="h-3 w-3" /> Top up
-      </button>
+      <Gate perm="billing.manage">
+        <button
+          type="button"
+          onClick={onTopUp}
+          className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+        >
+          <Plus className="h-3 w-3" /> Top up
+        </button>
+      </Gate>
     </div>
   );
 }

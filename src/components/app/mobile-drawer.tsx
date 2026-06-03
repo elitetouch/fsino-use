@@ -8,6 +8,7 @@ import {
   CreditCard, ShoppingBag, Info, Phone, MessageCircle, ChevronRight, X, Wallet,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
+import { ruleForPath, usePermissions } from '@/lib/access';
 import { cn } from '@/lib/utils';
 
 const GROUPS: Array<{
@@ -52,6 +53,18 @@ const GROUPS: Array<{
 
 export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const p = usePermissions();
+
+  // Same filter as the desktop sidebar — see sidebar.tsx for the
+  // rationale on keeping all groups visible while loading.
+  const visibleGroups = p.loading
+    ? GROUPS
+    : GROUPS
+        .map((g) => ({
+          ...g,
+          items: g.items.filter((it) => p.satisfies(ruleForPath(it.href) ?? { openToMembers: true })),
+        }))
+        .filter((g) => g.items.length > 0);
 
   useEffect(() => {
     if (!open) return;
@@ -82,7 +95,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
-          {GROUPS.map((group, gi) => (
+          {visibleGroups.map((group, gi) => (
             <div key={group.heading ?? `g-${gi}`} className={gi > 0 ? 'mt-5' : ''}>
               {group.heading && (
                 <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">

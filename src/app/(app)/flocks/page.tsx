@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { FlockCard } from '@/components/app/flock-card';
 import { endpoints, type FlockDto } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
 
 export default function FlocksPage() {
@@ -24,12 +25,14 @@ export default function FlocksPage() {
         title="All flocks"
         description="Every flock you have placed — active and past cycles."
         actions={
-          <Button asChild size="sm" className="h-10">
-            <Link href="/setup/flocks">
-              <Plus className="h-4 w-4" />
-              Place flock
-            </Link>
-          </Button>
+          <Gate perm="flocks.create">
+            <Button asChild size="sm" className="h-10">
+              <Link href="/setup/flocks">
+                <Plus className="h-4 w-4" />
+                Place flock
+              </Link>
+            </Button>
+          </Gate>
         }
       />
 
@@ -66,11 +69,13 @@ function Empty() {
       </span>
       <p className="mt-4 text-sm font-bold text-[var(--color-brand-fg)]">No flocks yet</p>
       <p className="mt-1 text-xs text-[var(--color-brand-muted)]">Place your first flock to start tracking it.</p>
-      <Button asChild size="lg" className="mt-5">
-        <Link href="/setup/flocks">
-          <Plus className="h-4 w-4" /> Place a flock
-        </Link>
-      </Button>
+      <Gate perm="flocks.create">
+        <Button asChild size="lg" className="mt-5">
+          <Link href="/setup/flocks">
+            <Plus className="h-4 w-4" /> Place a flock
+          </Link>
+        </Button>
+      </Gate>
     </div>
   );
 }

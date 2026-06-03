@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { endpoints, type FlockDto, type PenDto } from '@/lib/api';
+import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -75,12 +76,14 @@ export default function PenDetailPage({ params }: { params: Promise<{ id: string
               </Link>
             </Button>
             {!active && pen && (
-              <Button asChild size="sm" className="h-9">
-                <Link href="/setup/flocks">
-                  <Plus className="h-3.5 w-3.5" />
-                  Place flock
-                </Link>
-              </Button>
+              <Gate perm="flocks.create">
+                <Button asChild size="sm" className="h-9">
+                  <Link href="/setup/flocks">
+                    <Plus className="h-3.5 w-3.5" />
+                    Place flock
+                  </Link>
+                </Button>
+              </Gate>
             )}
           </div>
         }

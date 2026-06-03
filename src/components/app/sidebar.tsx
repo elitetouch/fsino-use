@@ -7,6 +7,7 @@ import {
   CreditCard, ShoppingBag, Info, Phone, MessageCircle, ChevronRight, Wallet,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
+import { ruleForPath, usePermissions } from '@/lib/access';
 import { cn } from '@/lib/utils';
 
 /**
@@ -58,6 +59,23 @@ const GROUPS: Group[] = [
 ];
 
 export function Sidebar() {
+  const p = usePermissions();
+
+  // Filter every nav item against the route-access table so a staff
+  // user without staff_manage.view never even SEES "Users", a non-
+  // billing user never sees "Subscription", etc. Loading state keeps
+  // the original list — we deny on routes, not on the rail itself,
+  // because hiding everything during the initial fetch would jitter
+  // the layout. The route guards on each page are the safety net.
+  const visibleGroups = p.loading
+    ? GROUPS
+    : GROUPS
+        .map((g) => ({
+          ...g,
+          items: g.items.filter((it) => p.satisfies(ruleForPath(it.href) ?? { openToMembers: true })),
+        }))
+        .filter((g) => g.items.length > 0);
+
   return (
     <aside className="hidden h-screen w-[260px] shrink-0 flex-col border-r border-[var(--color-brand-border)] bg-white lg:flex">
       {/* Sidebar logo block — same proportions as the super-admin
@@ -73,7 +91,7 @@ export function Sidebar() {
           the first nav item — without it the highlight on "Dashboard"
           butts directly against the logo. */}
       <nav className="flex-1 overflow-y-auto px-3 pb-6 pt-4">
-        {GROUPS.map((group, gi) => (
+        {visibleGroups.map((group, gi) => (
           <div key={group.heading ?? `g-${gi}`} className={gi > 0 ? 'mt-5' : ''}>
             {group.heading && (
               <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
