@@ -10,6 +10,8 @@
  * farm-switcher in the topbar.
  */
 
+import { useEffect, useState } from 'react';
+
 const KEY = 'fsm.app.currentFarmId';
 
 const listeners = new Set<(farmId: string | null) => void>();
@@ -51,4 +53,31 @@ export function onCurrentFarmChange(l: (farmId: string | null) => void): () => v
     };
   }
   return () => listeners.delete(l);
+}
+
+/**
+ * Reactive hook over the current-farm id.
+ *
+ * `readCurrentFarmId()` is fine for one-shot reads inside event
+ * handlers, but components need a value that re-renders when the
+ * id changes — otherwise the first-login dashboard reads `null`,
+ * writes the farm id to localStorage in an effect, and never
+ * notices the write (`enabled: !!farmId` stays false → pens/flocks
+ * never fetch → user sees zeros until they refresh).
+ *
+ * Hydration-safe: starts as `null` on the server, syncs to the
+ * persisted value on mount, and subscribes to in-tab + cross-tab
+ * changes via the existing listener bus.
+ */
+export function useCurrentFarmId(): string | null {
+  const [farmId, setFarmId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Sync once on mount — the SSR pass returned null, but the
+    // browser may already have a persisted id.
+    setFarmId(readCurrentFarmId());
+    return onCurrentFarmChange((next) => setFarmId(next));
+  }, []);
+
+  return farmId;
 }

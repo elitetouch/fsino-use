@@ -18,7 +18,7 @@ import {
 } from '@/components/app/cycle-cards';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { readUser } from '@/lib/auth';
-import { readCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
+import { readCurrentFarmId, useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 
 /**
  * Dashboard — cycle-aware.
@@ -45,7 +45,11 @@ export default function HomePage() {
     else if (!first) router.replace('/setup/farm');
   }, [farms.data, router]);
 
-  const currentFarmId = readCurrentFarmId();
+  // Reactive read — re-renders when localStorage flips so the
+  // pens/flocks queries below actually fire after first-login
+  // bootstrapping (the effect above writes the id; without this
+  // hook the component never re-renders and `enabled` stays false).
+  const currentFarmId = useCurrentFarmId();
   const farm: FarmDto | undefined =
     farms.data?.farms.find((f) => f.id === currentFarmId) ?? farms.data?.farms[0];
 
