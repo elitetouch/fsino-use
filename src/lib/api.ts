@@ -3,6 +3,7 @@
 import axios, { AxiosError } from 'axios';
 import { clearToken, readToken } from './auth';
 import { readCurrentFarmId } from './farm-context';
+import type { FarmRole } from './permissions';
 
 /**
  * NEXT_PUBLIC_API_BASE_URL is the API **host root** (e.g.
@@ -222,6 +223,46 @@ export const endpoints = {
    * etc.) — the list/show endpoints we added return camelCase. Normalise
    * snake → camel here so the rest of the app sees one shape regardless.
    */
+  // ───────────── Team (members + invites) ─────────────
+  listFarmMembers: (farmId: string) =>
+    unwrap<{ members: FarmMemberDto[] }>(api.get(`/farms/${farmId}/members`)),
+
+  updateFarmMember: (
+    farmId: string,
+    userId: string | number,
+    payload: { role?: FarmRole; status?: 'invited' | 'active' | 'suspended'; permissions?: Record<string, true> | null },
+  ) =>
+    unwrap<{ member: FarmMemberDto }>(
+      api.patch(`/farms/${farmId}/members/${userId}`, payload),
+    ),
+
+  listInvites: () => unwrap<{ invites: StaffInviteDto[] }>(api.get('/staff-invites')),
+
+  createInvite: (payload: {
+    email: string;
+    role?: FarmRole;
+    permissions?: Record<string, true>;
+    expiresInHours?: number;
+    channel?: string;
+  }) => unwrap<{ invite: StaffInviteDto }>(api.post('/staff-invites', payload)),
+
+  revokeInvite: (id: string) =>
+    unwrap<{ inviteId: string }>(api.delete(`/staff-invites/${id}`)),
+
+  previewInvite: (token: string) =>
+    unwrap<InvitePreviewDto>(api.get(`/staff-invites/preview/${token}`)),
+
+  acceptInvite: (token: string) =>
+    unwrap<{ farmId: string }>(api.post('/staff-invites/accept', { token })),
+
+  acceptAndRegister: (payload: {
+    token: string;
+    name: string;
+    phone: string;
+    password: string;
+    password_confirmation: string;
+  }) => unwrap<AuthSession>(api.post('/staff-invites/accept-and-register', payload)),
+
   initializePurchase: async (payload: InitializePurchasePayload): Promise<TokenPurchaseDto> => {
     const raw = await unwrap<Record<string, unknown>>(api.post('/billing/purchases', payload));
     const get = <T,>(k1: string, k2: string): T | undefined =>
@@ -401,4 +442,38 @@ export type HatcheryDto = {
   id: string;
   name: string;
   country?: string;
+};
+
+// ────────────── Team / staff-invites DTOs ──────────────
+
+export type FarmMemberDto = {
+  userId: string | number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  role: FarmRole;
+  status: 'invited' | 'active' | 'suspended';
+  permissions?: Record<string, true> | null;
+  invitedAt?: string | null;
+  joinedAt?: string | null;
+};
+
+export type StaffInviteDto = {
+  id: string;
+  farmId: string;
+  email: string;
+  role: FarmRole;
+  permissions?: Record<string, true> | null;
+  status: 'invited' | 'accepted' | 'revoked' | 'expired';
+  expiresAt?: string | null;
+  acceptedAt?: string | null;
+  invitedByUser?: { id: number | string; name: string };
+  acceptedByUser?: { id: number | string; name: string };
+  createdAt?: string | null;
+};
+
+export type InvitePreviewDto = {
+  invite: StaffInviteDto;
+  farm: FarmDto | null;
+  nextAction: { type: 'login' | 'register' | 'accept'; userExists?: boolean };
 };

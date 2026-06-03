@@ -69,7 +69,10 @@ export function Sidebar() {
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 pb-6 pt-2">
+      {/* mt-2 here adds breathing room between the logo block above and
+          the first nav item — without it the highlight on "Dashboard"
+          butts directly against the logo. */}
+      <nav className="flex-1 overflow-y-auto px-3 pb-6 pt-4">
         {GROUPS.map((group, gi) => (
           <div key={group.heading ?? `g-${gi}`} className={gi > 0 ? 'mt-5' : ''}>
             {group.heading && (
