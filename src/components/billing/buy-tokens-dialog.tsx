@@ -72,6 +72,23 @@ export function BuyTokensDialog({
     [prices.data, tokenType, tier],
   );
 
+  // Different states for the price-loading area:
+  //   loading       → prices fetch in flight
+  //   error         → fetch failed (network, 404, 5xx)
+  //   empty         → returned 200 with [] — token_prices not seeded
+  //   missingCombo  → returned prices but not this token_type × tier
+  //   ready         → matchingPrice is set, all good
+  const priceState: 'loading' | 'error' | 'empty' | 'missingCombo' | 'ready' =
+    prices.isLoading
+      ? 'loading'
+      : prices.isError
+        ? 'error'
+        : (prices.data?.prices ?? []).length === 0
+          ? 'empty'
+          : !matchingPrice
+            ? 'missingCombo'
+            : 'ready';
+
   const buy = useMutation({
     mutationFn: () => endpoints.initializePurchase({
       token_type: tokenType,
@@ -104,7 +121,12 @@ export function BuyTokensDialog({
   const qty = Number(quantity || 0);
   const unitNaira = matchingPrice ? matchingPrice.unitPriceMinor / 100 : null;
   const subtotalNaira = unitNaira != null ? unitNaira * qty : null;
-  const canSubmit = qty >= 1 && qty <= 10_000_000 && !!matchingPrice && !buy.isPending;
+  // Block submit only on the things we can actually validate client-side
+  // (quantity bounds + mutation in-flight). Server-side missing-price
+  // returns a structured error which we toast — don't gate the button
+  // on the price feed, because that hides the real problem from the
+  // user when the prices endpoint is down or unseeded.
+  const canSubmit = qty >= 1 && qty <= 10_000_000 && !buy.isPending;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
@@ -208,12 +230,41 @@ export function BuyTokensDialog({
               Order summary
             </p>
             <div className="mt-2 space-y-1.5 text-[13px]">
-              <Row label={`${qty.toLocaleString()} × ${capitalize(tokenType)} / ${capitalize(tier)}`}
-                value={unitNaira != null ? formatMoney(unitNaira, matchingPrice?.currency ?? 'NGN') : '—'} />
-              <Row label="Subtotal"
-                value={subtotalNaira != null ? formatMoney(subtotalNaira, matchingPrice?.currency ?? 'NGN') : '—'} />
+              <Row
+                label={`${qty.toLocaleString()} × ${capitalize(tokenType)} / ${capitalize(tier)}`}
+                value={unitNaira != null ? formatMoney(unitNaira, matchingPrice?.currency ?? 'NGN') : '—'}
+              />
+              <Row
+                label="Subtotal"
+                value={subtotalNaira != null ? formatMoney(subtotalNaira, matchingPrice?.currency ?? 'NGN') : '—'}
+              />
               <Row label="Gateway fee" value="Calculated at checkout" muted />
             </div>
+
+            {priceState !== 'ready' && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11.5px] leading-snug text-amber-800">
+                {priceState === 'loading' && 'Loading current prices…'}
+                {priceState === 'error' && (
+                  <>
+                    Couldn&rsquo;t load prices. You can still continue — the gateway
+                    will reject the request if pricing isn&rsquo;t configured server-side.
+                  </>
+                )}
+                {priceState === 'empty' && (
+                  <>
+                    No token prices have been set yet. Continue if your admin has just
+                    configured them; otherwise contact support.
+                  </>
+                )}
+                {priceState === 'missingCombo' && (
+                  <>
+                    {capitalize(tokenType)} / {capitalize(tier)} pricing isn&rsquo;t
+                    configured. Try another tier or contact support.
+                  </>
+                )}
+              </div>
+            )}
+
             <p className="mt-2 inline-flex items-center gap-1 text-[10.5px] text-[var(--color-brand-muted)]">
               <ShieldCheck className="h-3 w-3" /> Secure checkout via {capitalize(provider)}.
             </p>

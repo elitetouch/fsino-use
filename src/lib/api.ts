@@ -195,8 +195,34 @@ export const endpoints = {
   showPurchase: (reference: string) =>
     unwrap<{ purchase: TokenPurchaseDto }>(api.get(`/billing/purchases/${reference}`)),
 
-  initializePurchase: (payload: InitializePurchasePayload) =>
-    unwrap<TokenPurchaseDto>(api.post('/billing/purchases', payload)),
+  /**
+   * Start a token purchase. The existing /billing/purchases endpoint
+   * historically returns snake_case keys (authorization_url, token_type,
+   * etc.) — the list/show endpoints we added return camelCase. Normalise
+   * snake → camel here so the rest of the app sees one shape regardless.
+   */
+  initializePurchase: async (payload: InitializePurchasePayload): Promise<TokenPurchaseDto> => {
+    const raw = await unwrap<Record<string, unknown>>(api.post('/billing/purchases', payload));
+    const get = <T,>(k1: string, k2: string): T | undefined =>
+      (raw[k1] ?? raw[k2]) as T | undefined;
+    return {
+      id: get<string>('id', 'id'),
+      reference: get<string>('reference', 'reference') ?? '',
+      provider: (get<TokenPurchaseDto['provider']>('provider', 'provider') ?? payload.provider),
+      tokenType: (get<TokenType>('tokenType', 'token_type') ?? payload.token_type),
+      tier: (get<TokenTier>('tier', 'tier') ?? payload.tier),
+      quantity: Number(get('quantity', 'quantity') ?? payload.quantity),
+      amountMinor: Number(get('amountMinor', 'amount_minor') ?? 0),
+      feeMinor: get<number>('feeMinor', 'fee_minor') ?? null,
+      totalChargedMinor: Number(
+        get('totalChargedMinor', 'total_charged_minor') ?? get('amountMinor', 'amount_minor') ?? 0,
+      ),
+      currency: get<string>('currency', 'currency') ?? 'NGN',
+      status: get<TokenPurchaseDto['status']>('status', 'status') ?? 'pending',
+      authorizationUrl: get<string>('authorizationUrl', 'authorization_url') ?? null,
+      createdAt: get<string>('createdAt', 'created_at') ?? null,
+    };
+  },
 };
 
 // ────────────── Billing DTOs ──────────────
