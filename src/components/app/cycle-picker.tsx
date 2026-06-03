@@ -68,7 +68,15 @@ export function CyclePicker({
       </button>
 
       {open && (
-        <div className="animate-fade-up absolute left-0 top-full z-40 mt-2 w-[320px] overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white shadow-[0_30px_60px_-25px_rgba(15,80,30,0.25)]">
+        // Position: on mobile we centre the menu beneath the button
+        // (`left-1/2 -translate-x-1/2`) since the picker itself is
+        // usually flex-centred there — `left-0` anchors to the button
+        // edge and the 320px panel spilled off the right side of small
+        // viewports. From sm+ we go back to a clean left-anchor for the
+        // wider desktop layout. Width caps to the viewport with a 1.5rem
+        // margin so the panel never gets clipped even on the narrowest
+        // phones.
+        <div className="animate-fade-up absolute left-1/2 top-full z-40 mt-2 w-[min(320px,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white shadow-[0_30px_60px_-25px_rgba(15,80,30,0.25)] sm:left-0 sm:w-[320px] sm:translate-x-0">
           <div className="max-h-[420px] overflow-y-auto p-1.5">
             {cycles.length === 0 ? (
               <div className="px-3 py-6 text-center text-[12px] text-[var(--color-brand-muted)]">
