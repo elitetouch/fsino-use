@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Check, Bird } from 'lucide-react';
 import type { FlockDto, PenDto } from '@/lib/api';
@@ -27,6 +27,54 @@ export function CyclePicker({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
+
+  /**
+   * Viewport-bounded positioning.
+   *
+   * Pure CSS positioning broke depending on the host container:
+   *   - Dashboard:   picker sits in a left-aligned flex column → button
+   *                  near viewport-left → `left-0` was fine, but
+   *                  `-translate-x-1/2` pushed the panel off the LEFT
+   *                  edge.
+   *   - Cycle page:  picker sits inside flex-col items-center → button
+   *                  centred → `left-0` overflowed RIGHT.
+   *
+   * Standard popover trick: measure the button on open, compute a
+   * `position: fixed` left/top that anchors the panel to the button's
+   * left edge while clamping it inside the viewport. Recomputed on
+   * resize/scroll so a phone rotation or a page scroll keeps the
+   * panel aligned (and prevents it visually detaching from the button
+   * while the user scrolls under it).
+   */
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null);
+      return;
+    }
+    function recompute() {
+      const btn = buttonRef.current;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      const margin = 12;          // gutter from each viewport edge
+      const ideal = 320;          // desired panel width
+      const width = Math.min(ideal, window.innerWidth - margin * 2);
+      const idealLeft = r.left;   // natural anchor: button's left edge
+      const maxLeft = window.innerWidth - width - margin;
+      const minLeft = margin;
+      const left = Math.max(minLeft, Math.min(idealLeft, maxLeft));
+      const top = r.bottom + 8;
+      setPos({ left, top, width });
+    }
+    recompute();
+    window.addEventListener('resize', recompute);
+    window.addEventListener('scroll', recompute, true);
+    return () => {
+      window.removeEventListener('resize', recompute);
+      window.removeEventListener('scroll', recompute, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -55,6 +103,7 @@ export function CyclePicker({
   return (
     <div ref={ref} className="relative inline-block">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-2.5 rounded-lg bg-[var(--color-brand-primary-dark)] px-4 py-2 text-white shadow-sm transition-colors hover:bg-[#062c0d]"
@@ -67,16 +116,16 @@ export function CyclePicker({
         <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
       </button>
 
-      {open && (
-        // Position: on mobile we centre the menu beneath the button
-        // (`left-1/2 -translate-x-1/2`) since the picker itself is
-        // usually flex-centred there — `left-0` anchors to the button
-        // edge and the 320px panel spilled off the right side of small
-        // viewports. From sm+ we go back to a clean left-anchor for the
-        // wider desktop layout. Width caps to the viewport with a 1.5rem
-        // margin so the panel never gets clipped even on the narrowest
-        // phones.
-        <div className="animate-fade-up absolute left-1/2 top-full z-40 mt-2 w-[min(320px,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white shadow-[0_30px_60px_-25px_rgba(15,80,30,0.25)] sm:left-0 sm:w-[320px] sm:translate-x-0">
+      {open && pos && (
+        // `position: fixed` with measured coords — see the
+        // useLayoutEffect above for the clamp logic. The DOM tree
+        // still has this <div> as a child of the `ref` wrapper, so
+        // the click-outside detection (mousedown → ref.contains)
+        // keeps working even though we're laid out in viewport space.
+        <div
+          style={{ left: pos.left, top: pos.top, width: pos.width }}
+          className="animate-fade-up fixed z-40 overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white shadow-[0_30px_60px_-25px_rgba(15,80,30,0.25)]"
+        >
           <div className="max-h-[420px] overflow-y-auto p-1.5">
             {cycles.length === 0 ? (
               <div className="px-3 py-6 text-center text-[12px] text-[var(--color-brand-muted)]">
