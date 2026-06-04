@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { Egg, Scale } from 'lucide-react';
 import type {
-  DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
+  DailyRecordDto, DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
 } from '@/lib/api';
-import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import { useCreateDailyRecord, useUpdateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
-  YesNoPills, LearnMoreDrawer, LearnMoreHeading,
+  YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { PillTiles, FieldStack } from '@/components/record/inputs';
 import type { EggCollectionData } from './egg-collection-step';
@@ -53,6 +53,7 @@ export function EggSizeWeightStep({
   recordDate,
   guidance,
   prefs,
+  existing,
   pendingCollection,
   stepIndex,
   stepCount,
@@ -66,6 +67,7 @@ export function EggSizeWeightStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
+  existing?: DailyRecordDto;
   /** Collection from the previous egg step, or null when the user said No. */
   pendingCollection: EggCollectionData | null;
   stepIndex: number;
@@ -81,11 +83,34 @@ export function EggSizeWeightStep({
   const trackWeight = !!prefs.dailyRecord.egg_metrics?.track_weight;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
+  const updateRecord = useUpdateDailyRecord(flockId);
+  const editing = !!existing;
 
-  // Default No — the figma marks the No button green by default.
-  const [answer, setAnswer] = useState<'yes' | 'no'>('no');
-  const [size, setSize] = useState<EggSize | null>(null);
-  const [totalWeight, setTotalWeight] = useState('');
+  // EDIT pre-fill — recover the dominant size key (the one with the
+  // highest count) and the weight metadata from the saved payload.
+  const existingPayload = (existing?.payload ?? {}) as Record<string, unknown>;
+  const existingSizes = (existingPayload.sizes ?? {}) as Record<string, unknown>;
+  const existingDominantSize = Object.entries(existingSizes)
+    .map(([k, v]) => [k, typeof v === 'number' ? v : 0] as const)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] as EggSize | undefined;
+  const existingTotal = typeof existingPayload.weight_total_grams === 'number'
+    ? existingPayload.weight_total_grams
+    : (typeof existingPayload.weight_avg_grams === 'number'
+       ? existingPayload.weight_avg_grams * WEIGHT_SAMPLE
+       : null);
+
+  // EDIT mode: if the row carries any size or weight data, default
+  // Yes so the user lands on the populated form rather than the
+  // collapsed "No" view.
+  const hasExistingMetrics = !!existingDominantSize || existingTotal !== null;
+
+  const [answer, setAnswer] = useState<'yes' | 'no'>(
+    editing && hasExistingMetrics ? 'yes' : 'no',
+  );
+  const [size, setSize] = useState<EggSize | null>(existingDominantSize ?? null);
+  const [totalWeight, setTotalWeight] = useState(
+    existingTotal !== null ? String(Math.round(existingTotal)) : '',
+  );
 
   const totalWeightNumeric = parseFloat(totalWeight);
   const totalWeightValid = !isNaN(totalWeightNumeric) && totalWeightNumeric > 0;
@@ -110,13 +135,20 @@ export function EggSizeWeightStep({
   // comes from the guidance service when the flock is 15-18 weeks old.
   const sizeMessages = guidance.sections.egg_size.messages;
 
+  const pending = createRecord.isPending || updateRecord.isPending;
   const submit = () => {
-    if (!isValid || createRecord.isPending) return;
+    if (!isValid || pending) return;
 
     if (answer === 'no') {
-      // Still need to flush any pending collection so the user's "Yes"
-      // on the previous step isn't lost. If pendingCollection is null
-      // there's nothing to POST and we just advance.
+      // Still need to flush any pending collection so the user's
+      // "Yes" on the previous step isn't lost. If we're editing an
+      // existing row, PATCH it instead of POSTing.
+      if (editing && existing) {
+        // No size/weight to add — just advance, the collection step
+        // already PATCHed the row.
+        onContinue();
+        return;
+      }
       if (pendingCollection) {
         createRecord.mutate(
           {
@@ -136,10 +168,12 @@ export function EggSizeWeightStep({
       return;
     }
 
-    // Yes — POST collection + size/weight in a single eggs event.
-    const good = pendingCollection?.good ?? 0;
-    const bad  = pendingCollection?.bad  ?? 0;
-    const moment = pendingCollection?.moment ?? 'entire_day';
+    // Yes — compose size/weight payload.
+    const good = pendingCollection?.good ?? (existing?.payload as Record<string, unknown>)?.good as number ?? 0;
+    const bad  = pendingCollection?.bad  ?? (existing?.payload as Record<string, unknown>)?.bad  as number ?? 0;
+    const moment = pendingCollection?.moment
+      ?? (existing?.moment as 'morning' | 'evening' | 'entire_day' | undefined)
+      ?? 'entire_day';
 
     const payload: Record<string, unknown> = {
       good,
@@ -157,6 +191,19 @@ export function EggSizeWeightStep({
       payload.weight_avg_grams = avgWeight;
       payload.weight_sample_size = WEIGHT_SAMPLE;
       payload.weight_total_grams = totalWeightNumeric;
+    }
+
+    if (editing && existing) {
+      // EDIT — PATCH the existing eggs row, preserving any prior
+      // metric fields the user didn't touch.
+      updateRecord.mutate(
+        {
+          recordId: existing.id,
+          payload: { payload },
+        },
+        { onSuccess: onContinue },
+      );
+      return;
     }
 
     createRecord.mutate(
@@ -188,16 +235,26 @@ export function EggSizeWeightStep({
         sectionLabel={sectionLabel}
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
         onSkip={onSkip}
         onContinue={submit}
         continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
-        continueLabel={isLast ? 'Complete record' : 'Continue'}
+        continuePending={pending}
+        continueLabel={editing && answer === 'yes'
+          ? 'Save changes'
+          : (isLast ? 'Complete record' : 'Continue')}
       >
         <FieldStack>
+          {editing && (
+            <EditingBanner
+              authorName={existing?.createdByUser?.name}
+              loggedAt={existing?.occurredAt}
+            />
+          )}
+
           <div>
             <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
               {questionLabel}

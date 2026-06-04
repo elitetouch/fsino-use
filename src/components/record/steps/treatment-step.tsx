@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { Stethoscope } from 'lucide-react';
-import type { DailyRecordGuidance } from '@/lib/api';
-import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import type { DailyRecordDto, DailyRecordGuidance } from '@/lib/api';
+import { useCreateDailyRecord, useUpdateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell,
-  YesNoPills, LearnMoreDrawer, LearnMoreHeading,
+  YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import {
   Dropdown, FieldStack, FOCUS_INPUT, FOCUS_WRAPPER,
@@ -52,6 +52,7 @@ export function TreatmentStep({
   flockId,
   recordDate,
   guidance,
+  existing,
   stepIndex,
   stepCount,
   onBack,
@@ -62,6 +63,7 @@ export function TreatmentStep({
   flockId: string;
   recordDate: string;
   guidance: DailyRecordGuidance;
+  existing?: DailyRecordDto;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -71,14 +73,33 @@ export function TreatmentStep({
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
+  const updateRecord = useUpdateDailyRecord(flockId);
+  const editing = !!existing;
+
+  // EDIT pre-fill — recover from payload. Treatment type and reason
+  // could be either matching value or free-text Other; we try to
+  // match against the curated lists first.
+  const existingPayload = (existing?.payload ?? {}) as Record<string, unknown>;
+  const existingBirds = typeof existingPayload.birds_affected === 'number'
+    ? existingPayload.birds_affected
+    : null;
+  const existingAllBirds = existingPayload.all_birds === true;
+  const existingTypeLabel = typeof existingPayload.treatment_type === 'string'
+    ? existingPayload.treatment_type : '';
+  const existingReasonLabel = typeof existingPayload.reason === 'string'
+    ? existingPayload.reason : '';
+  const matchingType = TREATMENT_TYPES.find((t) => t.label === existingTypeLabel)?.value
+    ?? (existingTypeLabel ? 'other' as TreatmentType : '');
+  const matchingReason = REASONS.find((r) => r.label === existingReasonLabel)?.value
+    ?? (existingReasonLabel ? 'other' as Reason : '');
 
   const [answer, setAnswer] = useState<'yes' | 'no'>('yes');
-  const [birds, setBirds] = useState('');
-  const [allBirds, setAllBirds] = useState(false);
-  const [type, setType] = useState<TreatmentType | ''>('');
-  const [otherType, setOtherType] = useState('');
-  const [reason, setReason] = useState<Reason | ''>('');
-  const [otherReason, setOtherReason] = useState('');
+  const [birds, setBirds] = useState(existingBirds != null ? String(existingBirds) : '');
+  const [allBirds, setAllBirds] = useState(existingAllBirds);
+  const [type, setType] = useState<TreatmentType | ''>(matchingType);
+  const [otherType, setOtherType] = useState(matchingType === 'other' ? existingTypeLabel : '');
+  const [reason, setReason] = useState<Reason | ''>(matchingReason);
+  const [otherReason, setOtherReason] = useState(matchingReason === 'other' ? existingReasonLabel : '');
 
   const livingBirds = guidance.flock.current_birds;
   const birdsNumeric = allBirds ? livingBirds : parseInt(birds, 10);
@@ -106,24 +127,33 @@ export function TreatmentStep({
     setBirds(v.replace(/[^\d]/g, '')); // integers only
   };
 
+  const pending = createRecord.isPending || updateRecord.isPending;
   const submit = () => {
-    if (!isValid || createRecord.isPending) return;
+    if (!isValid || pending) return;
     if (answer === 'no') {
       onContinue();
       return;
     }
     const finalType = type === 'other' ? otherType.trim() : labelForType(type as TreatmentType);
     const finalReason = reason === 'other' ? otherReason.trim() : labelForReason(reason as Reason);
+    const payload = {
+      birds_affected: birdsNumeric,
+      treatment_type: finalType,
+      reason: finalReason,
+      all_birds: allBirds,
+    };
+    if (editing && existing) {
+      updateRecord.mutate(
+        { recordId: existing.id, payload: { payload } },
+        { onSuccess: onContinue },
+      );
+      return;
+    }
     createRecord.mutate(
       {
         event_type: 'treatment',
         record_date: recordDate,
-        payload: {
-          birds_affected: birdsNumeric,
-          treatment_type: finalType,
-          reason: finalReason,
-          all_birds: allBirds,
-        },
+        payload,
       },
       { onSuccess: onContinue },
     );
@@ -136,15 +166,24 @@ export function TreatmentStep({
         sectionLabel="Treatment"
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
         onSkip={onSkip}
         onContinue={submit}
         continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
+        continuePending={pending}
+        continueLabel={editing && answer === 'yes' ? 'Save changes' : 'Continue'}
       >
         <FieldStack>
+          {editing && (
+            <EditingBanner
+              authorName={existing?.createdByUser?.name}
+              loggedAt={existing?.occurredAt}
+            />
+          )}
+
           <div>
             <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Did you treat any birds today?

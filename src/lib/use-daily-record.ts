@@ -1,10 +1,10 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   apiErrorMessage, endpoints,
-  type CreateDailyRecordPayload, type DailyRecordWarning,
+  type CreateDailyRecordPayload, type DailyRecordDto, type DailyRecordWarning,
 } from '@/lib/api';
 
 /**
@@ -50,6 +50,45 @@ export function useCreateDailyRecord(flockId: string) {
 }
 
 /**
+ * List records for a flock on a specific date — drives the wizard's
+ * EDIT mode. Each step component picks the row matching its
+ * event_type from the returned list and pre-fills its form.
+ *
+ * The query is keyed on (flockId, date) so re-visits and date changes
+ * are instant. Invalidated on every mutation success so post-edit
+ * state stays consistent.
+ *
+ * Pass `enabled: false` (via the `enabled` arg) on the FIRST date
+ * picker render so we don't burn a request for a date that almost
+ * certainly has no records.
+ */
+export function useDailyRecordsForDate(flockId: string, date: string, enabled = true) {
+  return useQuery({
+    queryKey: ['daily-records', flockId, date],
+    queryFn: () => endpoints.listDailyRecords(flockId, date),
+    staleTime: 30_000,
+    enabled: enabled && !!flockId && !!date,
+  });
+}
+
+/**
+ * Pick the most-recent record for a given event_type from the list.
+ * In edit mode, each step asks for "the row that matches me" — if
+ * the user logged feed twice on the same day (morning + evening),
+ * the most recent one wins for pre-fill purposes. The figma's edit
+ * flow assumes a single representative row per event per day.
+ */
+export function pickRecord(
+  records: DailyRecordDto[] | undefined,
+  eventType: DailyRecordDto['eventType'],
+): DailyRecordDto | undefined {
+  if (!records || records.length === 0) return undefined;
+  return records
+    .filter((r) => r.eventType === eventType)
+    .sort((a, b) => (b.occurredAt ?? '').localeCompare(a.occurredAt ?? ''))[0];
+}
+
+/**
  * The PATCH-instead-of-POST companion for EDIT mode. Backend restricts
  * which fields can be edited (see UpdateFlockDailyRecordRequest); the
  * caller is expected to compose only those descriptive fields.
@@ -62,7 +101,10 @@ export function useUpdateDailyRecord(flockId: string) {
       endpoints.updateDailyRecord(flockId, vars.recordId, vars.payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['daily-record-guidance', flockId] });
+      qc.invalidateQueries({ queryKey: ['daily-record-calendar', flockId] });
       qc.invalidateQueries({ queryKey: ['daily-records', flockId] });
+      qc.invalidateQueries({ queryKey: ['cycle', flockId] });
+      qc.invalidateQueries({ queryKey: ['flock', flockId] });
     },
     onError: (err) => {
       toast.error(apiErrorMessage(err, 'Could not save your edits.'));

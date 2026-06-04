@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { Egg } from 'lucide-react';
 import type {
-  DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
+  DailyRecordDto, DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
 } from '@/lib/api';
-import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import { useCreateDailyRecord, useUpdateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
-  YesNoPills, LearnMoreDrawer, LearnMoreHeading,
+  YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { Dropdown, FieldStack } from '@/components/record/inputs';
 
@@ -72,6 +72,7 @@ export function EggCollectionStep({
   recordDate,
   guidance,
   prefs,
+  existing,
   postDirectly,
   onCollect,
   stepIndex,
@@ -86,6 +87,7 @@ export function EggCollectionStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
+  existing?: DailyRecordDto;
   /** True when no egg_metrics step follows — POST happens here. */
   postDirectly: boolean;
   /** Called when the user advances with valid data (only used in stash mode). */
@@ -103,14 +105,29 @@ export function EggCollectionStep({
   const trackDamaged = !!prefs.dailyRecord.eggs?.track_damaged;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
+  const updateRecord = useUpdateDailyRecord(flockId);
+  const editing = !!existing;
+
+  // EDIT-mode pre-fill — pull good/bad/moment from the existing
+  // eggs row. We recover the per-input split based on the user's
+  // current track_damaged preference, even if the record was
+  // originally logged with a different setting.
+  const existingPayload = (existing?.payload ?? {}) as Record<string, unknown>;
+  const existingGood = typeof existingPayload.good === 'number' ? existingPayload.good : 0;
+  const existingBad  = typeof existingPayload.bad  === 'number' ? existingPayload.bad  : 0;
+  const existingMoment = (existing?.moment as Moment | undefined)
+    ?? (typeof existingPayload.moment === 'string'
+      ? existingPayload.moment as Moment
+      : (twiceADay ? 'morning' : 'entire_day'));
 
   // Default Yes — if the user opened this step at all, they probably
-  // collected eggs today; we save them a tap.
+  // collected eggs today; we save them a tap. In edit mode the row
+  // already exists so Yes is the only sensible default.
   const [answer, setAnswer] = useState<'yes' | 'no'>('yes');
-  const [moment, setMoment] = useState<Moment>(twiceADay ? 'morning' : 'entire_day');
-  const [eggsAll, setEggsAll] = useState('');
-  const [eggsGood, setEggsGood] = useState('');
-  const [eggsBad, setEggsBad] = useState('');
+  const [moment, setMoment] = useState<Moment>(existingMoment);
+  const [eggsAll, setEggsAll] = useState(editing && !trackDamaged ? String(existingGood + existingBad) : '');
+  const [eggsGood, setEggsGood] = useState(editing && trackDamaged ? String(existingGood) : '');
+  const [eggsBad, setEggsBad] = useState(editing && trackDamaged ? String(existingBad) : '');
 
   // Numeric working values (NaN if blank).
   const goodCount = safeInt(trackDamaged ? eggsGood : eggsAll);
@@ -133,8 +150,9 @@ export function EggCollectionStep({
 
   const eggsMessages = guidance.sections.eggs.messages;
 
+  const pending = createRecord.isPending || updateRecord.isPending;
   const submit = () => {
-    if (!isValid || createRecord.isPending) return;
+    if (!isValid || pending) return;
 
     if (answer === 'no') {
       // Nothing to POST; let the orchestrator know there's nothing in
@@ -149,6 +167,30 @@ export function EggCollectionStep({
       bad: badCount,
       moment,
     };
+
+    if (editing && existing) {
+      // EDIT mode — PATCH the existing row. We preserve any
+      // size/weight fields the row was originally saved with
+      // (the egg_metrics step will overwrite them if reached).
+      const mergedPayload: Record<string, unknown> = {
+        ...existingPayload,
+        good: data.good,
+        moment: data.moment,
+      };
+      if (data.bad > 0) {
+        mergedPayload.bad = data.bad;
+      } else {
+        delete mergedPayload.bad;
+      }
+      updateRecord.mutate(
+        {
+          recordId: existing.id,
+          payload: { payload: mergedPayload },
+        },
+        { onSuccess: onContinue },
+      );
+      return;
+    }
 
     if (postDirectly) {
       // No size/weight follow-up — POST the eggs event now.
@@ -180,16 +222,26 @@ export function EggCollectionStep({
         sectionLabel="Egg collection"
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
         onSkip={onSkip}
         onContinue={submit}
         continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
-        continueLabel={isLast ? 'Complete record' : 'Continue'}
+        continuePending={pending}
+        continueLabel={editing && answer === 'yes'
+          ? 'Save changes'
+          : (isLast ? 'Complete record' : 'Continue')}
       >
         <FieldStack>
+          {editing && (
+            <EditingBanner
+              authorName={existing?.createdByUser?.name}
+              loggedAt={existing?.occurredAt}
+            />
+          )}
+
           <div>
             <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Did you pick eggs today?

@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { Droplet } from 'lucide-react';
 import type {
-  DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
+  DailyRecordDto, DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
 } from '@/lib/api';
-import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import { useCreateDailyRecord, useUpdateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
-  LearnMoreDrawer, LearnMoreHeading,
+  EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { Dropdown, FieldStack } from '@/components/record/inputs';
 
@@ -35,6 +35,7 @@ export function WaterStep({
   recordDate,
   guidance,
   prefs,
+  existing,
   stepIndex,
   stepCount,
   onBack,
@@ -46,6 +47,7 @@ export function WaterStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
+  existing?: DailyRecordDto;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -56,9 +58,15 @@ export function WaterStep({
   const twiceADay = !!prefs.dailyRecord.water?.twice_a_day;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
+  const updateRecord = useUpdateDailyRecord(flockId);
+  const editing = !!existing;
 
-  const [moment, setMoment] = useState<Moment>(twiceADay ? 'morning' : 'entire_day');
-  const [amount, setAmount] = useState('');
+  const initialMoment = (existing?.moment as Moment | undefined)
+    ?? (twiceADay ? 'morning' : 'entire_day');
+  const initialAmount = existing?.quantity != null ? String(existing.quantity) : '';
+
+  const [moment, setMoment] = useState<Moment>(initialMoment);
+  const [amount, setAmount] = useState(initialAmount);
 
   const amountNumeric = parseFloat(amount);
   const amountValid = !isNaN(amountNumeric) && amountNumeric > 0;
@@ -70,8 +78,24 @@ export function WaterStep({
 
   const waterMessages = guidance.sections.water.messages;
 
+  const pending = createRecord.isPending || updateRecord.isPending;
   const submit = () => {
-    if (!isValid || createRecord.isPending) return;
+    if (!isValid || pending) return;
+    if (editing && existing) {
+      updateRecord.mutate(
+        {
+          recordId: existing.id,
+          payload: {
+            quantity: amountNumeric,
+            unit: 'liters',
+            moment,
+            payload: { moment },
+          },
+        },
+        { onSuccess: onContinue },
+      );
+      return;
+    }
     createRecord.mutate(
       {
         event_type: 'water',
@@ -91,15 +115,24 @@ export function WaterStep({
         sectionLabel="Water consumption"
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
         onSkip={onSkip}
         onContinue={submit}
         continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
+        continuePending={pending}
+        continueLabel={editing ? 'Save changes' : 'Continue'}
       >
         <FieldStack>
+          {editing && (
+            <EditingBanner
+              authorName={existing?.createdByUser?.name}
+              loggedAt={existing?.occurredAt}
+            />
+          )}
+
           {waterMessages.length > 0 && (
             <BeigeAlert>{firstHint(waterMessages)}</BeigeAlert>
           )}

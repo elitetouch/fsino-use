@@ -3,12 +3,12 @@
 import { useMemo, useState } from 'react';
 import { Scale } from 'lucide-react';
 import type {
-  DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
+  DailyRecordDto, DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
 } from '@/lib/api';
-import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import { useCreateDailyRecord, useUpdateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
-  YesNoPills, LearnMoreDrawer, LearnMoreHeading,
+  YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { FieldStack, FOCUS_WRAPPER } from '@/components/record/inputs';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,7 @@ export function WeightStep({
   recordDate,
   guidance,
   prefs,
+  existing,
   stepIndex,
   stepCount,
   isLast,
@@ -55,6 +56,7 @@ export function WeightStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
+  existing?: DailyRecordDto;
   stepIndex: number;
   stepCount: number;
   /** True when this is the final step in the wizard — drives the CTA copy. */
@@ -67,6 +69,8 @@ export function WeightStep({
   const autoAverage = !!prefs.dailyRecord.bird_weight?.auto_average;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
+  const updateRecord = useUpdateDailyRecord(flockId);
+  const editing = !!existing;
 
   // Default "Do you want to record bird weight today?" — flips with
   // the schedule guidance (figma: if it's almost time, default Yes;
@@ -75,14 +79,21 @@ export function WeightStep({
   const schedulingNow = !!weightSection.messages.find((m) =>
     m.code.startsWith('weight.time_to_weigh') || m.code.startsWith('weight.almost_time')
   );
-  const [answer, setAnswer] = useState<'yes' | 'no'>(schedulingNow ? 'yes' : 'no');
+  const [answer, setAnswer] = useState<'yes' | 'no'>(editing ? 'yes' : (schedulingNow ? 'yes' : 'no'));
 
-  const [selfAvg, setSelfAvg] = useState('');
-  const [bird1, setBird1] = useState('');
-  const [bird2, setBird2] = useState('');
-  const [bird3, setBird3] = useState('');
-  const [bird4, setBird4] = useState('');
-  const [bird5, setBird5] = useState('');
+  // EDIT-mode pre-fill — recover the average and the raw five-bird
+  // samples if present in the payload.
+  const existingAvg = existing?.quantity != null ? String(existing.quantity) : '';
+  const existingPayload = (existing?.payload ?? {}) as Record<string, unknown>;
+  const existingSamples = Array.isArray(existingPayload.weights)
+    ? (existingPayload.weights as unknown[]).map((n) => typeof n === 'number' ? String(n) : '')
+    : ['', '', '', '', ''];
+  const [selfAvg, setSelfAvg] = useState(existingAvg);
+  const [bird1, setBird1] = useState(existingSamples[0] ?? '');
+  const [bird2, setBird2] = useState(existingSamples[1] ?? '');
+  const [bird3, setBird3] = useState(existingSamples[2] ?? '');
+  const [bird4, setBird4] = useState(existingSamples[3] ?? '');
+  const [bird5, setBird5] = useState(existingSamples[4] ?? '');
 
   /* ---- Compute the average ---- */
 
@@ -109,29 +120,45 @@ export function WeightStep({
 
   /* ---- Submit ---- */
 
+  const pending = createRecord.isPending || updateRecord.isPending;
   const submit = () => {
-    if (!isValid || createRecord.isPending) return;
+    if (!isValid || pending) return;
     if (answer === 'no') {
       onContinue();
       return;
     }
     const finalAvg = submitAvg!;
+    const payload = autoAverage
+      ? {
+          auto_average: true,
+          weights: fiveBirdSamples,
+          sample_size: fiveBirdSamples.length,
+        }
+      : {
+          auto_average: false,
+          sample_size: null,
+        };
+    if (editing && existing) {
+      updateRecord.mutate(
+        {
+          recordId: existing.id,
+          payload: {
+            quantity: finalAvg,
+            unit: 'kg',
+            payload,
+          },
+        },
+        { onSuccess: onContinue },
+      );
+      return;
+    }
     createRecord.mutate(
       {
         event_type: 'weight',
         record_date: recordDate,
         quantity: finalAvg,
         unit: 'kg',
-        payload: autoAverage
-          ? {
-              auto_average: true,
-              weights: fiveBirdSamples,
-              sample_size: fiveBirdSamples.length,
-            }
-          : {
-              auto_average: false,
-              sample_size: null,
-            },
+        payload,
       },
       { onSuccess: onContinue },
     );
@@ -144,16 +171,26 @@ export function WeightStep({
         sectionLabel="Bird weight"
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
         onSkip={onSkip}
         onContinue={submit}
         continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
-        continueLabel={isLast ? 'Complete record' : 'Continue'}
+        continuePending={pending}
+        continueLabel={editing && answer === 'yes'
+          ? 'Save changes'
+          : (isLast ? 'Complete record' : 'Continue')}
       >
         <FieldStack>
+          {editing && (
+            <EditingBanner
+              authorName={existing?.createdByUser?.name}
+              loggedAt={existing?.occurredAt}
+            />
+          )}
+
           <div>
             <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Do you want to record bird weight today?

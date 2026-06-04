@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { Wheat } from 'lucide-react';
 import type {
-  DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
+  DailyRecordDto, DailyRecordGuidance, GuidanceMessage, MyPreferencesDto,
 } from '@/lib/api';
-import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import { useCreateDailyRecord, useUpdateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
-  LearnMoreDrawer, LearnMoreHeading,
+  EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import {
   PillTiles, Dropdown, FieldStack, FOCUS_INPUT,
@@ -83,6 +83,7 @@ export function FeedStep({
   recordDate,
   guidance,
   prefs,
+  existing,
   stepIndex,
   stepCount,
   onBack,
@@ -94,6 +95,8 @@ export function FeedStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
+  /** When present, the wizard is in EDIT mode for this row. */
+  existing?: DailyRecordDto;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -104,19 +107,32 @@ export function FeedStep({
   const twiceADay = !!prefs.dailyRecord.feed?.twice_a_day;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
+  const updateRecord = useUpdateDailyRecord(flockId);
+  const editing = !!existing;
 
-  // Unit default — backend stores text, the figma's "kg / bags" toggle
-  // covers the only two units broiler farmers use in Nigeria.
-  const lastUnit = (guidance.sections.feed.last_entry?.unit as string | undefined) ?? 'kg';
-  const lastType = (guidance.sections.feed.last_entry?.item_type as FeedType | undefined) ?? null;
-  const lastBrand = (guidance.sections.feed.last_entry?.item_brand as FeedBrand | undefined) ?? null;
+  // EDIT-mode pre-fill — pull every visible field from the existing
+  // row when one was passed in. The lazy-initialiser pattern lets
+  // useState resolve once on mount so subsequent re-renders don't
+  // wipe out the user's typing.
+  const lastUnit = (existing?.unit
+    ?? (guidance.sections.feed.last_entry?.unit as string | undefined)
+    ?? 'kg');
+  const lastType = (existing?.itemType as FeedType | undefined)
+    ?? (guidance.sections.feed.last_entry?.item_type as FeedType | undefined)
+    ?? null;
+  const lastBrand = (existing?.itemBrand as FeedBrand | undefined)
+    ?? (guidance.sections.feed.last_entry?.item_brand as FeedBrand | undefined)
+    ?? null;
+  const lastMoment = (existing?.moment as Moment | undefined)
+    ?? (twiceADay ? 'morning' : 'entire_day');
+  const lastAmount = existing?.quantity != null ? String(existing.quantity) : '';
 
   // ── State ──────────────────────────────────────────────────────────
-  const [moment, setMoment] = useState<Moment>(twiceADay ? 'morning' : 'entire_day');
+  const [moment, setMoment] = useState<Moment>(lastMoment);
   const [type, setType] = useState<FeedType | null>(lastType);
   const [brand, setBrand] = useState<FeedBrand | ''>(lastBrand ?? '');
   const [otherBrand, setOtherBrand] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(lastAmount);
   const [unit, setUnit] = useState<string>(lastUnit);
 
   // ── Validity + anomaly ─────────────────────────────────────────────
@@ -134,9 +150,34 @@ export function FeedStep({
   const feedMessages = guidance.sections.feed.messages;
 
   // ── Submit ─────────────────────────────────────────────────────────
+  const pending = createRecord.isPending || updateRecord.isPending;
   const submit = () => {
-    if (!isValid || createRecord.isPending) return;
+    if (!isValid || pending) return;
     const finalBrand = brand === 'other' ? otherBrand.trim() : labelForBrand(brand);
+    if (editing && existing) {
+      // PATCH path — the backend's UpdateFlockDailyRecordRequest
+      // restricts edits to descriptive fields. We compose only
+      // those; event_type / record_date are frozen server-side.
+      updateRecord.mutate(
+        {
+          recordId: existing.id,
+          payload: {
+            quantity: amountNumeric,
+            unit,
+            moment,
+            item_type: type ?? undefined,
+            item_brand: finalBrand,
+            payload: {
+              moment,
+              item_type: type,
+              item_brand: finalBrand,
+            },
+          },
+        },
+        { onSuccess: onContinue },
+      );
+      return;
+    }
     createRecord.mutate(
       {
         event_type: 'feed',
@@ -149,9 +190,7 @@ export function FeedStep({
           item_brand: finalBrand,
         },
       },
-      {
-        onSuccess: onContinue,
-      },
+      { onSuccess: onContinue },
     );
   };
 
@@ -162,15 +201,24 @@ export function FeedStep({
         sectionLabel="Feed consumption"
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
         onSkip={onSkip}
         onContinue={submit}
         continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
+        continuePending={pending}
+        continueLabel={editing ? 'Save changes' : 'Continue'}
       >
         <FieldStack>
+          {editing && (
+            <EditingBanner
+              authorName={existing?.createdByUser?.name}
+              loggedAt={existing?.occurredAt}
+            />
+          )}
+
           {/* Pre-input guidance from /guidance */}
           {feedMessages.length > 0 && (
             <BeigeAlert>{firstHint(feedMessages)}</BeigeAlert>

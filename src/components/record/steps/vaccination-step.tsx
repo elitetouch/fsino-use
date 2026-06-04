@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { Syringe } from 'lucide-react';
 import type {
-  DailyRecordGuidance, GuidanceMessage,
+  DailyRecordDto, DailyRecordGuidance, GuidanceMessage,
 } from '@/lib/api';
-import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import { useCreateDailyRecord, useUpdateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
-  YesNoPills, LearnMoreDrawer, LearnMoreHeading,
+  YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { Dropdown, FieldStack, FOCUS_INPUT } from '@/components/record/inputs';
 
@@ -44,6 +44,7 @@ export function VaccinationStep({
   flockId,
   recordDate,
   guidance,
+  existing,
   stepIndex,
   stepCount,
   onBack,
@@ -54,6 +55,7 @@ export function VaccinationStep({
   flockId: string;
   recordDate: string;
   guidance: DailyRecordGuidance;
+  existing?: DailyRecordDto;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -63,13 +65,27 @@ export function VaccinationStep({
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
+  const updateRecord = useUpdateDailyRecord(flockId);
+  const editing = !!existing;
+
+  // EDIT pre-fill — if there's an existing row, the user must have
+  // answered Yes when they originally logged it. Pull vaccine name
+  // from payload.vaccine_name; if it matches one of our known values
+  // we restore that, otherwise it becomes 'other' with the original
+  // string in the free-text field.
+  const existingVaccineName = existing?.payload
+    && typeof (existing.payload as Record<string, unknown>).vaccine_name === 'string'
+      ? String((existing.payload as Record<string, unknown>).vaccine_name)
+      : '';
+  const matchingVaccine = VACCINES.find((v) => v.label === existingVaccineName)?.value
+    ?? (existingVaccineName ? 'other' as Vaccine : '');
 
   // Default to Yes — the most likely answer on a day the user opened
   // this step. The figma's note: "By default Yes is selected."
-  const [answer, setAnswer] = useState<'yes' | 'no'>('yes');
-  const [vaccine, setVaccine] = useState<Vaccine | ''>('');
-  const [otherVaccine, setOtherVaccine] = useState('');
-  const [dosage, setDosage] = useState('');
+  const [answer, setAnswer] = useState<'yes' | 'no'>(editing ? 'yes' : 'yes');
+  const [vaccine, setVaccine] = useState<Vaccine | ''>(matchingVaccine);
+  const [otherVaccine, setOtherVaccine] = useState(matchingVaccine === 'other' ? existingVaccineName : '');
+  const [dosage, setDosage] = useState(existing?.quantity != null ? String(existing.quantity) : '');
 
   const dosageNumeric = parseFloat(dosage);
   const dosageValid = !isNaN(dosageNumeric) && dosageNumeric > 0;
@@ -92,17 +108,34 @@ export function VaccinationStep({
   const isLikelyPerBird =
     dosageValid && livingBirds > 100 && dosageNumeric < livingBirds * 0.05; // < 0.05 ml/bird is too low
 
+  const pending = createRecord.isPending || updateRecord.isPending;
   const submit = () => {
-    if (!isValid || createRecord.isPending) return;
+    if (!isValid || pending) return;
     if (answer === 'no') {
-      // Don't post anything — just advance. The figma's design treats
-      // "No" as opting out of a scheduled vaccination, which we model
-      // as silence (no row created). The dashboard's vaccination card
-      // will continue to show the schedule.
+      // Don't post anything — just advance. In ADD mode this is a
+      // proper opt-out. In EDIT mode we currently leave the existing
+      // row untouched (the backend doesn't expose DELETE), so the
+      // user can only modify Yes-rows or skip.
       onContinue();
       return;
     }
     const finalVaccine = vaccine === 'other' ? otherVaccine.trim() : labelForVaccine(vaccine as Vaccine);
+    if (editing && existing) {
+      updateRecord.mutate(
+        {
+          recordId: existing.id,
+          payload: {
+            quantity: dosageNumeric,
+            unit: 'ml',
+            payload: {
+              vaccine_name: finalVaccine,
+            },
+          },
+        },
+        { onSuccess: onContinue },
+      );
+      return;
+    }
     createRecord.mutate(
       {
         event_type: 'vaccination',
@@ -124,16 +157,24 @@ export function VaccinationStep({
         sectionLabel="Vaccination"
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
         onSkip={onSkip}
         onContinue={submit}
         continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
-        continueLabel={answer === 'no' ? 'Continue' : 'Continue'}
+        continuePending={pending}
+        continueLabel={editing && answer === 'yes' ? 'Save changes' : 'Continue'}
       >
         <FieldStack>
+          {editing && (
+            <EditingBanner
+              authorName={existing?.createdByUser?.name}
+              loggedAt={existing?.occurredAt}
+            />
+          )}
+
           <div>
             <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Did you vaccinate today?

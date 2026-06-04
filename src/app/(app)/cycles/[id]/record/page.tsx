@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { endpoints, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
+import { useDailyRecordsForDate, pickRecord } from '@/lib/use-daily-record';
 import { DatePickerStep } from '@/components/record/date-picker-step';
 import { FeedStep } from '@/components/record/steps/feed-step';
 import { WaterStep } from '@/components/record/steps/water-step';
@@ -84,6 +85,13 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   const hasRecordsOnSelectedDate = useMemo(() => {
     return !!calendar.data?.days.some((d) => d.date === selectedDate && d.recordCount > 0);
   }, [calendar.data, selectedDate]);
+
+  // EDIT mode — when the picked date already has records, fetch them
+  // so each step can pre-fill from the matching row. Disabled until
+  // we know the date has data (saves a roundtrip on the happy path
+  // of "log today's record").
+  const dayRecords = useDailyRecordsForDate(flockId, selectedDate, hasRecordsOnSelectedDate);
+  const existingRecords = dayRecords.data?.records ?? [];
 
   /* ------------------------------------------------------------------ */
   /*  Dynamic step list                                                 */
@@ -166,23 +174,43 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   const nextKind = stepList[stepIdx]?.kind;
   const eggsHasFollowUp = nextKind === 'egg_metrics';
 
+  // Each step asks for "the row that matches my event_type". For the
+  // synthetic egg_metrics step, the matching backend row is also
+  // event_type=eggs (size/weight is just extra payload on the same
+  // event), so we hand it the same record.
+  const existingFor = (kind: StepKind) => {
+    switch (kind) {
+      case 'feed':        return pickRecord(existingRecords, 'feed');
+      case 'water':       return pickRecord(existingRecords, 'water');
+      case 'vaccination': return pickRecord(existingRecords, 'vaccination');
+      case 'treatment':   return pickRecord(existingRecords, 'treatment');
+      case 'bird_count':  return pickRecord(existingRecords, 'bird_count');
+      case 'weight':      return pickRecord(existingRecords, 'weight');
+      case 'eggs':        return pickRecord(existingRecords, 'eggs');
+      case 'egg_metrics': return pickRecord(existingRecords, 'eggs');
+      default:            return undefined;
+    }
+  };
+  const existing = existingFor(currentStep.kind);
+
   switch (currentStep.kind) {
     case 'feed':
-      return <FeedStep {...sharedProps} />;
+      return <FeedStep {...sharedProps} existing={existing} />;
     case 'water':
-      return <WaterStep {...sharedProps} />;
+      return <WaterStep {...sharedProps} existing={existing} />;
     case 'vaccination':
-      return <VaccinationStep {...sharedProps} />;
+      return <VaccinationStep {...sharedProps} existing={existing} />;
     case 'treatment':
-      return <TreatmentStep {...sharedProps} />;
+      return <TreatmentStep {...sharedProps} existing={existing} />;
     case 'bird_count':
-      return <BirdCountStep {...sharedProps} />;
+      return <BirdCountStep {...sharedProps} existing={existing} />;
     case 'weight':
-      return <WeightStep {...sharedProps} isLast={isLast} />;
+      return <WeightStep {...sharedProps} existing={existing} isLast={isLast} />;
     case 'eggs':
       return (
         <EggCollectionStep
           {...sharedProps}
+          existing={existing}
           postDirectly={!eggsHasFollowUp}
           onCollect={setEggsBuffer}
           isLast={isLast}
@@ -192,6 +220,7 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
       return (
         <EggSizeWeightStep
           {...sharedProps}
+          existing={existing}
           pendingCollection={eggsBuffer}
           isLast={isLast}
         />

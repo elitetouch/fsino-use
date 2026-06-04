@@ -38,6 +38,7 @@ export function StepShell({
   sectionTint = 'green',
   stepIndex,
   stepCount,
+  editing,
   onCancel,
   onBack,
   onLearnMore,
@@ -54,6 +55,8 @@ export function StepShell({
   sectionTint?: 'green' | 'amber' | 'rose';
   stepIndex: number;        // 1-based
   stepCount: number;
+  /** When true, render the "Editing" badge in the section pill. */
+  editing?: boolean;
   /** Header "Cancel ✕" — usually navigates out of the wizard. */
   onCancel: () => void;
   /** Header "‹" back arrow — absent on the first step. */
@@ -111,6 +114,11 @@ export function StepShell({
           <div className="flex min-w-0 items-center gap-2">
             <span className="shrink-0">{sectionIcon}</span>
             <p className="truncate text-[13px] font-bold tracking-tight">{sectionLabel}</p>
+            {editing && (
+              <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+                Editing
+              </span>
+            )}
             {onLearnMore && (
               <button
                 type="button"
@@ -339,6 +347,47 @@ export function AnomalyWarning({ children }: { children: React.ReactNode }) {
       <strong className="font-bold">Are you sure?</strong> {children}
     </p>
   );
+}
+
+/**
+ * Editing-mode header strip — shown above the form body on any step
+ * the user is editing a previously-saved record on. Light brand-tint
+ * background so it's obviously distinct from anomaly/info messages
+ * but doesn't compete with the form for attention.
+ *
+ * The wizard's section pill also gets an "Editing" badge via the
+ * StepShell's `editing` prop — this strip is the inline reminder
+ * after the user has scrolled past the pill.
+ */
+export function EditingBanner({
+  authorName,
+  loggedAt,
+}: {
+  authorName?: string | null;
+  loggedAt?: string | null;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)]/30 px-3.5 py-3 text-[12px] leading-snug text-[var(--color-brand-primary-deep)]">
+      <p className="font-bold">Editing this day&rsquo;s record</p>
+      <p className="mt-0.5 text-[var(--color-brand-fg-soft)]">
+        Your edits will overwrite the existing entry
+        {authorName ? <> originally logged by <strong>{authorName}</strong></> : null}
+        {loggedAt ? <> on <strong>{fmtShortTime(loggedAt)}</strong></> : null}
+        . The day, event type and bird counts cannot be changed; log a
+        fresh entry to correct those.
+      </p>
+    </div>
+  );
+}
+
+function fmtShortTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
 }
 
 /* ================================================================== */

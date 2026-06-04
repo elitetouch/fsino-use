@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Bird } from 'lucide-react';
-import type { DailyRecordGuidance, MyPreferencesDto } from '@/lib/api';
+import type { DailyRecordDto, DailyRecordGuidance, MyPreferencesDto } from '@/lib/api';
 import { useCreateDailyRecord } from '@/lib/use-daily-record';
 import {
   StepShell, BeigeAlert, AnomalyWarning,
@@ -50,6 +50,7 @@ export function BirdCountStep({
   recordDate,
   guidance,
   prefs,
+  existing,
   stepIndex,
   stepCount,
   onBack,
@@ -61,6 +62,15 @@ export function BirdCountStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
+  /**
+   * When present, the day already has a bird_count row. The backend
+   * freezes bird-count payload counts on PATCH (the running
+   * current_birds tally would otherwise drift), so this step
+   * renders read-only when editing — the user can confirm the
+   * recorded numbers and continue, or back out and log a fresh
+   * bird_count to correct.
+   */
+  existing?: DailyRecordDto;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -68,6 +78,7 @@ export function BirdCountStep({
   onContinue: () => void;
   onSkip: () => void;
 }) {
+  const editing = !!existing;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const createRecord = useCreateDailyRecord(flockId);
 
@@ -135,24 +146,44 @@ export function BirdCountStep({
         sectionLabel="Bird count"
         stepIndex={stepIndex}
         stepCount={stepCount}
+        editing={editing}
         onBack={onBack}
         onCancel={onCancel}
         onLearnMore={() => setDrawerOpen(true)}
-        onSkip={onSkip}
-        onContinue={submit}
-        continueDisabled={!isValid}
-        continuePending={createRecord.isPending}
+        onSkip={editing ? undefined : onSkip}
+        onContinue={editing ? onContinue : submit}
+        continueDisabled={!editing && !isValid}
+        continuePending={!editing && createRecord.isPending}
+        continueLabel={editing ? 'Continue' : 'Continue'}
       >
         <FieldStack>
-          <div>
-            <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
-              Any dead, culled, sold or lost birds today?
-            </p>
-            <YesNoPills value={answer} onChange={setAnswer} primary="no" />
-          </div>
+          {/*
+            EDIT mode — read-only summary.
+            Bird-count payload counts are frozen on PATCH so the
+            running flock.current_birds tally stays coherent. Show
+            what was logged and let the user move on; if they need
+            to correct the numbers, the figma's design says "log a
+            fresh bird_count entry" — the same record_date can hold
+            a second row.
+          */}
+          {editing && (
+            <BirdCountEditView
+              record={existing!}
+              livingBirds={livingBirds}
+            />
+          )}
+
+          {!editing && (
+            <div>
+              <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+                Any dead, culled, sold or lost birds today?
+              </p>
+              <YesNoPills value={answer} onChange={setAnswer} primary="no" />
+            </div>
+          )}
 
           {/* "No" branch */}
-          {answer === 'no' && (
+          {!editing && answer === 'no' && (
             <BeigeAlert title="Keep a correct count of birds">
               {lastEntryDays !== null ? (
                 <>
@@ -170,7 +201,7 @@ export function BirdCountStep({
           )}
 
           {/* "Yes" branch — the enabled count inputs + live total */}
-          {answer === 'yes' && (
+          {!editing && answer === 'yes' && (
             <>
               {enabledFields.map((f) => (
                 <CountField
@@ -293,4 +324,92 @@ function CountField({
 function safeInt(s: string): number {
   const n = parseInt(s, 10);
   return isNaN(n) ? 0 : n;
+}
+
+/**
+ * Read-only view of an existing bird_count row for EDIT mode.
+ *
+ * The backend's UpdateFlockDailyRecordRequest freezes bird-count
+ * payload counts, so we can't safely let the user retype them — a
+ * silent drift between the row and flock.current_birds would
+ * compound across cycles. Instead, we show what was logged and
+ * direct them to log a fresh bird_count if a correction is needed
+ * (multiple rows on the same date are allowed).
+ */
+function BirdCountEditView({
+  record,
+  livingBirds,
+}: {
+  record: DailyRecordDto;
+  livingBirds: number;
+}) {
+  const payload = (record.payload ?? {}) as Record<string, unknown>;
+  const counts = {
+    sold:   readCount(payload, 'sold'),
+    dead:   readCount(payload, 'dead'),
+    culled: readCount(payload, 'culled'),
+    lost:   readCount(payload, 'lost'),
+  };
+  const totalOut = counts.sold + counts.dead + counts.culled + counts.lost;
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-[var(--color-brand-border)] bg-white">
+        <div className="border-b border-[var(--color-brand-border)] px-4 py-2.5">
+          <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+            Logged for this day
+          </p>
+        </div>
+        <dl className="divide-y divide-[var(--color-brand-border)]">
+          <Stat label="Sold"   value={counts.sold} />
+          <Stat label="Dead"   value={counts.dead} />
+          <Stat label="Culled" value={counts.culled} />
+          <Stat label="Lost"   value={counts.lost} />
+          <Stat label="Total out" value={totalOut} bold />
+          <Stat label="Birds remaining" value={livingBirds} bold />
+        </dl>
+      </div>
+
+      <BeigeAlert title="Counts can't be edited">
+        Bird-count totals are frozen once saved — editing them would
+        let the running flock count drift. If today&rsquo;s figures are
+        wrong, tap Cancel and log a <strong>fresh bird-count entry</strong>{' '}
+        on this same date. Multiple rows on one day are allowed.
+      </BeigeAlert>
+    </div>
+  );
+}
+
+function Stat({
+  label, value, bold,
+}: { label: string; value: number; bold?: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3">
+      <dt className={cn(
+        'text-[12.5px] text-[var(--color-brand-fg-soft)]',
+        bold && 'font-bold text-[var(--color-brand-fg)]',
+      )}>
+        {label}
+      </dt>
+      <dd className={cn(
+        'text-[13.5px] font-semibold tracking-tight text-[var(--color-brand-fg)]',
+        bold && 'text-[15px] font-extrabold',
+      )}>
+        {value.toLocaleString()}
+      </dd>
+    </div>
+  );
+}
+
+function readCount(payload: Record<string, unknown>, key: string): number {
+  const section = payload[key];
+  if (section && typeof section === 'object') {
+    const c = (section as Record<string, unknown>).count;
+    if (typeof c === 'number') return c;
+    if (typeof c === 'string') {
+      const n = parseInt(c, 10);
+      return isNaN(n) ? 0 : n;
+    }
+  }
+  return 0;
 }
