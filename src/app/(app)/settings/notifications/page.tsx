@@ -15,10 +15,12 @@ import { useMyPreferences, useUpdateMyPreferences } from '@/lib/use-preferences'
  * in red — PenKeep alerts, finance reminders, daily / weekly reports
  * — marked here as "Soon" so the user knows we're aware.
  *
- * These narrow the farm-wide notification defaults — turning something
- * OFF here only suppresses it for this user. Turning it ON when the
- * farm has switched it off won't do anything, so the UI reflects the
- * effective state (farm AND user).
+ * These override the farm-wide notification defaults for THIS user
+ * on this device. The farm defaults seed new members; you can turn
+ * anything on or off here independently of what the farm picked.
+ * (Unlike daily-record toggles, notifications aren't subject to a
+ * hard farm ceiling — see PreferenceSchema::effectiveDailyRecord
+ * for the asymmetry.)
  */
 export default function NotificationsPage() {
   const prefs = useMyPreferences();
@@ -45,7 +47,7 @@ export default function NotificationsPage() {
     <div>
       <SubPageHeader
         title="Push notifications"
-        description="Reminders and alerts you get on this device. These narrow the farm's defaults — you can mute, but not un-mute things the farm has switched off."
+        description="Reminders and alerts you get on this device. These override the farm's defaults — turn any of them on or off, independently of the rest of the team."
       />
 
       <div className="space-y-4">

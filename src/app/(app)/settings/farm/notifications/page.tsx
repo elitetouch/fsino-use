@@ -9,10 +9,13 @@ import { usePermissions } from '@/lib/access';
 /**
  * Farm-wide notification defaults — admin sub-page.
  *
- * Edits `farm_settings.notification_config`. Members keep their own
- * narrowed versions in personal preferences; the farm value is the
- * default they fall back to and the ceiling above which they can't
- * subscribe.
+ * Edits `farm_settings.notification_config`. These act as the team
+ * default — what new members start with, and the value the
+ * notification dispatcher reads for farm-scoped sends. Individual
+ * members can independently override any of these on themselves;
+ * there's no farm AND user ceiling for notifications the way there
+ * is for daily-record events (see PreferenceSchema::effectiveDailyRecord
+ * for the asymmetric model).
  */
 export default function FarmNotificationsPage() {
   const perms = usePermissions();
@@ -44,7 +47,7 @@ export default function FarmNotificationsPage() {
       <SubPageHeader
         backTo="/settings"
         title="Farm notifications"
-        description="Default reminders the team gets for this farm. Members can mute these on their own device but can't add ones the farm has switched off."
+        description="Default reminders the team gets for this farm. Members can override any of these on their own device, independently of what you pick here."
         lockedNote={canEdit ? undefined : 'You can review these defaults but only owners and managers can change them.'}
       />
 
