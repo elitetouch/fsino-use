@@ -5,6 +5,7 @@ import {
   ArrowLeft, X, ChevronRight, Info, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FOCUS_WRAPPER } from './inputs';
 
 /**
  * StepShell — the chrome every step of the Add-record wizard shares.
@@ -255,7 +256,10 @@ export function NumberKeypadInput({
           )}
         </div>
       )}
-      <div className="flex items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 py-2.5 focus-within:border-[var(--color-brand-primary)]">
+      <div className={cn(
+        'flex items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 py-2.5',
+        FOCUS_WRAPPER,
+      )}>
         {prefix && (
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
             {prefix}
@@ -269,7 +273,7 @@ export function NumberKeypadInput({
           value={value}
           onChange={(e) => onChange(sanitiseNumeric(e.target.value))}
           placeholder={placeholder}
-          className="min-w-0 flex-1 bg-transparent text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+          className="min-w-0 flex-1 bg-transparent text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none focus:outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
         />
         {unitOptions && onUnitChange ? (
           <select

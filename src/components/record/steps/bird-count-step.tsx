@@ -8,7 +8,7 @@ import {
   StepShell, BeigeAlert, AnomalyWarning,
   YesNoPills, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
-import { FieldStack } from '@/components/record/inputs';
+import { FieldStack, FOCUS_WRAPPER } from '@/components/record/inputs';
 import { cn } from '@/lib/utils';
 
 /**
@@ -270,7 +270,10 @@ function CountField({
         </label>
         <span className="text-[11px] text-[var(--color-brand-muted)]">{desc}</span>
       </div>
-      <div className="flex h-11 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 focus-within:border-[var(--color-brand-primary)]">
+      <div className={cn(
+        'flex h-11 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3',
+        FOCUS_WRAPPER,
+      )}>
         <input
           type="text"
           inputMode="numeric"

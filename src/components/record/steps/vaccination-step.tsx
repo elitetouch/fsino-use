@@ -10,7 +10,7 @@ import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
   YesNoPills, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
-import { Dropdown, FieldStack } from '@/components/record/inputs';
+import { Dropdown, FieldStack, FOCUS_INPUT } from '@/components/record/inputs';
 
 /**
  * Step 3 — Vaccination.
@@ -176,7 +176,7 @@ export function VaccinationStep({
                     value={otherVaccine}
                     onChange={(e) => setOtherVaccine(e.target.value)}
                     placeholder="Type the vaccine name"
-                    className="h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] focus:border-[var(--color-brand-primary)] focus:outline-none"
+                    className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                     autoFocus
                   />
                 </div>

@@ -10,7 +10,8 @@ import {
   StepShell, NumberKeypadInput, BeigeAlert, AnomalyWarning,
   YesNoPills, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
-import { FieldStack } from '@/components/record/inputs';
+import { FieldStack, FOCUS_WRAPPER } from '@/components/record/inputs';
+import { cn } from '@/lib/utils';
 
 /**
  * Step 6 — Bird weight.
@@ -285,7 +286,10 @@ function BirdRow({
       <p className="w-20 shrink-0 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
         {label}
       </p>
-      <div className="flex h-11 flex-1 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 focus-within:border-[var(--color-brand-primary)]">
+      <div className={cn(
+        'flex h-11 flex-1 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3',
+        FOCUS_WRAPPER,
+      )}>
         <input
           type="text"
           inputMode="decimal"

@@ -11,7 +11,7 @@ import {
   LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import {
-  PillTiles, Dropdown, FieldStack,
+  PillTiles, Dropdown, FieldStack, FOCUS_INPUT,
 } from '@/components/record/inputs';
 
 /**
@@ -215,7 +215,7 @@ export function FeedStep({
                 value={otherBrand}
                 onChange={(e) => setOtherBrand(e.target.value)}
                 placeholder="Type the brand name"
-                className="h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] focus:border-[var(--color-brand-primary)] focus:outline-none"
+                className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                 autoFocus
               />
             </div>

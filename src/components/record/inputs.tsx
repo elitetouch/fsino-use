@@ -4,6 +4,29 @@ import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /* ================================================================== */
+/*  Shared focus classes                                               */
+/* ================================================================== */
+
+/**
+ * Common focus state for any wrapped-input row (a container holding a
+ * text input + icon prefix + unit suffix). Subtle border colour change
+ * + 2px soft tint ring, matching the focus pattern in the existing
+ * `Input` component (components/ui/input.tsx). No hard 2px outline —
+ * the global :focus-visible rule already excludes form elements
+ * (see globals.css) so this is the only focus indicator in play.
+ */
+export const FOCUS_WRAPPER =
+  'transition focus-within:border-[var(--color-brand-primary)] focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/15';
+
+/**
+ * Same shape for a bare input that doesn't sit inside a wrapper (the
+ * "Other (type in)" free-text fallbacks scattered across the step
+ * files). Wrap-level focus-within → input-level focus.
+ */
+export const FOCUS_INPUT =
+  'transition focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/15';
+
+/* ================================================================== */
 /*  PillTiles — Starter / Grower / Finisher etc.                       */
 /* ================================================================== */
 
@@ -105,7 +128,7 @@ export function Dropdown<T extends string>({
           onChange={(e) => onChange(e.target.value as T)}
           className={cn(
             'h-11 w-full appearance-none rounded-lg border border-[var(--color-brand-input-border)] bg-white pl-3.5 pr-9 text-[13px] font-semibold text-[var(--color-brand-fg)]',
-            'focus:border-[var(--color-brand-primary)] focus:outline-none',
+            FOCUS_INPUT,
             value === '' && 'text-[var(--color-brand-muted-soft)] font-normal',
             disabled && 'cursor-not-allowed opacity-60',
           )}

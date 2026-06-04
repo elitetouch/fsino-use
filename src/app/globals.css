@@ -82,7 +82,20 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-:focus-visible {
+/*
+ * Global keyboard-focus indicator for non-form elements (links,
+ * tabindexed divs, custom buttons). Form elements (input / select /
+ * textarea / button) opt out here and own their own focus state via
+ * their wrapper component so we don't end up with a thin colored
+ * `border` + a thicker offset `outline` stacked on top of one another
+ * — which looked like a double green border on every wizard input.
+ *
+ * Accessibility note: each form-element wrapper still surfaces a
+ * visible focus signal (focus-within: border-primary + ring), so
+ * keyboard navigation remains discoverable. Only the rendering
+ * mechanism changed.
+ */
+:focus-visible:not(input):not(select):not(textarea):not(button) {
   outline: 2px solid var(--color-brand-primary);
   outline-offset: 2px;
   border-radius: 6px;

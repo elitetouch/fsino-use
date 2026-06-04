@@ -8,7 +8,9 @@ import {
   StepShell,
   YesNoPills, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
-import { Dropdown, FieldStack } from '@/components/record/inputs';
+import {
+  Dropdown, FieldStack, FOCUS_INPUT, FOCUS_WRAPPER,
+} from '@/components/record/inputs';
 import { cn } from '@/lib/utils';
 
 /**
@@ -163,7 +165,10 @@ export function TreatmentStep({
                 </div>
                 <div className="flex items-stretch gap-2">
                   <div className="flex-1">
-                    <div className="flex h-11 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 focus-within:border-[var(--color-brand-primary)]">
+                    <div className={cn(
+                      'flex h-11 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3',
+                      FOCUS_WRAPPER,
+                    )}>
                       <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
                         <Stethoscope className="h-3 w-3" />
                       </span>
@@ -216,7 +221,7 @@ export function TreatmentStep({
                   value={otherType}
                   onChange={(e) => setOtherType(e.target.value)}
                   placeholder="Type the treatment"
-                  className="h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] focus:border-[var(--color-brand-primary)] focus:outline-none"
+                  className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                 />
               )}
 
@@ -234,7 +239,7 @@ export function TreatmentStep({
                   value={otherReason}
                   onChange={(e) => setOtherReason(e.target.value)}
                   placeholder="Type the reason"
-                  className="h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] focus:border-[var(--color-brand-primary)] focus:outline-none"
+                  className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                 />
               )}
             </>
