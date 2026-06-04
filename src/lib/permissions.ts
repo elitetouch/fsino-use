@@ -116,11 +116,26 @@ export const MANAGER_LIKE_PRESET: Record<string, true> = ALL_PERMISSION_KEYS.red
 );
 
 /**
- * Normalise permissions — accept the legacy nested
- * { flocks: { records: { create: true } } } shape AND the modern flat-key
- * shape { "flocks.records.create": true }, return the flat-key map.
+ * Normalise permissions — accept three shapes and return the flat-key map:
+ *
+ *   1. Modern flat-key object  { "flocks.records.create": true }
+ *   2. Legacy nested object    { flocks: { records: { create: true } } }
+ *   3. Raw JSON string         '{"flocks.records.create":true}'
+ *
+ * (3) exists because the pivot column is jsonb on Postgres and older
+ * API responses sometimes returned it as a raw string when the resource
+ * forgot to decode it. Defensive handling here means a single resource
+ * regression doesn't wipe out a staff user's permissions client-side.
  */
 export function normalisePermissions(value: unknown): Record<string, true> {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return normalisePermissions(parsed);
+    } catch {
+      return {};
+    }
+  }
   const out: Record<string, true> = {};
   if (!value || typeof value !== 'object') return out;
   const flatten = (obj: Record<string, unknown>, prefix: string) => {
