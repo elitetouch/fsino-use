@@ -43,6 +43,7 @@ export function useUpdateMyPreferences() {
       const previous = qc.getQueryData<{ preferences: MyPreferencesDto }>(['my-preferences']);
       if (previous) {
         const dc = (patch.dashboard_config ?? {}) as Record<string, unknown>;
+        const drPatch = (dc.daily_record as object) ?? {};
         const next: MyPreferencesDto = {
           ...previous.preferences,
           viewMode: (dc.view_mode as MyPreferencesDto['viewMode']) ?? previous.preferences.viewMode,
@@ -56,8 +57,21 @@ export function useUpdateMyPreferences() {
             (dc.daily_record ? 'custom' : previous.preferences.dailyRecordPreset),
           dailyRecord: deepMerge(
             previous.preferences.dailyRecord as Record<string, unknown>,
-            (dc.daily_record as object) ?? {},
+            drPatch,
           ) as MyPreferencesDto['dailyRecord'],
+          // CRITICAL: keep effectiveDailyRecord in sync optimistically.
+          // The wizard reads this field (not dailyRecord) to decide which
+          // steps to show — without this line, toggling Feed off in the
+          // settings page leaves the wizard showing a Feed step until a
+          // hard refetch. The real effective state is farm AND user, but
+          // optimistically applying the user's intent here is correct
+          // 99% of the time (the 1% — user re-enabling something the
+          // farm blocked — corrects when onSuccess writes the server
+          // response below).
+          effectiveDailyRecord: deepMerge(
+            previous.preferences.effectiveDailyRecord as Record<string, unknown>,
+            drPatch,
+          ) as MyPreferencesDto['effectiveDailyRecord'],
           dashboard: {
             cards: {
               ...previous.preferences.dashboard.cards,
@@ -80,6 +94,14 @@ export function useUpdateMyPreferences() {
     onError: (err, _vars, ctx) => {
       if (ctx?.previous) qc.setQueryData(['my-preferences'], ctx.previous);
       toast.error(apiErrorMessage(err, 'Could not save your preferences.'));
+    },
+    // Write the server's authoritative response back so any derived
+    // fields the optimistic path can't compute (effectiveDailyRecord
+    // edge cases, server-side custom-preset stamp, updatedAt, etc.)
+    // catch up immediately. Without this, the cache holds the
+    // optimistic snapshot for 30s — the bug the user reported.
+    onSuccess: (data) => {
+      qc.setQueryData(['my-preferences'], data);
     },
   });
 }
@@ -124,10 +146,15 @@ export function useUpdateFarmSettings() {
       if (ctx?.previous) qc.setQueryData(['farm-settings'], ctx.previous);
       toast.error(apiErrorMessage(err, 'Could not save farm settings.'));
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Write the server's authoritative farm-settings response back —
+      // same rationale as the user-pref mutation: the optimistic
+      // snapshot can drift from server-side computed fields, so we
+      // catch up immediately rather than after the staleTime expires.
+      qc.setQueryData(['farm-settings'], data);
       // Farm setting changes alter the user-pref ceiling; force a
       // re-fetch of my-preferences so effectiveDailyRecord reflects
-      // the new ceiling immediately.
+      // the new ceiling immediately on whichever page reads it next.
       qc.invalidateQueries({ queryKey: ['my-preferences'] });
     },
   });
