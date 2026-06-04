@@ -86,11 +86,17 @@ export const ROUTE_ACCESS: Array<{ path: string; rule: AccessRule }> = [
 
   // Team + settings + billing
   { path: '/users',        rule: { perm: 'staff_manage.view' } },
-  // Settings page hosts BOTH farm-level settings AND personal
-  // preferences. Anyone with either permission can open the page —
-  // sections inside the page each have their own <Gate>, so a staff
-  // user without settings.view sees only the "My preferences" half.
-  { path: '/settings',     rule: { anyOf: ['settings.view', 'preferences.update'] } },
+  // Settings is structured as a menu hub + sub-pages. The hub itself
+  // is open to anyone with either permission; the personal sub-pages
+  // require preferences.update; the farm-wide sub-pages require
+  // settings.view (with settings.update gating writes inside the page).
+  { path: '/settings',                  rule: { anyOf: ['settings.view', 'preferences.update'] } },
+  { path: '/settings/dashboard',        rule: { perm: 'preferences.update' } },
+  { path: '/settings/daily-record',     rule: { perm: 'preferences.update' } },
+  { path: '/settings/finance',          rule: { perm: 'preferences.update' } },
+  { path: '/settings/notifications',    rule: { perm: 'preferences.update' } },
+  { path: '/settings/farm/daily-record', rule: { perm: 'settings.view' } },
+  { path: '/settings/farm/notifications', rule: { perm: 'settings.view' } },
   { path: '/wallet',       rule: { openToMembers: true } },        // anyone can see the balance
   { path: '/subscription', rule: { perm: 'billing.manage' } },     // only billing-managers see purchases
 
