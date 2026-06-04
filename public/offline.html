@@ -20,7 +20,14 @@
       min-height: 100vh;
       background: var(--bg);
       color: var(--fg);
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      /*
+       * Roboto Flex matches the rest of the app's typography. The
+       * offline page is a standalone HTML file served before the SW
+       * boots, so it can't read the CSS variable next/font sets — we
+       * spell the family out directly and fall back to the same
+       * ladder globals.css uses.
+       */
+      font-family: 'Roboto Flex', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       -webkit-font-smoothing: antialiased;
       display: flex;
       align-items: center;

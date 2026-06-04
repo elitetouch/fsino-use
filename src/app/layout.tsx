@@ -1,16 +1,21 @@
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Roboto_Flex } from 'next/font/google';
 import { Providers } from './providers';
 import { SwRegistration } from '@/components/offline/sw-registration';
 import { OfflineBanner } from '@/components/offline/offline-banner';
 import { IosInstallPrompt } from '@/components/offline/ios-install-prompt';
 import './globals.css';
 
-const jakarta = Plus_Jakarta_Sans({
+// Roboto Flex — matches the figma source-of-truth. It's a variable
+// font so a single download covers every weight from 400→800 used
+// across the app (auth pages, dashboard cards, settings toggles,
+// wizard buttons). `next/font/google` self-hosts it, so no FOUC and
+// no third-party request from the browser at runtime.
+const robotoFlex = Roboto_Flex({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
-  variable: '--font-jakarta',
+  variable: '--font-roboto-flex',
 });
 
 const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Farm Support Innovation';
@@ -52,7 +57,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={jakarta.variable}>
+    <html lang="en" className={robotoFlex.variable}>
       <head>
         {/* iOS-specific PWA hints (Next.js metadata covers most of this,
             but a couple of older bits live outside the metadata API). */}

@@ -39,10 +39,15 @@
   --radius-card: 20px;
   --radius-input: 12px;
 
-  /* Type */
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
-               BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
-               Arial, sans-serif;
+  /* Type — Roboto Flex matches the figma source-of-truth. The font is
+     loaded as the CSS variable --font-roboto-flex by next/font in
+     layout.tsx; we reference that variable here so the same Roboto Flex
+     instance flows everywhere. If the variable isn't available (e.g.
+     server-side render before the font binds), we degrade through the
+     same ladder browsers use for "system sans". */
+  --font-sans: var(--font-roboto-flex), 'Roboto Flex', 'Roboto', ui-sans-serif,
+               system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+               'Helvetica Neue', Arial, sans-serif;
 
   /* Stepped type scale — aligned to the mobile Figma design.
      Mobile-first; sm + lg adjustments stay modest so the web app
