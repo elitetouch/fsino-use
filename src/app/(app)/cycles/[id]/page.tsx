@@ -249,7 +249,7 @@ function ResultsTab({
           </div>
           <Gate perm="flocks.records.create">
             <Button asChild size="sm">
-              <Link href="/records">
+              <Link href={`/cycles/${cycle.id}/record`}>
                 <Plus className="h-3.5 w-3.5" />
                 Add record
               </Link>

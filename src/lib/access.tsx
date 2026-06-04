@@ -78,6 +78,14 @@ export const ROUTE_ACCESS: Array<{ path: string; rule: AccessRule }> = [
   { path: '/pens',         rule: { perm: 'pens.view' } },
   { path: '/flocks',       rule: { perm: 'flocks.view' } },
   { path: '/cycles',       rule: { perm: 'flocks.view' } },
+  // NB: /cycles/<id>/record (the add-record wizard) inherits the
+  // /cycles flocks.view rule above via the longest-prefix matcher,
+  // since the matcher doesn't expand `[id]` slugs. That's fine in
+  // practice — every entry point (dashboard "Log", cycle-detail
+  // "Add record") is already wrapped in <Gate perm="flocks.records.create">,
+  // and the backend POST is gated by farm.perm:flocks.records.create.
+  // A user without write perm could reach the wizard URL by typing
+  // it, but each Save would 403 server-side.
 
   // Setup flows — write actions
   { path: '/setup/pens',   rule: { perm: 'pens.create' } },

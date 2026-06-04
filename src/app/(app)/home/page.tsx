@@ -156,14 +156,19 @@ export default function HomePage() {
               Feed, water, vaccines, mortality — log in seconds, watch your margins grow.
             </p>
           </div>
-          <Gate perm="flocks.records.create">
-            <Button asChild size="sm" variant="outline">
-              <Link href="/records">
-                <ClipboardList className="h-3.5 w-3.5" />
-                Log
-              </Link>
-            </Button>
-          </Gate>
+          {/* "Log" needs an active cycle to land on — without one, the
+              empty-state CTA above already invites them to place a flock,
+              so we just hide this row's button. */}
+          {cycle && (
+            <Gate perm="flocks.records.create">
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/cycles/${cycle.id}/record`}>
+                  <ClipboardList className="h-3.5 w-3.5" />
+                  Log
+                </Link>
+              </Button>
+            </Gate>
+          )}
         </div>
       </section>
     </div>

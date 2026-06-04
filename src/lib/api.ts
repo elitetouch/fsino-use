@@ -196,6 +196,65 @@ export const endpoints = {
   archiveFlock: (id: string, force = false) =>
     api.delete(`/flocks/${id}`, { params: force ? { force: 'true' } : undefined }),
 
+  // ───────────── Daily records ─────────────
+
+  /**
+   * Pre-input guidance for the "Add Daily Record" wizard — usual
+   * ranges (14-day rolling window), last-entry snapshots, and per-
+   * section beige hint messages the form renders before the user
+   * types. Backend computes everything; we just render.
+   */
+  getDailyRecordGuidance: (flockId: string) =>
+    unwrap<DailyRecordGuidance>(
+      api.get(`/flocks/${flockId}/daily-records/guidance`),
+    ),
+
+  /**
+   * Calendar coloring for the date-picker step. White day = empty,
+   * light-green = has records (dot-styled in the UI). Defaults to
+   * the current month when `month` is omitted.
+   */
+  getDailyRecordCalendar: (flockId: string, month?: string) =>
+    unwrap<{ month: string; days: DailyRecordCalendarDay[] }>(
+      api.get(`/flocks/${flockId}/daily-records/calendar`, {
+        params: month ? { month } : undefined,
+      }),
+    ),
+
+  /**
+   * List records for a flock. With `date`, returns just that day —
+   * powers the wizard's EDIT mode (pre-fill from existing rows).
+   * Without `date`, returns the last 30 records.
+   */
+  listDailyRecords: (flockId: string, date?: string) =>
+    unwrap<{ records: DailyRecordDto[] }>(
+      api.get(`/flocks/${flockId}/daily-records`, {
+        params: date ? { date } : undefined,
+      }),
+    ),
+
+  /**
+   * Create a single daily-record event. The wizard fires one POST
+   * per step (per the agreed "per-step POST with auto-skip" model).
+   * Response includes the saved record plus a `warnings: []` array
+   * the UI surfaces as soft "Are you sure?" anomaly messages.
+   */
+  createDailyRecord: (flockId: string, payload: CreateDailyRecordPayload) =>
+    unwrap<{ record: DailyRecordDto; flockCurrentBirds: number; warnings: DailyRecordWarning[] }>(
+      api.post(`/flocks/${flockId}/daily-records`, payload),
+    ),
+
+  /**
+   * Edit a previously-saved record. Backend freezes event_type,
+   * record_date, birds_delta and bird-count payload counts — only
+   * descriptive fields are editable. Staff may only edit records
+   * they themselves created (owner/manager bypass).
+   */
+  updateDailyRecord: (flockId: string, recordId: string, payload: UpdateDailyRecordPayload) =>
+    unwrap<{ record: DailyRecordDto }>(
+      api.patch(`/flocks/${flockId}/daily-records/${recordId}`, payload),
+    ),
+
   // ───────────── Reference data ─────────────
   listBreeds: (params?: { production_type?: string; search?: string; country?: string }) =>
     unwrap<{ breeds: BreedDto[] }>(api.get('/breeds', { params })),
@@ -504,6 +563,162 @@ export type HatcheryDto = {
   id: string;
   name: string;
   country?: string;
+};
+
+// ────────────── Daily-record DTOs ──────────────
+
+/**
+ * One row in the daily-records table — what the wizard reads back
+ * in EDIT mode and what each step's POST returns. Field naming
+ * matches FlockDailyRecordResource exactly so we don't need a remap
+ * layer on the client.
+ */
+export type DailyRecordDto = {
+  id: string;
+  farmId: string;
+  flockId: string;
+  penId: string | null;
+  eventType: DailyRecordEventType;
+  recordDate: string;          // ISO date (YYYY-MM-DD) — the day this row belongs to
+  occurredAt: string;          // ISO timestamp — when it was actually logged
+  birdsDelta: number | null;
+  birdsSnapshot: number | null;
+  quantity: number | null;
+  unit: string | null;
+  moment: 'morning' | 'evening' | 'entire_day' | null;
+  itemType: string | null;     // feed type (starter/grower/finisher), etc.
+  itemBrand: string | null;
+  amount: number | null;
+  currency: string | null;
+  note: string | null;
+  payload: Record<string, unknown> | null;
+  createdByUser: { id: string | number; name: string | null } | null;
+  updatedByUser: { id: string | number; name: string | null } | null;
+  lastEditedAt: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** The 10 event types the backend accepts in CreateFlockEventRequest. */
+export type DailyRecordEventType =
+  | 'feed' | 'water' | 'vaccination' | 'treatment' | 'weight' | 'eggs'
+  | 'mortality' | 'bird_count' | 'sale' | 'note';
+
+/**
+ * Per-step payload for createDailyRecord. Backend validates per
+ * event_type — see CreateFlockEventRequest::withValidator for the
+ * specifics. The TypeScript shape stays permissive so each step
+ * component can compose what it needs.
+ */
+export type CreateDailyRecordPayload = {
+  event_type: DailyRecordEventType;
+  /** Override the implicit "today"; format YYYY-MM-DD. */
+  record_date?: string;
+  /** Override now(); ISO timestamp. */
+  occurred_at?: string;
+  /** Defaults to flock.pen_id server-side. */
+  pen_id?: string;
+  /** feed/water/weight — numeric quantity. */
+  quantity?: number;
+  /** kg / liters / g / ml, etc. */
+  unit?: string;
+  /** For currency-bearing future events (sale, etc.). */
+  amount?: number;
+  currency?: string;
+  /** mortality/sale — count of birds removed. */
+  birds_delta?: number;
+  /** Free-text user note. */
+  note?: string;
+  /** Event-specific structured data — see backend per-type validators. */
+  payload?: Record<string, unknown>;
+};
+
+/**
+ * Editable fields on a saved record. Backend freezes the bird-math
+ * fields (event_type, birds_delta, bird_count payload counts) so
+ * the audit trail and flock.current_birds stay coherent — UI should
+ * only expose descriptive fields here.
+ */
+export type UpdateDailyRecordPayload = {
+  note?: string;
+  unit?: string;
+  quantity?: number;
+  moment?: 'morning' | 'evening' | 'entire_day';
+  item_type?: string;
+  item_brand?: string;
+  payload?: Record<string, unknown>;
+};
+
+/**
+ * Soft warnings the server returns alongside a successful POST.
+ * Drives the "Are you sure?" red text on each step. Severity is
+ * advisory — the record was saved either way.
+ */
+export type DailyRecordWarning = {
+  code: string;
+  message: string;
+  severity?: 'info' | 'warning';
+  context?: Record<string, unknown>;
+};
+
+/**
+ * One day in the calendar endpoint response. The UI uses
+ * `recordCount > 0` to colour days light-green. `eventTypes` lets
+ * us show a tooltip "Logged: feed, water" if we want.
+ */
+export type DailyRecordCalendarDay = {
+  date: string;                // YYYY-MM-DD
+  recordCount: number;
+  eventTypes: DailyRecordEventType[];
+};
+
+/**
+ * The full guidance blob — per-section thresholds, last-entry
+ * snapshots, and pre-input messages. Schema mirrors
+ * DailyRecordGuidanceService::computeFor.
+ */
+export type DailyRecordGuidance = {
+  flock: {
+    id: string;
+    production_type: 'broiler' | 'layer' | 'mixed';
+    current_birds: number;
+    placed_birds: number;
+    current_age_days: number;
+    current_age_weeks: number;
+    cycle_weeks: number;
+    start_date: string | null;
+    timezone: string;
+  };
+  lookback_days: number;
+  generated_at: string;
+  sections: {
+    feed: GuidanceSection;
+    water: GuidanceSection;
+    vaccination: GuidanceSection;
+    treatment: GuidanceSection;
+    bird_count: GuidanceSection;
+    weight: GuidanceSection;
+    eggs: GuidanceSection;
+    egg_size: GuidanceSection;
+  };
+};
+
+export type GuidanceSection = {
+  enabled: boolean;
+  living_birds?: number;
+  history_days?: number;
+  sample_size?: number;
+  unit?: string;
+  usual_quantity?: { low: number; high: number; avg: number } | null;
+  last_entry?: Record<string, unknown> | null;
+  messages: GuidanceMessage[];
+};
+
+export type GuidanceMessage = {
+  code: string;
+  text: string;
+  context?: Record<string, unknown>;
 };
 
 // ────────────── Preferences DTOs ──────────────
