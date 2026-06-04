@@ -4,7 +4,7 @@ import { use, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { endpoints, type DailyRecordEventType, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
+import { endpoints, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
 import { DatePickerStep } from '@/components/record/date-picker-step';
 import { FeedStep } from '@/components/record/steps/feed-step';
@@ -13,6 +13,8 @@ import { VaccinationStep } from '@/components/record/steps/vaccination-step';
 import { TreatmentStep } from '@/components/record/steps/treatment-step';
 import { BirdCountStep } from '@/components/record/steps/bird-count-step';
 import { WeightStep } from '@/components/record/steps/weight-step';
+import { EggCollectionStep, type EggCollectionData } from '@/components/record/steps/egg-collection-step';
+import { EggSizeWeightStep } from '@/components/record/steps/egg-size-weight-step';
 
 /**
  * Daily-record wizard for a single cycle.
@@ -44,6 +46,18 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
 
   // Current step index. 0 = date picker; 1..N = event steps.
   const [stepIdx, setStepIdx] = useState(0);
+
+  // Buffered egg-collection data for the layer sub-flow.
+  //
+  // The backend's eggs event validator (CreateFlockEventRequest::eggs)
+  // requires payload.good on EVERY eggs row, so we can't POST the
+  // collection step and the size/weight step as two independent rows.
+  // Instead, when both steps are in the wizard, the collection step
+  // stashes here and the size/weight step submits one combined event.
+  // When the size/weight step isn't in the wizard at all (egg_metrics
+  // disabled), the collection step POSTs directly — see its
+  // `postDirectly` prop.
+  const [eggsBuffer, setEggsBuffer] = useState<EggCollectionData | null>(null);
 
   // Guidance — drives the dynamic step list (which events the farm
   // allows) plus per-section hints for each event step.
@@ -132,7 +146,7 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   }
 
   // ── Real event steps ──────────────────────────────────────────────
-  const currentEvent = stepList[stepIdx - 1]!;
+  const currentStep = stepList[stepIdx - 1]!;
   const isLast = stepIdx === stepList.length;
   const sharedProps = {
     flockId,
@@ -147,7 +161,12 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
     onSkip: goNext,
   };
 
-  switch (currentEvent.eventType) {
+  // Whether an egg_metrics step follows the eggs collection step —
+  // determines whether the collection step POSTs or stashes.
+  const nextKind = stepList[stepIdx]?.kind;
+  const eggsHasFollowUp = nextKind === 'egg_metrics';
+
+  switch (currentStep.kind) {
     case 'feed':
       return <FeedStep {...sharedProps} />;
     case 'water':
@@ -160,14 +179,30 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
       return <BirdCountStep {...sharedProps} />;
     case 'weight':
       return <WeightStep {...sharedProps} isLast={isLast} />;
+    case 'eggs':
+      return (
+        <EggCollectionStep
+          {...sharedProps}
+          postDirectly={!eggsHasFollowUp}
+          onCollect={setEggsBuffer}
+          isLast={isLast}
+        />
+      );
+    case 'egg_metrics':
+      return (
+        <EggSizeWeightStep
+          {...sharedProps}
+          pendingCollection={eggsBuffer}
+          isLast={isLast}
+        />
+      );
     default:
-      // Defensive — buildStepList only emits the 6 events above. If
-      // a future event_type sneaks in we render the placeholder so
-      // navigation isn't blocked.
+      // Defensive — buildStepList only emits the kinds above. If a
+      // future kind sneaks in we render the placeholder so navigation
+      // isn't blocked.
       return (
         <StepPlaceholder
-          eventType={currentEvent.eventType}
-          label={currentEvent.label}
+          label={currentStep.label}
           stepIndex={stepIdx}
           stepCount={stepList.length}
           onBack={goBack}
@@ -183,24 +218,48 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
 /*  Dynamic step builder                                               */
 /* ================================================================== */
 
+/**
+ * Internal step kinds. Most map 1:1 to a backend event_type, but
+ * `egg_metrics` is synthetic — it's part of the eggs event, just
+ * captured in its own UI step. The orchestrator buffers the
+ * collection result and the size/weight step submits the combined
+ * row.
+ */
+type StepKind =
+  | 'feed'
+  | 'water'
+  | 'vaccination'
+  | 'treatment'
+  | 'bird_count'
+  | 'weight'
+  | 'eggs'
+  | 'egg_metrics';
+
 interface WizardStep {
-  eventType: DailyRecordEventType;
+  kind: StepKind;
   label: string;
 }
 
 /**
  * Compute which event steps to show, in what order. Mirrors the
- * mobile figma's section ordering (feed → water → vaccination →
- * treatment → bird_count → weight → eggs for layers).
+ * mobile figma's section ordering: feed → water → vaccination →
+ * treatment → bird_count → bird weight → egg collection → egg
+ * size/weight (the last two layer-only).
  *
  * A step is included when ALL of:
  *   1. The user's `effectiveDailyRecord.<event>.include` is true
  *      (which already factors in the farm ceiling — see
  *      PreferenceSchema::effectiveDailyRecord on the backend).
- *   2. For `eggs`, the flock's production_type is 'layer' or 'mixed'.
+ *   2. For `eggs` and `egg_metrics`, the flock's production_type is
+ *      'layer' or 'mixed' — broilers never see them even with the
+ *      preference on (the farm ceiling enforces this server-side too).
  *
- * `bird_count` is always shown when the user has any of its sub-flags
- * (dead/culled/sold/lost) enabled — even one flag justifies the step.
+ * `bird_count` appears when any of its sub-flags (dead/culled/sold/
+ * lost) are on — even one justifies the step.
+ *
+ * `egg_metrics` is only shown when `eggs.include` is also on (because
+ * the size/weight payload piggy-backs on the eggs event, which
+ * requires payload.good).
  */
 function buildStepList(
   guidance: DailyRecordGuidance,
@@ -208,29 +267,43 @@ function buildStepList(
 ): WizardStep[] {
   const eff = prefs.effectiveDailyRecord;
   const type = guidance.flock.production_type;
+  const isLayerOrMixed = type === 'layer' || type === 'mixed';
 
   const steps: WizardStep[] = [];
 
-  if (eff.feed?.include) steps.push({ eventType: 'feed', label: 'Feed consumption' });
-  if (eff.water?.include) steps.push({ eventType: 'water', label: 'Water consumption' });
-  if (eff.vaccination?.include) steps.push({ eventType: 'vaccination', label: 'Vaccination' });
-  if (eff.treatment?.include) steps.push({ eventType: 'treatment', label: 'Treatment' });
+  if (eff.feed?.include)        steps.push({ kind: 'feed',        label: 'Feed consumption' });
+  if (eff.water?.include)       steps.push({ kind: 'water',       label: 'Water consumption' });
+  if (eff.vaccination?.include) steps.push({ kind: 'vaccination', label: 'Vaccination' });
+  if (eff.treatment?.include)   steps.push({ kind: 'treatment',   label: 'Treatment' });
 
   // Bird count appears when any of its sub-flags are on. The figma's
   // step shows all four sub-fields together, so we don't split them.
   const bc = eff.bird_count ?? {};
   if (bc.dead || bc.culled || bc.sold || bc.lost) {
-    steps.push({ eventType: 'bird_count', label: 'Bird count' });
+    steps.push({ kind: 'bird_count', label: 'Bird count' });
   }
 
-  if (eff.bird_weight?.include) steps.push({ eventType: 'weight', label: 'Bird weight' });
+  if (eff.bird_weight?.include) steps.push({ kind: 'weight', label: 'Bird weight' });
 
-  // Eggs only for layer / mixed flocks
-  if ((type === 'layer' || type === 'mixed') && eff.eggs?.include) {
-    steps.push({ eventType: 'eggs', label: 'Egg collection' });
+  // Layer-only steps. eggs.include gates BOTH collection and metrics
+  // because the metrics step's POST payload includes a `good` egg
+  // count from the buffered collection.
+  if (isLayerOrMixed && eff.eggs?.include) {
+    steps.push({ kind: 'eggs', label: 'Egg collection' });
+
+    const em = eff.egg_metrics ?? {};
+    if (em.track_size || em.track_weight) {
+      steps.push({ kind: 'egg_metrics', label: labelForEggMetrics(em) });
+    }
   }
 
   return steps;
+}
+
+function labelForEggMetrics(em: { track_size?: boolean; track_weight?: boolean }): string {
+  if (em.track_size && em.track_weight) return 'Egg size and weight';
+  if (em.track_size) return 'Egg size';
+  return 'Egg weight';
 }
 
 /* ================================================================== */
@@ -238,9 +311,8 @@ function buildStepList(
 /* ================================================================== */
 
 function StepPlaceholder({
-  eventType, label, stepIndex, stepCount, onBack, onCancel, onSkip, onContinue,
+  label, stepIndex, stepCount, onBack, onCancel, onSkip, onContinue,
 }: {
-  eventType: DailyRecordEventType;
   label: string;
   stepIndex: number;
   stepCount: number;
@@ -265,15 +337,11 @@ function StepPlaceholder({
       onContinue={onContinue}
     >
       <div className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-8 text-center">
-        <p className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
-          Phase 2
-        </p>
-        <h2 className="mt-1 text-[15px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+        <h2 className="text-[15px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
           {label}
         </h2>
         <p className="mt-1.5 text-[12px] leading-snug text-[var(--color-brand-muted)]">
-          The real form for <strong>{eventType}</strong> ships in Phase 2. For now, use
-          Continue or Skip to move through the wizard and verify the navigation flow.
+          This step has no form yet. Tap Continue or Skip to move on.
         </p>
       </div>
     </StepShell>
