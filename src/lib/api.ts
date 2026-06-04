@@ -236,6 +236,37 @@ export const endpoints = {
       api.patch(`/farms/${farmId}/members/${userId}`, payload),
     ),
 
+  /*
+   * Farm settings — applies to every member on the farm.
+   * Read requires settings.view; write requires settings.update.
+   * Owner & manager bypass both.
+   */
+  getFarmSettings: () =>
+    unwrap<{ settings: FarmSettingsDto }>(api.get('/farm-settings')),
+  updateFarmSettings: (payload: Partial<{
+    daily_record_preset: 'easy' | 'expert' | 'custom';
+    daily_record_config: Record<string, unknown>;
+    notification_config: Record<string, unknown>;
+  }>) =>
+    unwrap<{ settings: FarmSettingsDto }>(api.patch('/farm-settings', payload)),
+
+  /*
+   * My preferences — per-user, per-farm. Any active member can change
+   * their own. Backend deep-merges, so we always send minimal patches
+   * (just the field that changed). The response includes:
+   *   - dailyRecord            (my raw preferences)
+   *   - farmDailyRecord        (what the farm allows — the ceiling)
+   *   - effectiveDailyRecord   (the AND — what's actually applied)
+   */
+  getMyPreferences: () =>
+    unwrap<{ preferences: MyPreferencesDto }>(api.get('/my-farm-preferences')),
+  updateMyPreferences: (payload: Partial<{
+    preset: 'easy' | 'expert' | 'custom';
+    dashboard_config: Record<string, unknown>;
+    notification_overrides: Record<string, unknown> | null;
+  }>) =>
+    unwrap<{ preferences: MyPreferencesDto }>(api.patch('/my-farm-preferences', payload)),
+
   listInvites: () => unwrap<{ invites: StaffInviteDto[] }>(api.get('/staff-invites')),
 
   createInvite: (payload: {
@@ -473,6 +504,60 @@ export type HatcheryDto = {
   id: string;
   name: string;
   country?: string;
+};
+
+// ────────────── Preferences DTOs ──────────────
+
+/**
+ * Farm-level settings. Affects every member of the farm. Mutating
+ * requires settings.update; reading requires settings.view (both
+ * bypassed by owner/manager). The `dailyRecordConfig` is the HARD
+ * CEILING for what data the farm captures.
+ */
+export type FarmSettingsDto = {
+  id: string;
+  farmId: string;
+  dailyRecordPreset: 'easy' | 'expert' | 'custom';
+  dailyRecordConfig: Record<string, Record<string, boolean>>;
+  notificationConfig: Record<string, boolean>;
+  metadata?: Record<string, unknown> | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/**
+ * User-level preferences for the current user on the current farm.
+ * `dailyRecord` is what THE USER wants. `farmDailyRecord` is what the
+ * FARM allows (the ceiling). `effectiveDailyRecord` is the AND — what
+ * actually shows up in the UI. The backend already computes it so the
+ * client doesn't have to.
+ */
+export type MyPreferencesDto = {
+  id: string;
+  userId: string | number;
+  farmId: string;
+  viewMode: 'easy' | 'expert';
+  dailyRecordPreset: 'easy' | 'expert' | 'custom';
+  dailyRecord: DailyRecordPrefs;
+  farmDailyRecord: Record<string, Record<string, boolean>> | null;
+  effectiveDailyRecord: DailyRecordPrefs;
+  dashboard: { cards: Record<string, boolean> };
+  finance: { enabled: boolean };
+  notifications: Record<string, boolean>;
+  notificationOverrides?: Record<string, unknown> | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type DailyRecordPrefs = {
+  feed?: { include: boolean; twice_a_day?: boolean };
+  water?: { include: boolean; twice_a_day?: boolean };
+  vaccination?: { include: boolean; capture_dosage?: boolean };
+  treatment?: { include: boolean };
+  bird_weight?: { include: boolean; auto_average?: boolean };
+  bird_count?: { dead?: boolean; culled?: boolean; sold?: boolean; lost?: boolean };
+  eggs?: { include: boolean; twice_a_day?: boolean; track_damaged?: boolean };
+  egg_metrics?: { track_size?: boolean; track_weight?: boolean };
 };
 
 // ────────────── Team / staff-invites DTOs ──────────────

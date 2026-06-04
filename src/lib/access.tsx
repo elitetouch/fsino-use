@@ -86,7 +86,11 @@ export const ROUTE_ACCESS: Array<{ path: string; rule: AccessRule }> = [
 
   // Team + settings + billing
   { path: '/users',        rule: { perm: 'staff_manage.view' } },
-  { path: '/settings',     rule: { perm: 'settings.view' } },
+  // Settings page hosts BOTH farm-level settings AND personal
+  // preferences. Anyone with either permission can open the page —
+  // sections inside the page each have their own <Gate>, so a staff
+  // user without settings.view sees only the "My preferences" half.
+  { path: '/settings',     rule: { anyOf: ['settings.view', 'preferences.update'] } },
   { path: '/wallet',       rule: { openToMembers: true } },        // anyone can see the balance
   { path: '/subscription', rule: { perm: 'billing.manage' } },     // only billing-managers see purchases
 
