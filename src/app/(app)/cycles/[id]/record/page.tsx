@@ -7,6 +7,12 @@ import { Loader2 } from 'lucide-react';
 import { endpoints, type DailyRecordEventType, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
 import { DatePickerStep } from '@/components/record/date-picker-step';
+import { FeedStep } from '@/components/record/steps/feed-step';
+import { WaterStep } from '@/components/record/steps/water-step';
+import { VaccinationStep } from '@/components/record/steps/vaccination-step';
+import { TreatmentStep } from '@/components/record/steps/treatment-step';
+import { BirdCountStep } from '@/components/record/steps/bird-count-step';
+import { WeightStep } from '@/components/record/steps/weight-step';
 
 /**
  * Daily-record wizard for a single cycle.
@@ -125,21 +131,52 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
     return <FullPageSpinner />;
   }
 
-  // Phase 1 placeholder — each event step renders this until Phase 2
-  // wires up the real forms.
+  // ── Real event steps ──────────────────────────────────────────────
   const currentEvent = stepList[stepIdx - 1]!;
-  return (
-    <StepPlaceholder
-      eventType={currentEvent.eventType}
-      label={currentEvent.label}
-      stepIndex={stepIdx}
-      stepCount={stepList.length}
-      onBack={goBack}
-      onCancel={exit}
-      onSkip={goNext}
-      onContinue={goNext}
-    />
-  );
+  const isLast = stepIdx === stepList.length;
+  const sharedProps = {
+    flockId,
+    recordDate: selectedDate,
+    guidance: guidance.data,
+    prefs: prefs.data!.preferences,
+    stepIndex: stepIdx,
+    stepCount: stepList.length,
+    onBack: goBack,
+    onCancel: exit,
+    onContinue: goNext,
+    onSkip: goNext,
+  };
+
+  switch (currentEvent.eventType) {
+    case 'feed':
+      return <FeedStep {...sharedProps} />;
+    case 'water':
+      return <WaterStep {...sharedProps} />;
+    case 'vaccination':
+      return <VaccinationStep {...sharedProps} />;
+    case 'treatment':
+      return <TreatmentStep {...sharedProps} />;
+    case 'bird_count':
+      return <BirdCountStep {...sharedProps} />;
+    case 'weight':
+      return <WeightStep {...sharedProps} isLast={isLast} />;
+    default:
+      // Defensive — buildStepList only emits the 6 events above. If
+      // a future event_type sneaks in we render the placeholder so
+      // navigation isn't blocked.
+      return (
+        <StepPlaceholder
+          eventType={currentEvent.eventType}
+          label={currentEvent.label}
+          stepIndex={stepIdx}
+          stepCount={stepList.length}
+          onBack={goBack}
+          onCancel={exit}
+          onSkip={goNext}
+          onContinue={goNext}
+        />
+      );
+  }
 }
 
 /* ================================================================== */

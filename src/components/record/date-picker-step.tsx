@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { endpoints } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { StepShell, LearnMoreDrawer, LearnMoreHeading } from './wizard-shell';
 
 /**
