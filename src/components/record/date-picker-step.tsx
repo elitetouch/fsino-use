@@ -63,7 +63,11 @@ export function DatePickerStep({
 
   const recordedDates = useMemo(() => {
     const set = new Set<string>();
-    for (const d of calendar.data?.days ?? []) set.add(d.date);
+    // Normalise to YYYY-MM-DD so any legacy/cached responses with a
+    // time component still match the buildMonthGrid keys (see the
+    // orchestrator's equivalent slice). Belt-and-braces with the
+    // backend's own normalisation.
+    for (const d of calendar.data?.days ?? []) set.add(d.date.slice(0, 10));
     return set;
   }, [calendar.data]);
 

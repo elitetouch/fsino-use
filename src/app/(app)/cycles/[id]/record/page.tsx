@@ -83,7 +83,14 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   });
 
   const hasRecordsOnSelectedDate = useMemo(() => {
-    return !!calendar.data?.days.some((d) => d.date === selectedDate && d.recordCount > 0);
+    // Defensive normalisation — the backend now always returns
+    // YYYY-MM-DD, but historical clients may have cached responses
+    // with a different shape. Slice off any time component before
+    // the equality check so the calendar's green tint and the
+    // wizard's edit detection stay in sync.
+    return !!calendar.data?.days.some(
+      (d) => d.date.slice(0, 10) === selectedDate && d.recordCount > 0,
+    );
   }, [calendar.data, selectedDate]);
 
   // EDIT mode — when the picked date already has records, fetch them
@@ -92,6 +99,17 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   // of "log today's record").
   const dayRecords = useDailyRecordsForDate(flockId, selectedDate, hasRecordsOnSelectedDate);
   const existingRecords = dayRecords.data?.records ?? [];
+
+  // Are we waiting for the records query before we can mount a step?
+  // Each step uses a useState lazy initializer to pre-fill from the
+  // `existing` prop; that initializer runs once on mount. If we mount
+  // the step before the records arrive, the initializer locks in the
+  // empty default and the user sees an ADD-mode form even after the
+  // records load. So we hold the step at a spinner until we have
+  // them. The calendar tells us which days have data — we only block
+  // when that flag says "yes" for the selected day.
+  const editRecordsLoading = hasRecordsOnSelectedDate
+    && (dayRecords.isLoading || (!dayRecords.data && !dayRecords.isError));
 
   /* ------------------------------------------------------------------ */
   /*  Dynamic step list                                                 */
@@ -150,6 +168,14 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   // After the last event step, redirect back to the cycle detail.
   if (stepIdx > stepList.length) {
     router.replace(`/cycles/${flockId}?recorded=1`);
+    return <FullPageSpinner />;
+  }
+
+  // Hold the step at a spinner while we fetch the records that the
+  // step's useState lazy initialiser needs to pre-fill from. See the
+  // editRecordsLoading definition above for the race condition this
+  // prevents.
+  if (editRecordsLoading) {
     return <FullPageSpinner />;
   }
 

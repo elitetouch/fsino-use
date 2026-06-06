@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Bird, Warehouse, Wallet, TrendingUp, Plus, ClipboardList,
-  ArrowRight, Sparkles,
+  ArrowRight, Sparkles, CheckCircle2, Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
@@ -101,6 +101,16 @@ export default function HomePage() {
         )}
       </section>
 
+      {/* Today's record CTA — front-and-centre so consistent daily logging
+          is one tap away. Only renders when there's an active cycle to
+          log against. Adapts to "Edit" copy when today already has at
+          least one record. */}
+      {cycle && (
+        <Gate perm="flocks.records.create">
+          <TodayRecordCTA cycle={cycle} />
+        </Gate>
+      )}
+
       {/* Stat row */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={Bird}       label="Active birds" value={totalBirds.toLocaleString()}
@@ -173,6 +183,128 @@ export default function HomePage() {
       </section>
     </div>
   );
+}
+
+/**
+ * Today's-record hero card — the dashboard's most-clicked button.
+ *
+ * Goal: zero friction for the daily logging habit. The card is the
+ * first thing under the greeting; the right-side button is full-width
+ * on mobile; status copy reflects whether anything's been logged today
+ * so the user instantly knows whether they're adding or topping-up.
+ *
+ * Data: reads the per-month calendar query for the active cycle and
+ * checks whether today's date has any records. Defensive `.slice(0,10)`
+ * on the response date in case any legacy/cached calendar payload
+ * carries a time component.
+ */
+function TodayRecordCTA({ cycle }: { cycle: FlockDto }) {
+  const today = todayYmd();
+  const month = today.slice(0, 7);
+  const calendar = useQuery({
+    queryKey: ['daily-record-calendar', cycle.id, month],
+    queryFn: () => endpoints.getDailyRecordCalendar(cycle.id, month),
+    staleTime: 30_000,
+    enabled: !!cycle.id,
+  });
+
+  const todayEntry = calendar.data?.days.find(
+    (d) => d.date.slice(0, 10) === today,
+  );
+  const todayRecordCount = todayEntry?.recordCount ?? 0;
+  const todayHasRecord = todayRecordCount > 0;
+
+  return (
+    <section
+      className={
+        'flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5 ' +
+        (todayHasRecord
+          ? 'border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)]/40'
+          : 'border-[var(--color-brand-primary)] bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-white shadow-[0_10px_30px_-15px_rgba(15,80,30,0.40)]')
+      }
+    >
+      <span
+        className={
+          'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' +
+          (todayHasRecord
+            ? 'bg-[var(--color-brand-primary)] text-white'
+            : 'bg-white/20 text-white')
+        }
+      >
+        {todayHasRecord
+          ? <CheckCircle2 className="h-4.5 w-4.5" strokeWidth={2.4} />
+          : <ClipboardList className="h-4.5 w-4.5" strokeWidth={2.4} />}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p
+          className={
+            'text-[10.5px] font-bold uppercase tracking-[0.16em] ' +
+            (todayHasRecord ? 'text-[var(--color-brand-primary-deep)]' : 'text-white/80')
+          }
+        >
+          Today&rsquo;s record
+        </p>
+        <p
+          className={
+            'mt-0.5 text-[14px] font-bold tracking-tight ' +
+            (todayHasRecord ? 'text-[var(--color-brand-fg)]' : 'text-white')
+          }
+        >
+          {todayFullLabel()}
+          {' · '}
+          <span className={todayHasRecord ? 'text-[var(--color-brand-primary-deep)]' : 'text-white/90'}>
+            {todayHasRecord
+              ? `${todayRecordCount} ${todayRecordCount === 1 ? 'entry' : 'entries'} logged`
+              : 'Not yet logged'}
+          </span>
+        </p>
+        <p
+          className={
+            'mt-0.5 text-[11.5px] leading-snug ' +
+            (todayHasRecord ? 'text-[var(--color-brand-muted)]' : 'text-white/80')
+          }
+        >
+          {todayHasRecord
+            ? 'Open today’s entry to update feed, water, vaccinations or weight.'
+            : 'A daily log keeps FCR, mortality and margin trends accurate.'}
+        </p>
+      </div>
+
+      <div className="sm:shrink-0">
+        <Button
+          asChild
+          size="sm"
+          className={
+            'h-10 w-full sm:w-auto ' +
+            (todayHasRecord
+              ? ''
+              : 'bg-white text-[var(--color-brand-primary-deep)] hover:bg-white/95')
+          }
+          variant={todayHasRecord ? 'outline' : undefined}
+        >
+          <Link href={`/cycles/${cycle.id}/record`}>
+            {todayHasRecord
+              ? <><Pencil className="h-3.5 w-3.5" /> Edit today&rsquo;s record</>
+              : <><Plus className="h-3.5 w-3.5" /> Add today&rsquo;s record</>}
+          </Link>
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+/** Today as YYYY-MM-DD in the user's local timezone. */
+function todayYmd(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Long-form today label, e.g. "Wed, Jun 4". */
+function todayFullLabel(): string {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric',
+  });
 }
 
 function EmptyCycleNudge() {
