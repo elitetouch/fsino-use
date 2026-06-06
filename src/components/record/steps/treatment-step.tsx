@@ -11,6 +11,7 @@ import {
 import {
   Dropdown, FieldStack, FOCUS_INPUT, FOCUS_WRAPPER,
 } from '@/components/record/inputs';
+import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 import { cn } from '@/lib/utils';
 
 /**
@@ -48,11 +49,95 @@ const REASONS = [
 ] as const;
 type Reason = (typeof REASONS)[number]['value'];
 
-export function TreatmentStep({
+interface TreatmentStepProps {
+  flockId: string;
+  recordDate: string;
+  guidance: DailyRecordGuidance;
+  existingList: DailyRecordDto[];
+  stepIndex: number;
+  stepCount: number;
+  onBack: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+export function TreatmentStep(props: TreatmentStepProps) {
+  const choice = useEntryChoice(props.existingList);
+  if (choice.showPicker) {
+    return (
+      <TreatmentPickerView
+        {...props}
+        pickRecord={choice.pickRecord}
+        pickAddNew={choice.pickAddNew}
+      />
+    );
+  }
+  return (
+    <TreatmentForm
+      key={choice.formKey}
+      flockId={props.flockId}
+      recordDate={props.recordDate}
+      guidance={props.guidance}
+      existing={choice.existing}
+      onSwitchEntry={props.existingList.length >= 2 ? choice.goToPicker : undefined}
+      stepIndex={props.stepIndex}
+      stepCount={props.stepCount}
+      onBack={props.onBack}
+      onCancel={props.onCancel}
+      onContinue={props.onContinue}
+      onSkip={props.onSkip}
+    />
+  );
+}
+
+function TreatmentPickerView({
+  existingList, stepIndex, stepCount,
+  onBack, onCancel, onSkip,
+  pickRecord, pickAddNew,
+}: TreatmentStepProps & {
+  pickRecord: (r: DailyRecordDto) => void;
+  pickAddNew: () => void;
+}) {
+  return (
+    <StepShell
+      sectionIcon={<Stethoscope className="h-3.5 w-3.5" />}
+      sectionLabel="Treatment"
+      stepIndex={stepIndex}
+      stepCount={stepCount}
+      onBack={onBack}
+      onCancel={onCancel}
+      onSkip={onSkip}
+      onContinue={() => {}}
+      continueDisabled
+      continueLabel="Pick an entry above"
+    >
+      <EntryPicker
+        eventLabel="treatment"
+        entries={existingList}
+        summary={(r) => {
+          const p = (r.payload ?? {}) as Record<string, unknown>;
+          const type = typeof p.treatment_type === 'string' ? p.treatment_type : 'Treatment';
+          const birds = typeof p.birds_affected === 'number'
+            ? `${p.birds_affected.toLocaleString()} birds`
+            : '';
+          const reason = typeof p.reason === 'string' ? p.reason : '';
+          return [type, birds, reason].filter(Boolean).join(' · ');
+        }}
+        onSelect={pickRecord}
+        onAddAnother={pickAddNew}
+        totalLine={`${existingList.length} ${existingList.length === 1 ? 'treatment' : 'treatments'} logged today`}
+      />
+    </StepShell>
+  );
+}
+
+function TreatmentForm({
   flockId,
   recordDate,
   guidance,
   existing,
+  onSwitchEntry,
   stepIndex,
   stepCount,
   onBack,
@@ -64,6 +149,7 @@ export function TreatmentStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   existing?: DailyRecordDto;
+  onSwitchEntry?: () => void;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -181,6 +267,7 @@ export function TreatmentStep({
             <EditingBanner
               authorName={existing?.createdByUser?.name}
               loggedAt={existing?.occurredAt}
+              onSwitchEntry={onSwitchEntry}
             />
           )}
 

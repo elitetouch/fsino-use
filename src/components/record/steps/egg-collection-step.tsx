@@ -11,6 +11,7 @@ import {
   YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { Dropdown, FieldStack } from '@/components/record/inputs';
+import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 
 /**
  * Step 7 — Egg collection.
@@ -67,12 +68,112 @@ export interface EggCollectionData {
   moment: Moment;
 }
 
-export function EggCollectionStep({
+interface EggCollectionStepProps {
+  flockId: string;
+  recordDate: string;
+  guidance: DailyRecordGuidance;
+  prefs: MyPreferencesDto;
+  existingList: DailyRecordDto[];
+  postDirectly: boolean;
+  onCollect: (data: EggCollectionData | null) => void;
+  stepIndex: number;
+  stepCount: number;
+  isLast: boolean;
+  onBack: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+export function EggCollectionStep(props: EggCollectionStepProps) {
+  const choice = useEntryChoice(props.existingList);
+  if (choice.showPicker) {
+    return (
+      <EggCollectionPickerView
+        {...props}
+        pickRecord={choice.pickRecord}
+        pickAddNew={choice.pickAddNew}
+      />
+    );
+  }
+  return (
+    <EggCollectionForm
+      key={choice.formKey}
+      flockId={props.flockId}
+      recordDate={props.recordDate}
+      guidance={props.guidance}
+      prefs={props.prefs}
+      existing={choice.existing}
+      onSwitchEntry={props.existingList.length >= 2 ? choice.goToPicker : undefined}
+      postDirectly={props.postDirectly}
+      onCollect={props.onCollect}
+      stepIndex={props.stepIndex}
+      stepCount={props.stepCount}
+      isLast={props.isLast}
+      onBack={props.onBack}
+      onCancel={props.onCancel}
+      onContinue={props.onContinue}
+      onSkip={props.onSkip}
+    />
+  );
+}
+
+function EggCollectionPickerView({
+  existingList, stepIndex, stepCount,
+  onBack, onCancel, onSkip,
+  pickRecord, pickAddNew,
+}: EggCollectionStepProps & {
+  pickRecord: (r: DailyRecordDto) => void;
+  pickAddNew: () => void;
+}) {
+  // Sum good + bad eggs across all entries.
+  const dayTotalEggs = existingList.reduce((s, r) => {
+    const p = (r.payload ?? {}) as Record<string, unknown>;
+    const good = typeof p.good === 'number' ? p.good : 0;
+    const bad = typeof p.bad === 'number' ? p.bad : 0;
+    return s + good + bad;
+  }, 0);
+  const dayCrates = dayTotalEggs / CRATE_SIZE;
+  return (
+    <StepShell
+      sectionIcon={<Egg className="h-3.5 w-3.5" />}
+      sectionLabel="Egg collection"
+      stepIndex={stepIndex}
+      stepCount={stepCount}
+      onBack={onBack}
+      onCancel={onCancel}
+      onSkip={onSkip}
+      onContinue={() => {}}
+      continueDisabled
+      continueLabel="Pick an entry above"
+    >
+      <EntryPicker
+        eventLabel="egg collection"
+        entries={existingList}
+        summary={(r) => {
+          const p = (r.payload ?? {}) as Record<string, unknown>;
+          const good = typeof p.good === 'number' ? p.good : 0;
+          const bad = typeof p.bad === 'number' ? p.bad : 0;
+          const total = good + bad;
+          const crates = total / CRATE_SIZE;
+          const damaged = bad > 0 ? ` (${bad} damaged)` : '';
+          return `${total} eggs · ${crates.toFixed(1)} crates${damaged}`;
+        }}
+        onSelect={pickRecord}
+        onAddAnother={pickAddNew}
+        totalLine={`Today total: ${dayTotalEggs.toLocaleString()} eggs · ${dayCrates.toFixed(1)} crates across ${existingList.length} entries`}
+      />
+    </StepShell>
+  );
+}
+
+function EggCollectionForm({
   flockId,
   recordDate,
   guidance,
   prefs,
   existing,
+  onSwitchEntry,
   postDirectly,
   onCollect,
   stepIndex,
@@ -88,13 +189,11 @@ export function EggCollectionStep({
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
   existing?: DailyRecordDto;
-  /** True when no egg_metrics step follows — POST happens here. */
+  onSwitchEntry?: () => void;
   postDirectly: boolean;
-  /** Called when the user advances with valid data (only used in stash mode). */
   onCollect: (data: EggCollectionData | null) => void;
   stepIndex: number;
   stepCount: number;
-  /** Drives the CTA copy when this happens to be the last step. */
   isLast: boolean;
   onBack: () => void;
   onCancel: () => void;
@@ -239,6 +338,7 @@ export function EggCollectionStep({
             <EditingBanner
               authorName={existing?.createdByUser?.name}
               loggedAt={existing?.occurredAt}
+              onSwitchEntry={onSwitchEntry}
             />
           )}
 

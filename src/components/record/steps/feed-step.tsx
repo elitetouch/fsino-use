@@ -13,6 +13,7 @@ import {
 import {
   PillTiles, Dropdown, FieldStack, FOCUS_INPUT,
 } from '@/components/record/inputs';
+import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 
 /**
  * Step 1 — Feed consumption.
@@ -75,15 +76,131 @@ const FEED_BRANDS = [
 type FeedBrand = (typeof FEED_BRANDS)[number]['value'];
 
 /* ================================================================== */
-/*  Component                                                          */
+/*  FeedStep — picker/form router                                       */
 /* ================================================================== */
 
-export function FeedStep({
+interface FeedStepProps {
+  flockId: string;
+  recordDate: string;
+  guidance: DailyRecordGuidance;
+  prefs: MyPreferencesDto;
+  /** Every feed row for the day. 0 → add, 1 → edit, 2+ → picker. */
+  existingList: DailyRecordDto[];
+  stepIndex: number;
+  stepCount: number;
+  onBack: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+/**
+ * Public step component.
+ *
+ * Routes between the EntryPicker (when the day has 2+ feed rows) and
+ * the actual feed form (FeedForm) for whichever choice the user made.
+ * The form's React `key` is bumped on each transition so its lazy
+ * useState initialisers re-run against the new `existing` value.
+ */
+export function FeedStep(props: FeedStepProps) {
+  const choice = useEntryChoice(props.existingList);
+
+  if (choice.showPicker) {
+    return (
+      <FeedPickerView
+        {...props}
+        pickRecord={choice.pickRecord}
+        pickAddNew={choice.pickAddNew}
+      />
+    );
+  }
+
+  return (
+    <FeedForm
+      key={choice.formKey}
+      flockId={props.flockId}
+      recordDate={props.recordDate}
+      guidance={props.guidance}
+      prefs={props.prefs}
+      existing={choice.existing}
+      onSwitchEntry={props.existingList.length >= 2 ? choice.goToPicker : undefined}
+      stepIndex={props.stepIndex}
+      stepCount={props.stepCount}
+      onBack={props.onBack}
+      onCancel={props.onCancel}
+      onContinue={props.onContinue}
+      onSkip={props.onSkip}
+    />
+  );
+}
+
+/* ================================================================== */
+/*  Picker view                                                        */
+/* ================================================================== */
+
+function FeedPickerView({
+  existingList, stepIndex, stepCount,
+  onBack, onCancel, onSkip,
+  pickRecord, pickAddNew,
+}: FeedStepProps & {
+  pickRecord: (r: DailyRecordDto) => void;
+  pickAddNew: () => void;
+}) {
+  // Sum quantities for the day total. Unit is taken from the most-
+  // common unit (all entries are usually the same — kg or bags — so
+  // this is just a defensive fallback).
+  const total = existingList.reduce((s, r) => s + Number(r.quantity ?? 0), 0);
+  const unit = existingList[0]?.unit ?? 'kg';
+
+  return (
+    <StepShell
+      sectionIcon={<Wheat className="h-3.5 w-3.5" />}
+      sectionLabel="Feed consumption"
+      stepIndex={stepIndex}
+      stepCount={stepCount}
+      onBack={onBack}
+      onCancel={onCancel}
+      onSkip={onSkip}
+      onContinue={() => {/* the picker uses internal buttons, hide CTA */}}
+      continueDisabled
+      continueLabel="Pick an entry above"
+    >
+      <EntryPicker
+        eventLabel="feed entry"
+        entries={existingList}
+        summary={(r) => summariseFeed(r)}
+        onSelect={pickRecord}
+        onAddAnother={pickAddNew}
+        totalLine={`Today total: ${fmtNumber(total)} ${unit} across ${existingList.length} entries`}
+      />
+    </StepShell>
+  );
+}
+
+function summariseFeed(r: DailyRecordDto): string {
+  const bits: string[] = [];
+  if (r.quantity != null) bits.push(`${fmtNumber(Number(r.quantity))} ${r.unit ?? ''}`.trim());
+  if (r.itemType) bits.push(String(r.itemType));
+  if (r.itemBrand) bits.push(String(r.itemBrand));
+  return bits.join(' · ') || 'No quantity recorded';
+}
+
+function fmtNumber(n: number): string {
+  if (Number.isInteger(n)) return n.toLocaleString();
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+/* ================================================================== */
+/*  Form body — the actual feed form (was the original FeedStep)        */
+/* ================================================================== */
+
+function FeedForm({
   flockId,
   recordDate,
   guidance,
   prefs,
   existing,
+  onSwitchEntry,
   stepIndex,
   stepCount,
   onBack,
@@ -97,6 +214,8 @@ export function FeedStep({
   prefs: MyPreferencesDto;
   /** When present, the wizard is in EDIT mode for this row. */
   existing?: DailyRecordDto;
+  /** Back-to-picker link, only when there are 2+ entries to pick from. */
+  onSwitchEntry?: () => void;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -216,6 +335,7 @@ export function FeedStep({
             <EditingBanner
               authorName={existing?.createdByUser?.name}
               loggedAt={existing?.occurredAt}
+              onSwitchEntry={onSwitchEntry}
             />
           )}
 

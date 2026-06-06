@@ -362,20 +362,41 @@ export function AnomalyWarning({ children }: { children: React.ReactNode }) {
 export function EditingBanner({
   authorName,
   loggedAt,
+  onSwitchEntry,
 }: {
   authorName?: string | null;
   loggedAt?: string | null;
+  /**
+   * If supplied, render a "Pick a different entry" link. Used when
+   * the day has 2+ matching entries — the step's EntryPicker selected
+   * one to edit, and this lets the user go back and pick a different
+   * row without leaving the wizard.
+   */
+  onSwitchEntry?: () => void;
 }) {
   return (
     <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)]/30 px-3.5 py-3 text-[12px] leading-snug text-[var(--color-brand-primary-deep)]">
-      <p className="font-bold">Editing this day&rsquo;s record</p>
-      <p className="mt-0.5 text-[var(--color-brand-fg-soft)]">
-        Your edits will overwrite the existing entry
-        {authorName ? <> originally logged by <strong>{authorName}</strong></> : null}
-        {loggedAt ? <> on <strong>{fmtShortTime(loggedAt)}</strong></> : null}
-        . The day, event type and bird counts cannot be changed; log a
-        fresh entry to correct those.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-bold">Editing this entry</p>
+          <p className="mt-0.5 text-[var(--color-brand-fg-soft)]">
+            Your edits will overwrite this entry only
+            {authorName ? <> &mdash; originally logged by <strong>{authorName}</strong></> : null}
+            {loggedAt ? <> at <strong>{fmtShortTime(loggedAt)}</strong></> : null}
+            . The day, event type and bird counts cannot be changed; log a
+            fresh entry to correct those.
+          </p>
+        </div>
+        {onSwitchEntry && (
+          <button
+            type="button"
+            onClick={onSwitchEntry}
+            className="shrink-0 text-[11.5px] font-bold tracking-tight text-[var(--color-brand-primary-deep)] underline-offset-2 hover:underline"
+          >
+            Pick a different entry
+          </button>
+        )}
+      </div>
     </div>
   );
 }

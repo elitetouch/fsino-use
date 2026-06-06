@@ -11,6 +11,7 @@ import {
   YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { Dropdown, FieldStack, FOCUS_INPUT } from '@/components/record/inputs';
+import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 
 /**
  * Step 3 — Vaccination.
@@ -40,11 +41,92 @@ const VACCINES = [
 ] as const;
 type Vaccine = (typeof VACCINES)[number]['value'];
 
-export function VaccinationStep({
+interface VaccinationStepProps {
+  flockId: string;
+  recordDate: string;
+  guidance: DailyRecordGuidance;
+  existingList: DailyRecordDto[];
+  stepIndex: number;
+  stepCount: number;
+  onBack: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+export function VaccinationStep(props: VaccinationStepProps) {
+  const choice = useEntryChoice(props.existingList);
+  if (choice.showPicker) {
+    return (
+      <VaccinationPickerView
+        {...props}
+        pickRecord={choice.pickRecord}
+        pickAddNew={choice.pickAddNew}
+      />
+    );
+  }
+  return (
+    <VaccinationForm
+      key={choice.formKey}
+      flockId={props.flockId}
+      recordDate={props.recordDate}
+      guidance={props.guidance}
+      existing={choice.existing}
+      onSwitchEntry={props.existingList.length >= 2 ? choice.goToPicker : undefined}
+      stepIndex={props.stepIndex}
+      stepCount={props.stepCount}
+      onBack={props.onBack}
+      onCancel={props.onCancel}
+      onContinue={props.onContinue}
+      onSkip={props.onSkip}
+    />
+  );
+}
+
+function VaccinationPickerView({
+  existingList, stepIndex, stepCount,
+  onBack, onCancel, onSkip,
+  pickRecord, pickAddNew,
+}: VaccinationStepProps & {
+  pickRecord: (r: DailyRecordDto) => void;
+  pickAddNew: () => void;
+}) {
+  return (
+    <StepShell
+      sectionIcon={<Syringe className="h-3.5 w-3.5" />}
+      sectionLabel="Vaccination"
+      stepIndex={stepIndex}
+      stepCount={stepCount}
+      onBack={onBack}
+      onCancel={onCancel}
+      onSkip={onSkip}
+      onContinue={() => {}}
+      continueDisabled
+      continueLabel="Pick an entry above"
+    >
+      <EntryPicker
+        eventLabel="vaccination"
+        entries={existingList}
+        summary={(r) => {
+          const p = (r.payload ?? {}) as Record<string, unknown>;
+          const vname = typeof p.vaccine_name === 'string' ? p.vaccine_name : 'Unknown vaccine';
+          const dose = r.quantity != null ? ` · ${r.quantity} ml` : '';
+          return `${vname}${dose}`;
+        }}
+        onSelect={pickRecord}
+        onAddAnother={pickAddNew}
+        totalLine={`${existingList.length} ${existingList.length === 1 ? 'vaccination' : 'vaccinations'} logged today`}
+      />
+    </StepShell>
+  );
+}
+
+function VaccinationForm({
   flockId,
   recordDate,
   guidance,
   existing,
+  onSwitchEntry,
   stepIndex,
   stepCount,
   onBack,
@@ -56,6 +138,7 @@ export function VaccinationStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   existing?: DailyRecordDto;
+  onSwitchEntry?: () => void;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -172,6 +255,7 @@ export function VaccinationStep({
             <EditingBanner
               authorName={existing?.createdByUser?.name}
               loggedAt={existing?.occurredAt}
+              onSwitchEntry={onSwitchEntry}
             />
           )}
 

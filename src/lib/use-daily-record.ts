@@ -73,10 +73,12 @@ export function useDailyRecordsForDate(flockId: string, date: string, enabled = 
 
 /**
  * Pick the most-recent record for a given event_type from the list.
- * In edit mode, each step asks for "the row that matches me" — if
- * the user logged feed twice on the same day (morning + evening),
- * the most recent one wins for pre-fill purposes. The figma's edit
- * flow assumes a single representative row per event per day.
+ *
+ * Retained for the cases where only one row makes semantic sense
+ * (the egg_metrics synthetic step always reads "the eggs row for
+ * this day"). For everything else prefer `pickAllRecords` and let
+ * the step's EntryPicker make the ambiguity explicit when there
+ * are 2+ rows.
  */
 export function pickRecord(
   records: DailyRecordDto[] | undefined,
@@ -86,6 +88,26 @@ export function pickRecord(
   return records
     .filter((r) => r.eventType === eventType)
     .sort((a, b) => (b.occurredAt ?? '').localeCompare(a.occurredAt ?? ''))[0];
+}
+
+/**
+ * Pull every record of a given event_type from the day's list.
+ *
+ * Used by the edit-mode picker: when the day has 2+ feed rows logged
+ * by different staff, we hand the array to the FeedStep which shows
+ * an EntryPicker rather than silently overwriting the most-recent
+ * one. Returned sorted oldest-first (chronological); the picker
+ * renders that order to match the mental picture of "morning →
+ * midday → afternoon → evening".
+ */
+export function pickAllRecords(
+  records: DailyRecordDto[] | undefined,
+  eventType: DailyRecordDto['eventType'],
+): DailyRecordDto[] {
+  if (!records || records.length === 0) return [];
+  return records
+    .filter((r) => r.eventType === eventType)
+    .sort((a, b) => (a.occurredAt ?? '').localeCompare(b.occurredAt ?? ''));
 }
 
 /**

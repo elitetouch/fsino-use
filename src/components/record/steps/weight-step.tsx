@@ -11,6 +11,7 @@ import {
   YesNoPills, EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { FieldStack, FOCUS_WRAPPER } from '@/components/record/inputs';
+import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 import { cn } from '@/lib/utils';
 
 /**
@@ -38,12 +39,95 @@ import { cn } from '@/lib/utils';
  * supports a custom continueLabel.
  */
 
-export function WeightStep({
+interface WeightStepProps {
+  flockId: string;
+  recordDate: string;
+  guidance: DailyRecordGuidance;
+  prefs: MyPreferencesDto;
+  existingList: DailyRecordDto[];
+  stepIndex: number;
+  stepCount: number;
+  isLast: boolean;
+  onBack: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+export function WeightStep(props: WeightStepProps) {
+  const choice = useEntryChoice(props.existingList);
+  if (choice.showPicker) {
+    return (
+      <WeightPickerView
+        {...props}
+        pickRecord={choice.pickRecord}
+        pickAddNew={choice.pickAddNew}
+      />
+    );
+  }
+  return (
+    <WeightForm
+      key={choice.formKey}
+      flockId={props.flockId}
+      recordDate={props.recordDate}
+      guidance={props.guidance}
+      prefs={props.prefs}
+      existing={choice.existing}
+      onSwitchEntry={props.existingList.length >= 2 ? choice.goToPicker : undefined}
+      stepIndex={props.stepIndex}
+      stepCount={props.stepCount}
+      isLast={props.isLast}
+      onBack={props.onBack}
+      onCancel={props.onCancel}
+      onContinue={props.onContinue}
+      onSkip={props.onSkip}
+    />
+  );
+}
+
+function WeightPickerView({
+  existingList, stepIndex, stepCount,
+  onBack, onCancel, onSkip,
+  pickRecord, pickAddNew,
+}: WeightStepProps & {
+  pickRecord: (r: DailyRecordDto) => void;
+  pickAddNew: () => void;
+}) {
+  return (
+    <StepShell
+      sectionIcon={<Scale className="h-3.5 w-3.5" />}
+      sectionLabel="Bird weight"
+      stepIndex={stepIndex}
+      stepCount={stepCount}
+      onBack={onBack}
+      onCancel={onCancel}
+      onSkip={onSkip}
+      onContinue={() => {}}
+      continueDisabled
+      continueLabel="Pick an entry above"
+    >
+      <EntryPicker
+        eventLabel="weighing"
+        entries={existingList}
+        summary={(r) => {
+          if (r.quantity == null) return 'No weight recorded';
+          return `${Number(r.quantity).toFixed(2)} kg average`;
+        }}
+        onSelect={pickRecord}
+        onAddAnother={pickAddNew}
+        totalLine={`${existingList.length} ${existingList.length === 1 ? 'weighing' : 'weighings'} logged today`}
+      />
+    </StepShell>
+  );
+}
+
+function WeightForm({
   flockId,
   recordDate,
   guidance,
   prefs,
   existing,
+  onSwitchEntry,
   stepIndex,
   stepCount,
   isLast,
@@ -57,9 +141,9 @@ export function WeightStep({
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
   existing?: DailyRecordDto;
+  onSwitchEntry?: () => void;
   stepIndex: number;
   stepCount: number;
-  /** True when this is the final step in the wizard — drives the CTA copy. */
   isLast: boolean;
   onBack: () => void;
   onCancel: () => void;
@@ -188,6 +272,7 @@ export function WeightStep({
             <EditingBanner
               authorName={existing?.createdByUser?.name}
               loggedAt={existing?.occurredAt}
+              onSwitchEntry={onSwitchEntry}
             />
           )}
 

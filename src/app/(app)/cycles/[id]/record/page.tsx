@@ -4,9 +4,9 @@ import { use, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { endpoints, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
+import { endpoints, type DailyRecordDto, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
-import { useDailyRecordsForDate, pickRecord } from '@/lib/use-daily-record';
+import { useDailyRecordsForDate, pickRecord, pickAllRecords } from '@/lib/use-daily-record';
 import { DatePickerStep } from '@/components/record/date-picker-step';
 import { FeedStep } from '@/components/record/steps/feed-step';
 import { WaterStep } from '@/components/record/steps/water-step';
@@ -200,53 +200,61 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   const nextKind = stepList[stepIdx]?.kind;
   const eggsHasFollowUp = nextKind === 'egg_metrics';
 
-  // Each step asks for "the row that matches my event_type". For the
-  // synthetic egg_metrics step, the matching backend row is also
-  // event_type=eggs (size/weight is just extra payload on the same
-  // event), so we hand it the same record.
-  const existingFor = (kind: StepKind) => {
+  // Each step gets ALL matching records for its event_type so it can
+  // decide between three branches:
+  //   0 rows → ADD mode (fresh empty form)
+  //   1 row  → EDIT pre-filled (no ambiguity)
+  //   2+ rows → EntryPicker first, then edit-or-add per selection
+  //
+  // The synthetic egg_metrics step reads the eggs rows because
+  // size/weight is extra payload on the same backend event_type.
+  // For now we still pickRecord() there — eggs is one row per day
+  // per moment, the figma assumes a single representative row.
+  const existingListFor = (kind: StepKind): DailyRecordDto[] => {
     switch (kind) {
-      case 'feed':        return pickRecord(existingRecords, 'feed');
-      case 'water':       return pickRecord(existingRecords, 'water');
-      case 'vaccination': return pickRecord(existingRecords, 'vaccination');
-      case 'treatment':   return pickRecord(existingRecords, 'treatment');
-      case 'bird_count':  return pickRecord(existingRecords, 'bird_count');
-      case 'weight':      return pickRecord(existingRecords, 'weight');
-      case 'eggs':        return pickRecord(existingRecords, 'eggs');
-      case 'egg_metrics': return pickRecord(existingRecords, 'eggs');
-      default:            return undefined;
+      case 'feed':        return pickAllRecords(existingRecords, 'feed');
+      case 'water':       return pickAllRecords(existingRecords, 'water');
+      case 'vaccination': return pickAllRecords(existingRecords, 'vaccination');
+      case 'treatment':   return pickAllRecords(existingRecords, 'treatment');
+      case 'bird_count':  return pickAllRecords(existingRecords, 'bird_count');
+      case 'weight':      return pickAllRecords(existingRecords, 'weight');
+      case 'eggs':        return pickAllRecords(existingRecords, 'eggs');
+      case 'egg_metrics': return pickAllRecords(existingRecords, 'eggs');
+      default:            return [];
     }
   };
-  const existing = existingFor(currentStep.kind);
+  const existingList = existingListFor(currentStep.kind);
 
   switch (currentStep.kind) {
     case 'feed':
-      return <FeedStep {...sharedProps} existing={existing} />;
+      return <FeedStep {...sharedProps} existingList={existingList} />;
     case 'water':
-      return <WaterStep {...sharedProps} existing={existing} />;
+      return <WaterStep {...sharedProps} existingList={existingList} />;
     case 'vaccination':
-      return <VaccinationStep {...sharedProps} existing={existing} />;
+      return <VaccinationStep {...sharedProps} existingList={existingList} />;
     case 'treatment':
-      return <TreatmentStep {...sharedProps} existing={existing} />;
+      return <TreatmentStep {...sharedProps} existingList={existingList} />;
     case 'bird_count':
-      return <BirdCountStep {...sharedProps} existing={existing} />;
+      return <BirdCountStep {...sharedProps} existingList={existingList} />;
     case 'weight':
-      return <WeightStep {...sharedProps} existing={existing} isLast={isLast} />;
+      return <WeightStep {...sharedProps} existingList={existingList} isLast={isLast} />;
     case 'eggs':
       return (
         <EggCollectionStep
           {...sharedProps}
-          existing={existing}
+          existingList={existingList}
           postDirectly={!eggsHasFollowUp}
           onCollect={setEggsBuffer}
           isLast={isLast}
         />
       );
     case 'egg_metrics':
+      // egg_metrics still uses the single-record path — the day has
+      // at most one canonical eggs row to attach size/weight to.
       return (
         <EggSizeWeightStep
           {...sharedProps}
-          existing={existing}
+          existing={pickRecord(existingRecords, 'eggs')}
           pendingCollection={eggsBuffer}
           isLast={isLast}
         />

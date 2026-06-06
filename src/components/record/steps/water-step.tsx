@@ -11,6 +11,7 @@ import {
   EditingBanner, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { Dropdown, FieldStack } from '@/components/record/inputs';
+import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 
 /**
  * Step 2 — Water consumption.
@@ -30,12 +31,102 @@ const MOMENTS = [
 ] as const;
 type Moment = (typeof MOMENTS)[number]['value'];
 
-export function WaterStep({
+interface WaterStepProps {
+  flockId: string;
+  recordDate: string;
+  guidance: DailyRecordGuidance;
+  prefs: MyPreferencesDto;
+  existingList: DailyRecordDto[];
+  stepIndex: number;
+  stepCount: number;
+  onBack: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+/** Picker/form router — see feed-step.tsx for the pattern's rationale. */
+export function WaterStep(props: WaterStepProps) {
+  const choice = useEntryChoice(props.existingList);
+  if (choice.showPicker) {
+    return (
+      <WaterPickerView
+        {...props}
+        pickRecord={choice.pickRecord}
+        pickAddNew={choice.pickAddNew}
+      />
+    );
+  }
+  return (
+    <WaterForm
+      key={choice.formKey}
+      flockId={props.flockId}
+      recordDate={props.recordDate}
+      guidance={props.guidance}
+      prefs={props.prefs}
+      existing={choice.existing}
+      onSwitchEntry={props.existingList.length >= 2 ? choice.goToPicker : undefined}
+      stepIndex={props.stepIndex}
+      stepCount={props.stepCount}
+      onBack={props.onBack}
+      onCancel={props.onCancel}
+      onContinue={props.onContinue}
+      onSkip={props.onSkip}
+    />
+  );
+}
+
+function WaterPickerView({
+  existingList, stepIndex, stepCount,
+  onBack, onCancel, onSkip,
+  pickRecord, pickAddNew,
+}: WaterStepProps & {
+  pickRecord: (r: DailyRecordDto) => void;
+  pickAddNew: () => void;
+}) {
+  const total = existingList.reduce((s, r) => s + Number(r.quantity ?? 0), 0);
+  return (
+    <StepShell
+      sectionIcon={<Droplet className="h-3.5 w-3.5" />}
+      sectionLabel="Water consumption"
+      stepIndex={stepIndex}
+      stepCount={stepCount}
+      onBack={onBack}
+      onCancel={onCancel}
+      onSkip={onSkip}
+      onContinue={() => {}}
+      continueDisabled
+      continueLabel="Pick an entry above"
+    >
+      <EntryPicker
+        eventLabel="water entry"
+        entries={existingList}
+        summary={(r) => {
+          const bits: string[] = [];
+          if (r.quantity != null) bits.push(`${fmtNumber(Number(r.quantity))} ${r.unit ?? 'liters'}`);
+          if (r.moment) bits.push(String(r.moment).replace('_', ' '));
+          return bits.join(' · ') || 'No quantity recorded';
+        }}
+        onSelect={pickRecord}
+        onAddAnother={pickAddNew}
+        totalLine={`Today total: ${fmtNumber(total)} liters across ${existingList.length} entries`}
+      />
+    </StepShell>
+  );
+}
+
+function fmtNumber(n: number): string {
+  if (Number.isInteger(n)) return n.toLocaleString();
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function WaterForm({
   flockId,
   recordDate,
   guidance,
   prefs,
   existing,
+  onSwitchEntry,
   stepIndex,
   stepCount,
   onBack,
@@ -48,6 +139,7 @@ export function WaterStep({
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
   existing?: DailyRecordDto;
+  onSwitchEntry?: () => void;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -130,6 +222,7 @@ export function WaterStep({
             <EditingBanner
               authorName={existing?.createdByUser?.name}
               loggedAt={existing?.occurredAt}
+              onSwitchEntry={onSwitchEntry}
             />
           )}
 

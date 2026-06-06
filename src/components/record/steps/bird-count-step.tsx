@@ -9,6 +9,7 @@ import {
   YesNoPills, LearnMoreDrawer, LearnMoreHeading,
 } from '@/components/record/wizard-shell';
 import { FieldStack, FOCUS_WRAPPER } from '@/components/record/inputs';
+import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 import { cn } from '@/lib/utils';
 
 /**
@@ -45,12 +46,110 @@ const FIELDS: Array<{
   { key: 'lost',   label: 'Lost',   desc: 'Enter how many birds were lost', prefKey: 'lost' },
 ];
 
-export function BirdCountStep({
+interface BirdCountStepProps {
+  flockId: string;
+  recordDate: string;
+  guidance: DailyRecordGuidance;
+  prefs: MyPreferencesDto;
+  existingList: DailyRecordDto[];
+  stepIndex: number;
+  stepCount: number;
+  onBack: () => void;
+  onCancel: () => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+export function BirdCountStep(props: BirdCountStepProps) {
+  const choice = useEntryChoice(props.existingList);
+  if (choice.showPicker) {
+    return (
+      <BirdCountPickerView
+        {...props}
+        pickRecord={choice.pickRecord}
+        pickAddNew={choice.pickAddNew}
+      />
+    );
+  }
+  return (
+    <BirdCountForm
+      key={choice.formKey}
+      flockId={props.flockId}
+      recordDate={props.recordDate}
+      guidance={props.guidance}
+      prefs={props.prefs}
+      existing={choice.existing}
+      onSwitchEntry={props.existingList.length >= 2 ? choice.goToPicker : undefined}
+      stepIndex={props.stepIndex}
+      stepCount={props.stepCount}
+      onBack={props.onBack}
+      onCancel={props.onCancel}
+      onContinue={props.onContinue}
+      onSkip={props.onSkip}
+    />
+  );
+}
+
+function BirdCountPickerView({
+  existingList, stepIndex, stepCount,
+  onBack, onCancel, onSkip,
+  pickRecord, pickAddNew,
+}: BirdCountStepProps & {
+  pickRecord: (r: DailyRecordDto) => void;
+  pickAddNew: () => void;
+}) {
+  // Sum of every entry's totalOut — gives the user a sense of the
+  // day's total reduction across all rows.
+  const dayTotalOut = existingList.reduce((s, r) => {
+    const p = (r.payload ?? {}) as Record<string, unknown>;
+    return s + readCount(p, 'sold') + readCount(p, 'dead')
+      + readCount(p, 'culled') + readCount(p, 'lost');
+  }, 0);
+  return (
+    <StepShell
+      sectionIcon={<Bird className="h-3.5 w-3.5" />}
+      sectionLabel="Bird count"
+      stepIndex={stepIndex}
+      stepCount={stepCount}
+      onBack={onBack}
+      onCancel={onCancel}
+      onSkip={onSkip}
+      onContinue={() => {}}
+      continueDisabled
+      continueLabel="Pick an entry above"
+    >
+      <EntryPicker
+        eventLabel="bird-count entry"
+        entries={existingList}
+        summary={(r) => {
+          const p = (r.payload ?? {}) as Record<string, unknown>;
+          const sold = readCount(p, 'sold');
+          const dead = readCount(p, 'dead');
+          const culled = readCount(p, 'culled');
+          const lost = readCount(p, 'lost');
+          const out = sold + dead + culled + lost;
+          const bits: string[] = [];
+          if (sold > 0) bits.push(`${sold} sold`);
+          if (dead > 0) bits.push(`${dead} dead`);
+          if (culled > 0) bits.push(`${culled} culled`);
+          if (lost > 0) bits.push(`${lost} lost`);
+          return bits.length > 0 ? `${out} total · ${bits.join(', ')}` : 'No reductions';
+        }}
+        onSelect={pickRecord}
+        onAddAnother={pickAddNew}
+        totalLine={`Today's total reductions: ${dayTotalOut.toLocaleString()} birds across ${existingList.length} entries`}
+      />
+    </StepShell>
+  );
+}
+
+function BirdCountForm({
   flockId,
   recordDate,
   guidance,
   prefs,
   existing,
+  onSwitchEntry,
   stepIndex,
   stepCount,
   onBack,
@@ -62,15 +161,8 @@ export function BirdCountStep({
   recordDate: string;
   guidance: DailyRecordGuidance;
   prefs: MyPreferencesDto;
-  /**
-   * When present, the day already has a bird_count row. The backend
-   * freezes bird-count payload counts on PATCH (the running
-   * current_birds tally would otherwise drift), so this step
-   * renders read-only when editing — the user can confirm the
-   * recorded numbers and continue, or back out and log a fresh
-   * bird_count to correct.
-   */
   existing?: DailyRecordDto;
+  onSwitchEntry?: () => void;
   stepIndex: number;
   stepCount: number;
   onBack: () => void;
@@ -170,6 +262,7 @@ export function BirdCountStep({
             <BirdCountEditView
               record={existing!}
               livingBirds={livingBirds}
+              onSwitchEntry={onSwitchEntry}
             />
           )}
 
@@ -339,9 +432,12 @@ function safeInt(s: string): number {
 function BirdCountEditView({
   record,
   livingBirds,
+  onSwitchEntry,
 }: {
   record: DailyRecordDto;
   livingBirds: number;
+  /** When the day has 2+ bird-count rows, lets the user go back to the picker. */
+  onSwitchEntry?: () => void;
 }) {
   const payload = (record.payload ?? {}) as Record<string, unknown>;
   const counts = {
@@ -355,10 +451,19 @@ function BirdCountEditView({
   return (
     <div className="space-y-3">
       <div className="rounded-xl border border-[var(--color-brand-border)] bg-white">
-        <div className="border-b border-[var(--color-brand-border)] px-4 py-2.5">
+        <div className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-4 py-2.5">
           <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
             Logged for this day
           </p>
+          {onSwitchEntry && (
+            <button
+              type="button"
+              onClick={onSwitchEntry}
+              className="text-[11px] font-bold tracking-tight text-[var(--color-brand-primary-deep)] underline-offset-2 hover:underline"
+            >
+              Pick a different entry
+            </button>
+          )}
         </div>
         <dl className="divide-y divide-[var(--color-brand-border)]">
           <Stat label="Sold"   value={counts.sold} />
