@@ -348,10 +348,19 @@ function buildStepList(
 
   if (eff.bird_weight?.include) steps.push({ kind: 'weight', label: 'Bird weight' });
 
-  // Layer-only steps. eggs.include gates BOTH collection and metrics
-  // because the metrics step's POST payload includes a `good` egg
-  // count from the buffered collection.
-  if (isLayerOrMixed && eff.eggs?.include) {
+  // Layer-only steps. Three gates:
+  //   1. Production type must include eggs (layer or mixed).
+  //   2. User preference must include them.
+  //   3. The flock must be old enough to lay — under that age the
+  //      backend hard-rejects eggs POSTs with a clear message
+  //      ("Egg records can only be recorded from 16 weeks of age"),
+  //      so showing the step would just lead the user to a 422.
+  //      Skipping the step keeps the wizard short and honest.
+  //
+  // eggs.include also gates the metrics step because the metrics
+  // step's POST payload reuses the buffered collection's `good`
+  // count.
+  if (isLayerOrMixed && eff.eggs?.include && flockCanLayEggs(guidance)) {
     steps.push({ kind: 'eggs', label: 'Egg collection' });
 
     const em = eff.egg_metrics ?? {};
@@ -361,6 +370,21 @@ function buildStepList(
   }
 
   return steps;
+}
+
+/**
+ * Layers start laying around 16 weeks (112 days). Below that, the
+ * `eggs` POST is hard-rejected server-side
+ * (FlockDailyRecordController::store) — the wizard mirrors that gate
+ * so the user never sees a step that can't be saved.
+ *
+ * Keep this constant in sync with the backend's
+ * DailyRecordGuidanceService::LAYER_LAY_START_WEEK.
+ */
+const LAYER_LAY_START_DAYS = 16 * 7;
+
+function flockCanLayEggs(guidance: DailyRecordGuidance): boolean {
+  return (guidance.flock.current_age_days ?? 0) >= LAYER_LAY_START_DAYS;
 }
 
 function labelForEggMetrics(em: { track_size?: boolean; track_weight?: boolean }): string {
