@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
 import { CyclePicker } from '@/components/app/cycle-picker';
-import { CycleCardsGrid } from '@/app/(app)/cycles/[id]/page';
+import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { readUser } from '@/lib/auth';
