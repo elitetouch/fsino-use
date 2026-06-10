@@ -427,31 +427,50 @@ export function VaccinationCard({
 }
 
 /**
- * Single row in the vaccination list.
+ * Single row in the vaccination list. Mirrors the figma mobile layout:
  *
- * Layout:
- *   [age-pill] [name + scheduled date]   [status badge]
+ *   [SEP 1]   Fowlpox                       [TODAY pill]
+ *   [SEP 3]   Newcastle disease                       —
+ *   [SEP 8]   Marek's disease                         —
+ *   [AUG 22]  Gumboro                          [✓ green dot]
  *
- * The age-pill (e.g. "D5") matches the figma — vaccines are scheduled
- * at known days from placement, and the day number is the farmer's
- * primary mental anchor. Critical items render their name in bold so
- * they stay legible even in the noise of a busy schedule.
+ * Left column is the SCHEDULED DATE in compact "MMM D" form (e.g.
+ * "SEP 1"). The figma uses the calendar date as the farmer's primary
+ * anchor — vaccines line up with a wall calendar, not with a
+ * "day-of-cycle" tally. The previous "D5" pill was an internal
+ * concept that didn't survive contact with how farmers actually plan.
+ *
+ * Right column is a single visual status indicator (per the user's
+ * direct ask: "vaccines that have been given should be CHECKED GOOD
+ * just like in the figma"):
+ *
+ *   completed → solid green circle with a white check, nothing else.
+ *   today     → green "TODAY" pill in caps.
+ *   upcoming  → em-dash in muted grey.
+ *   overdue   → red badge ("OVERDUE Nd" or "OVERDUE" for crit class).
+ *   skipped   → grey "skipped" tag.
+ *
+ * Critical items still render their name in bold and keep their tiny
+ * red "Critical" pill — losing that on an overdue Newcastle row would
+ * wipe out an entire pen.
  */
 function VaccinationRow({ item }: { item: VaccinationItemDto }) {
-  const pillTone = pillToneForItem(item);
   const isOverdueCritical = item.status === 'overdue' && item.critical;
   return (
-    <li className="flex items-start gap-2.5 py-2.5">
-      <span className={cn(
-        'inline-flex h-7 min-w-[2.4rem] shrink-0 items-center justify-center rounded-md px-1 text-[10.5px] font-bold tracking-tight',
-        pillTone,
-      )}>
-        D{item.ageDays}
+    <li className="flex items-center gap-3 py-2.5">
+      {/*
+        Left date column — fixed-width so all rows line up vertically
+        regardless of label length. "SEP 1" is 5 chars, "AUG 14" is 6;
+        the column is sized for the longest.
+      */}
+      <span className="inline-flex w-[3.2rem] shrink-0 flex-col items-start text-[10.5px] font-bold uppercase leading-tight tracking-[0.08em] text-[var(--color-brand-muted)]">
+        {formatScheduledDate(item.scheduledDateLabel)}
       </span>
+
       <div className="min-w-0 flex-1">
         <p className={cn(
           'truncate text-[13px] leading-snug text-[var(--color-brand-fg)]',
-          isOverdueCritical ? 'font-bold' : 'font-medium',
+          isOverdueCritical ? 'font-bold' : 'font-semibold',
         )}>
           {item.name}
           {item.critical && (
@@ -460,56 +479,89 @@ function VaccinationRow({ item }: { item: VaccinationItemDto }) {
             </span>
           )}
         </p>
-        <p className="mt-0.5 text-[11px] text-[var(--color-brand-muted)]">
-          {item.scheduledDateLabel}
-          {item.diseaseTarget ? ` · ${item.diseaseTarget}` : ''}
-          {item.method ? ` · ${item.method}` : ''}
-        </p>
+        {(item.diseaseTarget || item.method) && (
+          <p className="mt-0.5 truncate text-[11px] text-[var(--color-brand-muted)]">
+            {item.diseaseTarget}
+            {item.diseaseTarget && item.method ? ' · ' : ''}
+            {item.method}
+          </p>
+        )}
       </div>
-      <span className={cn(
-        'mt-0.5 inline-flex items-center gap-0.5 text-[11px] font-semibold uppercase tracking-wider',
-        statusTone(item.status),
-      )}>
-        {item.status === 'completed' && <Check className="h-3 w-3" />}
-        {statusLabel(item)}
-      </span>
+
+      <VaccinationStatusIndicator item={item} />
     </li>
   );
 }
 
-function pillToneForItem(item: VaccinationItemDto): string {
-  if (item.status === 'overdue' && item.critical) return 'bg-rose-600 text-white';
-  if (item.status === 'overdue') return 'bg-amber-100 text-amber-700';
-  if (item.status === 'today') return 'bg-amber-100 text-amber-700';
-  if (item.status === 'completed') return 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]';
-  if (item.status === 'skipped') return 'bg-[var(--color-brand-surface-soft)] text-[var(--color-brand-muted-soft)]';
-  return 'bg-[var(--color-brand-surface-soft)] text-[var(--color-brand-muted)]';
+/**
+ * Right-aligned status indicator — one of: green check disc / TODAY pill
+ * / em-dash / overdue badge / skipped tag.
+ *
+ * Kept as its own component so the row body stays clean and the
+ * indicator's variants are easy to scan.
+ */
+function VaccinationStatusIndicator({ item }: { item: VaccinationItemDto }) {
+  if (item.status === 'completed') {
+    // Solid green check disc — the user's direct ask.
+    return (
+      <span
+        aria-label="Done"
+        title="Vaccinated"
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-white shadow-sm"
+      >
+        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+      </span>
+    );
+  }
+
+  if (item.status === 'today') {
+    return (
+      <span className="shrink-0 rounded-full bg-[var(--color-brand-primary)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+        Today
+      </span>
+    );
+  }
+
+  if (item.status === 'overdue') {
+    const days = Math.abs(item.daysFromToday);
+    return (
+      <span className={cn(
+        'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+        item.critical ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700',
+      )}>
+        {days === 0 ? 'Overdue' : `Overdue ${days}d`}
+      </span>
+    );
+  }
+
+  if (item.status === 'skipped') {
+    return (
+      <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+        Skipped
+      </span>
+    );
+  }
+
+  // Upcoming — em-dash matches the figma's quiet "not yet" treatment.
+  return (
+    <span
+      aria-label="Upcoming"
+      title="Upcoming"
+      className="shrink-0 text-[16px] font-bold leading-none text-[var(--color-brand-muted-soft)]"
+    >
+      &mdash;
+    </span>
+  );
 }
 
-function statusTone(status: VaccinationItemDto['status']): string {
-  switch (status) {
-    case 'overdue':   return 'text-rose-700';
-    case 'today':     return 'text-amber-700';
-    case 'completed': return 'text-[var(--color-brand-primary-deep)]';
-    case 'skipped':   return 'text-[var(--color-brand-muted-soft)]';
-    default:          return 'text-[var(--color-brand-muted-soft)]';
-  }
-}
-
-function statusLabel(item: VaccinationItemDto): string {
-  switch (item.status) {
-    case 'overdue':
-      return `Overdue ${Math.abs(item.daysFromToday)}d`;
-    case 'today':     return 'Today';
-    case 'completed': return 'Done';
-    case 'skipped':   return 'Skipped';
-    default: {
-      const d = item.daysFromToday;
-      if (d <= 0) return 'Upcoming';
-      if (d === 1) return 'Tomorrow';
-      return `In ${d}d`;
-    }
-  }
+/**
+ * "Sep 1" → "SEP 1" (uppercase) to match the figma's all-caps
+ * date column. Falls back gracefully if the backend ever ships a
+ * different format.
+ */
+function formatScheduledDate(label: string | null | undefined): string {
+  if (!label) return '';
+  return label.toUpperCase();
 }
 
 function whenLabel(item: VaccinationItemDto): string {
