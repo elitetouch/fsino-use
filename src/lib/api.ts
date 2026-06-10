@@ -255,6 +255,26 @@ export const endpoints = {
       api.patch(`/flocks/${flockId}/daily-records/${recordId}`, payload),
     ),
 
+  // ───────────── Pen dashboard ─────────────
+
+  /**
+   * Aggregated dashboard for the active flock in a pen — every card
+   * (feed/water/mortality/birdsSold/weight/eggs/vaccination) precomputed
+   * server-side. Uses `flock.start_date` as the default window so the
+   * card numbers reflect the entire cycle; pass `days` to trim.
+   *
+   * The cards.vaccination payload is the authoritative source for the
+   * vaccination schedule UI — it's fuzzy-matched against the user's
+   * logged vaccination + medication records, so a record logged as
+   * "Lasota" satisfies the "Newcastle" schedule row, etc.
+   */
+  getPenDashboard: (penId: string, days?: number) =>
+    unwrap<PenDashboardDto>(
+      api.get(`/pens/${penId}/dashboard`, {
+        params: days != null ? { days } : undefined,
+      }),
+    ),
+
   // ───────────── Reference data ─────────────
   listBreeds: (params?: { production_type?: string; search?: string; country?: string }) =>
     unwrap<{ breeds: BreedDto[] }>(api.get('/breeds', { params })),
@@ -667,6 +687,212 @@ export type DailyRecordWarning = {
  * `recordCount > 0` to colour days light-green. `eventTypes` lets
  * us show a tooltip "Logged: feed, water" if we want.
  */
+// ─────────────  Pen dashboard DTOs ─────────────
+
+/**
+ * Full payload returned by GET /pens/{id}/dashboard. Every cycle card on
+ * the home and cycle-detail pages reads from this single response. The
+ * `cards` map is keyed by card name (matches the backend's
+ * PenDashboardService::cards iteration order).
+ */
+export type PenDashboardDto = {
+  pen: {
+    id: string;
+    name: string;
+    penType: string | null;
+    capacity: number | null;
+    houseCode: string | null;
+    isActive: boolean;
+  };
+  flock: {
+    id: string;
+    name: string | null;
+    breed: string;
+    productionType: 'broiler' | 'layer' | 'mixed';
+    placedBirds: number;
+    currentBirds: number;
+    ageDays: number;
+    startDate: string;
+    validUntil: string | null;
+    isActive: boolean;
+  } | null;
+  viewMode: 'easy' | 'expert';
+  window: {
+    days: number;
+    from: string;
+    to: string;
+  };
+  cards: PenDashboardCards;
+  message?: string;        // present only when flock is null
+};
+
+export type PenDashboardCards = {
+  feed?: FeedCardDto;
+  water?: WaterCardDto;
+  mortality?: MortalityCardDto;
+  birdsSold?: BirdsSoldCardDto;
+  weight?: WeightCardDto;
+  eggCollection?: EggCollectionCardDto;
+  eggSize?: EggSizeCardDto;
+  eggWeight?: EggWeightCardDto;
+  vaccination?: VaccinationCardDto;
+};
+
+/** Common envelope every card extends. */
+export interface DashboardCardBase {
+  key: string;
+  state: 'empty' | 'partial' | 'ready';
+  window: { days: number; from: string; to: string };
+  insights: string[];
+}
+
+/** Daily/expert series shape used by feed/water/mortality/eggs. */
+export type DashboardSeries =
+  | {
+      mode: 'easy';
+      daily: Array<{ date: string; value: number | null }>;
+      lastRecordDate?: string | null;
+      daysSinceLastRecord?: number | null;
+    }
+  | {
+      mode: 'expert';
+      morning: Array<{ date: string; value: number | null }>;
+      evening: Array<{ date: string; value: number | null }>;
+      lastRecordDate?: string | null;
+      daysSinceLastRecord?: number | null;
+    }
+  | {
+      mode: 'daily';
+      daily: Array<{ date: string; value: number | null }>;
+    };
+
+export type FeedCardDto = DashboardCardBase & {
+  summary: {
+    fcr: number | null;
+    /** Backend benchmark — 'excellent' | 'good' | 'fair' | 'poor' etc. */
+    rating: string | null;
+    ratingLabel: string | null;
+    /** % vs benchmark — positive = worse, negative = better. */
+    deltaPct: number | null;
+    metric: 'fcr' | 'kg_per_bird' | string;
+    productionType: 'broiler' | 'layer' | 'mixed';
+    unit: string;
+    itemType: string | null;
+    itemBrand: string | null;
+    lifetimeTotal: number | null;
+  };
+  benchmark?: { low: number; mid: number; high: number } | null;
+  breed?: string | null;
+  weeksInLay?: number | null;
+  series: DashboardSeries;
+};
+
+export type WaterCardDto = DashboardCardBase & {
+  summary: {
+    avgMlPerBirdPerDay: number | null;
+    unit: string;
+    lifetimeTotal: number | null;
+  };
+  series: DashboardSeries;
+};
+
+export type MortalityCardDto = DashboardCardBase & {
+  summary: {
+    totalDead: number;
+    rate: number | null;       // percent
+    rateLabel: string | null;  // "healthy" | "watch" | "concerning"
+    primaryCause: string | null;
+    placedBirds: number;
+    currentBirds: number;
+  };
+  series: DashboardSeries;
+};
+
+export type BirdsSoldCardDto = DashboardCardBase & {
+  summary: {
+    totalSold: number;
+    revenue: number | null;
+    currency: string | null;
+  };
+};
+
+export type WeightCardDto = DashboardCardBase & {
+  summary: {
+    latestAvgKg: number | null;
+    target?: number | null;
+    deltaPct?: number | null;
+  };
+};
+
+export type EggCollectionCardDto = DashboardCardBase & {
+  summary: {
+    lifetimeGoodEggs: number;
+    lifetimeDamagedEggs: number;
+    avgPerDay: number | null;
+    layRatePct: number | null;
+  };
+  series?: DashboardSeries;
+};
+
+export type EggSizeCardDto = DashboardCardBase & {
+  summary: {
+    dominantSize: string | null;
+    distribution: Record<string, number> | null;
+  };
+};
+
+export type EggWeightCardDto = DashboardCardBase & {
+  summary: {
+    latestAvgGrams: number | null;
+    lifetimeKg: number | null;
+  };
+};
+
+/**
+ * The vaccination card is the safety-critical one — fuzzy-matched server
+ * side against the farmer's logged vaccination + medication records.
+ * Shape mirrors the backend's `Domain\Operations\Dashboard\Cards\VaccinationCard::build`.
+ */
+export type VaccinationCardDto = DashboardCardBase & {
+  summary: {
+    completed: number;
+    totalScheduled: number;
+    overdue: number;
+    criticalOverdue: number;
+    dueToday: number;
+    upcoming: number;
+    todayKey: string;
+    nextDue: VaccinationItemDto | null;
+  };
+  items: VaccinationItemDto[];
+};
+
+export type VaccinationItemDto = {
+  id: string;
+  kind: string;
+  name: string;
+  diseaseTarget: string | null;
+  vaccineStrain: string | null;
+  method: string | null;
+  dosage: string | null;
+  /** Newcastle / Gumboro / Marek's class — flagged red when overdue. */
+  critical: boolean;
+  ageDays: number;
+  scheduledDate: string;          // YYYY-MM-DD
+  scheduledDateLabel: string;     // "Mar 14"
+  windowDays: number;
+  status: 'completed' | 'today' | 'overdue' | 'upcoming' | 'skipped';
+  isToday: boolean;
+  /** Negative = past, 0 = today, positive = future. */
+  daysFromToday: number;
+  completedAt: string | null;
+  completedSource: string | null;
+  completedRecordId: string | null;
+  skipped: boolean;
+  skipReason: string | null;
+  notes: string | null;
+};
+
 export type DailyRecordCalendarDay = {
   date: string;                // YYYY-MM-DD
   recordCount: number;

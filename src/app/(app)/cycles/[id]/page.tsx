@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
 import {
-  ArrowLeft, Calendar, MapPin, Plus, ChevronRight, Archive, Loader2,
+  ArrowLeft, Calendar, MapPin, Plus, Archive, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CyclePicker } from '@/components/app/cycle-picker';
@@ -228,15 +228,7 @@ function ResultsTab({
         </div>
       )}
 
-      {/* 2-up card grid */}
-      <div className="grid gap-3 lg:grid-cols-2">
-        <BreedSummaryCard flock={cycle} />
-        <FeedConsumptionCard fcr={null} />
-        <WaterConsumptionCard daily={null} />
-        <MortalityCard rate={null} />
-        {cycle.productionType === 'layer' && <EggCollectionCard daily={null} />}
-        <VaccinationCard schedule={[]} />
-      </div>
+      <CycleCardsGrid cycle={cycle} penId={pen?.id} />
 
       {/* Quick-add row */}
       <section className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-4">
@@ -293,3 +285,54 @@ function NotFound() {
     </div>
   );
 }
+
+/* ================================================================== */
+/*  CycleCardsGrid — shared by /cycles/[id] and /home                  */
+/* ================================================================== */
+
+/**
+ * Card grid for one active cycle. Encapsulates the pen-dashboard fetch
+ * so both /home (current cycle) and /cycles/[id] (any cycle) can reuse
+ * it via a single import. Cards render their own empty state if the
+ * dashboard is still loading or the user hasn't logged records yet,
+ * so the layout doesn't pop.
+ *
+ * Skips the dashboard fetch entirely when penId is missing — the
+ * BreedSummaryCard still renders so the user sees breed + age + bird
+ * count even without records.
+ */
+export function CycleCardsGrid({
+  cycle,
+  penId,
+}: {
+  cycle: FlockDto;
+  /** Active flock's pen id. Required for the dashboard query. */
+  penId: string | undefined;
+}) {
+  const dashboard = useQuery({
+    queryKey: ['pen-dashboard', penId],
+    queryFn: () => endpoints.getPenDashboard(penId!),
+    enabled: !!penId,
+    staleTime: 30_000,
+  });
+
+  const cards = dashboard.data?.cards;
+  // FlockDto.productionType uses "dual_purpose" but the dashboard
+  // payload uses "mixed"; tolerate both so the egg-collection card
+  // surfaces for either naming convention.
+  const isLayerOrMixed = cycle.productionType === 'layer'
+    || (cycle.productionType as string) === 'mixed'
+    || cycle.productionType === 'dual_purpose';
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      <BreedSummaryCard flock={cycle} />
+      <FeedConsumptionCard data={cards?.feed} />
+      <WaterConsumptionCard data={cards?.water} />
+      <MortalityCard data={cards?.mortality} />
+      {isLayerOrMixed && <EggCollectionCard data={cards?.eggCollection} />}
+      <VaccinationCard data={cards?.vaccination} />
+    </div>
+  );
+}
+

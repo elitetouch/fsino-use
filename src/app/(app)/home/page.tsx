@@ -12,10 +12,7 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
 import { CyclePicker } from '@/components/app/cycle-picker';
-import {
-  BreedSummaryCard, FeedConsumptionCard, WaterConsumptionCard,
-  MortalityCard, VaccinationCard,
-} from '@/components/app/cycle-cards';
+import { CycleCardsGrid } from '@/app/(app)/cycles/[id]/page';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { readUser } from '@/lib/auth';
@@ -140,13 +137,8 @@ export default function HomePage() {
             }
           />
 
-          <div className="grid gap-3 lg:grid-cols-2">
-            <BreedSummaryCard flock={cycle} />
-            <FeedConsumptionCard fcr={null} />
-            <WaterConsumptionCard daily={null} />
-            <MortalityCard rate={null} />
-            <VaccinationCard schedule={[]} />
-          </div>
+          <CycleCardsGrid cycle={cycle} penId={cycle.penId ?? undefined} />
+
         </>
       ) : (
         <EmptyCycleNudge />
