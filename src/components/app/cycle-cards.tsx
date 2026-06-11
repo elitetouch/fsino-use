@@ -84,13 +84,7 @@ export function FeedConsumptionCard({
       />
       <p className="mt-2 text-[12px] text-[var(--color-brand-muted)]">
         {empty
-          // The backend can't compute FCR without BOTH (a) feed
-          // logged in kg AND (b) at least one bird-weight record
-          // (broilers) or eggs in good condition + an egg weight
-          // (layers). If the user has been logging feed in `bags`
-          // only, lifetime_feed_kg is 0 and FCR returns null; the
-          // copy below tells them what to add next.
-          ? 'Log feed in kilograms and a bird weight to see your conversion rate.'
+          ? fcrEmptyStateCopy(data)
           : firstInsight(data) ?? 'Your birds show a stable feed conversion rate.'}
       </p>
 
@@ -729,6 +723,48 @@ function recentDailyPoints(
 
 function firstInsight(card?: { insights?: string[] } | null): string | undefined {
   return card?.insights?.[0];
+}
+
+/**
+ * Production-type-aware empty state for the FCR card.
+ *
+ * The backend returns fcr=null for two distinct "not enough data"
+ * shapes:
+ *   - Feed totals are 0 (nothing logged, OR everything was in bags
+ *     before the bag→kg conversion landed).
+ *   - Feed totals are >0 but the phase-appropriate denominator is
+ *     missing — for broilers + pre-lay layers + mixed that means no
+ *     bird-weight record; for layers in production it means no eggs
+ *     × egg-weight.
+ *
+ * We don't have a flag for which one bit, so we infer from
+ * `summary.lifetimeTotal` (the lifetime feed total): if there's any
+ * feed on file we know the blocker is the denominator.
+ *
+ * The production-type hint matters for young layers especially —
+ * "ISA Brown, 9 days old" doesn't make sense if we ask the farmer
+ * to start collecting eggs. We tell them what'll happen once their
+ * birds start laying so the empty state doubles as a roadmap.
+ */
+function fcrEmptyStateCopy(data?: FeedCardDto | null): string {
+  const hasFeed = (data?.summary?.lifetimeTotal ?? 0) > 0;
+  const type = data?.summary?.productionType ?? 'broiler';
+
+  if (!hasFeed) {
+    return 'Log feed entries (kg or bags) to start tracking your conversion rate.';
+  }
+
+  // Feed is on file — the blocker is the denominator. The message
+  // depends on production type because the denominator IS the
+  // production type (eggs for layers in lay, weight for everything
+  // else).
+  if (type === 'layer') {
+    return 'Log a bird weight to see growth-phase FCR. Once your hens start laying, we\'ll switch to feed-per-egg.';
+  }
+  if (type === 'mixed') {
+    return 'Log a bird weight to see growth-phase FCR. Once your layers start producing, we\'ll fold eggs in too.';
+  }
+  return 'Log a bird weight to compute FCR from your feed entries.';
 }
 
 function shortDate(iso: string): string {
