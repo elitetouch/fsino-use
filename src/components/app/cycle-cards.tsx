@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Bird, Droplet, Skull, Syringe, Wheat, ChevronRight, Egg,
-  Check, X as XIcon, Info, ChevronDown,
+  Check, CheckCircle2, X as XIcon, Info, ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 import type {
@@ -55,6 +55,42 @@ export function BreedSummaryCard({ flock }: { flock: FlockDto }) {
 
 // ────────────── FEED CONSUMPTION ──────────────
 
+/**
+ * Feed consumption card — rebuilt to match the figma "Preference: Easy /
+ * Expert / First entry state" frames strictly. See FarmSpeak 2023 Frame
+ * 1000004325. The chrome reads:
+ *
+ *   [icon] Feed consumption                       (no right-slot pill)
+ *   Your birds show a [great] feed conversion rate.
+ *
+ *   Feed conversion rate (FCR)
+ *   Low  ▬▬▬▬▬▬▬ [1.45] ▬▬▬▬▬▬  High
+ *
+ *   Daily feed amount             Starter: Animal Care
+ *   Jan 1   Jan 2   Jan 3   Jan 4   Jan 5
+ *   [1,2kg] [12kg]  [120kg] [1.2Mkg][12tons]
+ *
+ *   ✓ Learn more                              Edit record ›
+ *
+ * Critical deltas from the previous implementation:
+ *
+ *   - NO rating pill in the header. The figma reads the rating into
+ *     the description sentence instead ("Your birds show A GREAT…").
+ *   - Gauge gradient runs rose → amber → emerald → sky (centered on
+ *     optimal), not the previous emerald → amber → rose (lower-is-
+ *     better). The figma treats extreme low values as suspicious
+ *     ("did you really log 0.4 kg/bird?") rather than excellent.
+ *   - Below the gauge: "Low" / "High" labels flank the bar, not
+ *     "Lower is better / Higher is worse" sitting beneath it.
+ *   - Replaces vertical bar charts (DailyBars) with the figma's
+ *     horizontal pill grid: each day is a date label + a beige pill
+ *     containing the value, all 5 columns flowing across.
+ *   - Twice-a-day pref splits into "Morning feed amount" + "Evening
+ *     feed amount" sections, each with their own brand badge.
+ *   - Footer "Learn more" gets the green check-circle badge the
+ *     figma shows, distinct from the vaccination card's sky-blue
+ *     info badge.
+ */
 export function FeedConsumptionCard({
   data,
   onEdit,
@@ -63,77 +99,225 @@ export function FeedConsumptionCard({
   onEdit?: () => void;
 }) {
   const fcr = data?.summary.fcr ?? null;
-  const rating = data?.summary.ratingLabel ?? null;
+  const ratingLabel = data?.summary.ratingLabel ?? null;
+  const ratingWord = ratingWordFromLabel(ratingLabel);
+  const itemType = data?.summary.itemType ?? null;
+  const itemBrand = data?.summary.itemBrand ?? null;
+  const unit = data?.summary.unit ?? 'kg';
   const empty = fcr == null;
+  const series = data?.series;
+  const isTwiceADay = series?.mode === 'expert';
 
-  // Visual FCR meter — broiler good FCR is roughly 1.4–1.8.
-  // We translate any FCR into a 0–8 progress on the bar, then clamp
-  // the pill's centerline so it never crosses the gradient edges.
-  // Without the clamp, an extreme value (broiler at 0.6 or layer
-  // pre-lay at 0.5) places the value pill at pct≈0% with
-  // -translate-x-1/2, which renders the pill HALF off the card
-  // on mobile (visible on a 320px viewport).
-  const rawPct = fcr == null ? null : Math.max(0, Math.min(1, (fcr - 1.2) / 1.4)) * 100;
-  // 7% / 93% breathing room — about the width of one pill on a
-  // narrow screen, so the visible centerline stays inside the
-  // gradient bar regardless of FCR magnitude.
+  // FCR gauge — centered scale so the figma's 1.45 example lands
+  // near the middle (green zone). Range [0.4, 2.4] gives:
+  //   broiler optimal 1.4–1.8  → 50–70%  (emerald → sky transition)
+  //   layer pre-lay   0.5–1.0  → 5–30%   (rose / amber zone — caveat
+  //                                       below makes sense)
+  //   layer in-prod   2.0–2.5  → 80–100% (sky)
+  //
+  // Clamp the pill's centerline to [7%, 93%] so it doesn't bleed off
+  // the bar edge on extremes — about one pill-half on a 320 px phone.
+  const rawPct = fcr == null ? null : Math.max(0, Math.min(1, (fcr - 0.4) / 2.0)) * 100;
   const pct = rawPct == null ? null : Math.max(7, Math.min(93, rawPct));
 
   return (
     <Card>
-      <CardHeader
-        icon={Wheat}
-        title="Feed consumption"
-        rightSlot={
-          rating ? (
-            <span className={cn(
-              'rounded-md px-2 py-0.5 text-[11px] font-bold capitalize text-white',
-              feedRatingTone(rating),
-            )}>
-              {rating}
-            </span>
-          ) : undefined
-        }
-      />
-      <p className="mt-2 text-[12px] text-[var(--color-brand-muted)]">
-        {empty
-          ? fcrEmptyStateCopy(data)
-          : firstInsight(data) ?? 'Your birds show a stable feed conversion rate.'}
+      <CardHeader icon={Wheat} title="Feed consumption" />
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          fcrEmptyStateCopy(data)
+        ) : ratingWord ? (
+          <>
+            Your birds show {articleFor(ratingWord)}{' '}
+            <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+              {ratingWord}
+            </strong>{' '}
+            feed conversion rate.
+          </>
+        ) : (
+          'Your birds show a stable feed conversion rate.'
+        )}
       </p>
 
-      <div className="mt-4">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
-          Feed conversion rate (FCR)
-        </p>
-        <div className="relative h-7">
-          <div className="absolute inset-y-0 left-0 right-0 my-auto h-2 overflow-hidden rounded-full bg-gradient-to-r from-emerald-300 via-amber-200 to-rose-200">
-            <div className="absolute inset-0 opacity-0" />
-          </div>
-          {fcr != null && pct != null && (
-            <div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-md bg-[var(--color-brand-primary)] px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm"
-              style={{ left: `${pct}%` }}
-            >
-              {fcr.toFixed(2)}
+      {!empty && (
+        <div className="mt-4">
+          <p className="mb-2 text-[12.5px] font-bold text-[var(--color-brand-fg)]">
+            Feed conversion rate (FCR)
+          </p>
+          {/* Bar + Low/High labels in one row. The bar itself is a
+              4-stop linear gradient (rose → amber → emerald → sky) so
+              the figma's segmented look reproduces without N coloured
+              divs. The value pill is positioned over the bar with a
+              white ring to lift it off the gradient. */}
+          <div className="relative flex h-7 items-center gap-2">
+            <span className="text-[11px] font-semibold text-[var(--color-brand-muted)]">
+              Low
+            </span>
+            <div className="relative h-1.5 flex-1 overflow-hidden rounded-full">
+              <div
+                aria-hidden
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background:
+                    'linear-gradient(to right, #be123c 0%, #f97316 28%, #16a34a 55%, #0284c7 78%)',
+                }}
+              />
+              {fcr != null && pct != null && (
+                <div
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-brand-primary)] px-2.5 py-0.5 text-[11.5px] font-bold leading-tight text-white shadow-md ring-2 ring-white"
+                  style={{ left: `${pct}%` }}
+                >
+                  {fcr.toFixed(2)}
+                </div>
+              )}
             </div>
+            <span className="text-[11px] font-semibold text-[var(--color-brand-muted)]">
+              High
+            </span>
+          </div>
+        </div>
+      )}
+
+      {!empty && series && (
+        <div className="mt-4 space-y-3">
+          {isTwiceADay && series.mode === 'expert' ? (
+            <>
+              <DailyAmountSection
+                title="Morning feed amount"
+                itemType={itemType}
+                itemBrand={itemBrand}
+                items={(series.morning ?? []).slice(-5)}
+                unit={unit}
+              />
+              <DailyAmountSection
+                title="Evening feed amount"
+                itemType={itemType}
+                itemBrand={itemBrand}
+                items={(series.evening ?? []).slice(-5)}
+                unit={unit}
+              />
+            </>
+          ) : (
+            <DailyAmountSection
+              title="Daily feed amount"
+              itemType={itemType}
+              itemBrand={itemBrand}
+              items={recentDailyPoints(series, 5)}
+              unit={unit}
+            />
           )}
         </div>
-        <div className="mt-1 flex justify-between text-[10px] font-semibold text-[var(--color-brand-muted-soft)]">
-          <span>Lower is better</span>
-          <span>Higher is worse</span>
-        </div>
-      </div>
+      )}
 
-      <CardFooter onClick={onEdit} label={empty ? 'Log feed' : 'Edit record'} />
+      <FeedCardFooter onClick={onEdit} label={empty ? 'Log feed' : 'Edit record'} />
     </Card>
   );
 }
 
-function feedRatingTone(rating: string): string {
-  const r = rating.toLowerCase();
-  if (r.includes('excell') || r.includes('good')) return 'bg-[var(--color-brand-primary-dark)]';
-  if (r.includes('fair') || r.includes('avg')) return 'bg-amber-600';
-  return 'bg-rose-600';
+/**
+ * One date-column grid of feed-amount values. Used by both the
+ * single-section "Daily feed amount" and the twice-a-day
+ * Morning/Evening pair. Each value sits in a beige accent pill — the
+ * figma's "1,2 kg" / "12 kg" / "120 kg" / "1.200 kg" / "12 tons"
+ * row — so the row reads as a sequence of stable pills instead of a
+ * bar chart.
+ */
+function DailyAmountSection({
+  title,
+  itemType,
+  itemBrand,
+  items,
+  unit,
+}: {
+  title: string;
+  itemType: string | null;
+  itemBrand: string | null;
+  items: Array<{ date: string; value: number | null }>;
+  unit: string;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <p className="text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          {title}
+        </p>
+        {(itemType || itemBrand) && (
+          <p className="truncate text-[11px] text-[var(--color-brand-muted)]">
+            {itemType && (
+              <span className="font-bold text-[var(--color-brand-primary-deep)]">
+                {capitalizeFirst(itemType)}:
+              </span>
+            )}{' '}
+            {itemBrand}
+          </p>
+        )}
+      </div>
+      <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
+        {items.map((d) => (
+          <div key={d.date} className="flex min-w-0 flex-col items-center">
+            <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+              {shortDate(d.date)}
+            </p>
+            <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+              <span className="truncate">
+                {d.value == null ? '—' : `${fmtCompact(d.value)} ${unit}`}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Feed-card footer — green-check "Learn more" pill on the left, a
+ * compact "Edit record ›" on the right. Distinct from the
+ * vaccination card's sky-blue info badge so the two cards have
+ * recognisably different footers despite the same role.
+ */
+function FeedCardFooter({ onClick, label }: { onClick?: () => void; label: string }) {
+  return (
+    <div className="mt-4 flex items-center justify-between gap-2 border-t border-[var(--color-brand-border)] pt-2.5">
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 text-[12px] font-bold text-[var(--color-brand-primary-deep)] hover:underline"
+      >
+        <CheckCircle2 className="h-3.5 w-3.5 fill-[var(--color-brand-primary)] text-white" strokeWidth={2.4} />
+        Learn more
+      </button>
+      <button
+        type="button"
+        onClick={onClick}
+        className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
+      >
+        {label}
+        <ChevronRight className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Pull the rating word out of a ratingLabel like "Excellent —
+ * beating benchmark" → "excellent". Used by the description sentence
+ * so "Your birds show a great feed conversion rate" can be assembled
+ * dynamically.
+ */
+function ratingWordFromLabel(label: string | null | undefined): string | null {
+  if (!label) return null;
+  const word = label.split(/[—-]/, 1)[0]?.trim().toLowerCase();
+  return word && word.length > 0 ? word : null;
+}
+
+/** "a great" vs "an excellent" — picks the right indefinite article. */
+function articleFor(word: string): string {
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
+}
+
+function capitalizeFirst(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 // ────────────── WATER CONSUMPTION ──────────────
