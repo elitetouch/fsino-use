@@ -35,7 +35,11 @@ export function BreedSummaryCard({ flock }: { flock: FlockDto }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className="truncate text-[15px] font-bold text-[var(--color-brand-fg)]">{flock.breed}</p>
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-primary-dark)] px-2 py-0.5 text-[11px] font-bold text-white">
+            {/* Bird-count pill — figma uses BLACK here ("100 birds" /
+                "2,000 birds" / "280 birds"), not brand green. Only
+                weight/water/rating badges are green. Keeps counts
+                visually distinct from production-status badges. */}
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
               {flock.placedBirds.toLocaleString()} birds
             </span>
           </div>
@@ -63,8 +67,17 @@ export function FeedConsumptionCard({
   const empty = fcr == null;
 
   // Visual FCR meter — broiler good FCR is roughly 1.4–1.8.
-  // We translate any FCR into a 0–1 progress on the bar.
-  const pct = fcr == null ? null : Math.max(0, Math.min(1, (fcr - 1.2) / 1.4)) * 100;
+  // We translate any FCR into a 0–8 progress on the bar, then clamp
+  // the pill's centerline so it never crosses the gradient edges.
+  // Without the clamp, an extreme value (broiler at 0.6 or layer
+  // pre-lay at 0.5) places the value pill at pct≈0% with
+  // -translate-x-1/2, which renders the pill HALF off the card
+  // on mobile (visible on a 320px viewport).
+  const rawPct = fcr == null ? null : Math.max(0, Math.min(1, (fcr - 1.2) / 1.4)) * 100;
+  // 7% / 93% breathing room — about the width of one pill on a
+  // narrow screen, so the visible centerline stays inside the
+  // gradient bar regardless of FCR magnitude.
+  const pct = rawPct == null ? null : Math.max(7, Math.min(93, rawPct));
 
   return (
     <Card>
@@ -256,7 +269,10 @@ export function EggCollectionCard({
         title="Egg collection"
         rightSlot={
           !empty ? (
-            <span className="rounded-md bg-[var(--color-brand-primary-dark)] px-2 py-0.5 text-[11px] font-bold text-white">
+            // Egg collection count pill — figma uses BLACK for count
+            // ("1,093 eggs" / "1,254 eggs"), aligning with the bird-
+            // count convention in BreedSummaryCard.
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
               {avgPerDay != null ? `${avgPerDay}/day` : `${lifetimeGood} total`}
             </span>
           ) : undefined
@@ -477,7 +493,12 @@ function VaccinationRow({ item }: { item: VaccinationItemDto }) {
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            'truncate text-[13.5px] leading-snug text-[var(--color-brand-fg)]',
+            // line-clamp-2 (not truncate) so long vaccine names like
+            // "Newcastle Disease (HB1) + Infectious Bronchitis" wrap
+            // to two lines on phones instead of getting ellipsized
+            // mid-disease. On desktop most names fit on one line so
+            // visually nothing changes for short labels.
+            'line-clamp-2 break-words text-[13.5px] leading-snug text-[var(--color-brand-fg)]',
             // Bold the vaccine name on today's row (per figma); keep
             // normal weight otherwise so the row reads cleanly.
             isToday ? 'font-extrabold' : 'font-semibold',
@@ -613,14 +634,23 @@ function CardHeader({
   rightSlot?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
+    // gap-2 instead of gap-3 squeezes a few more pixels for the title on
+    // narrow phones. flex-wrap on the outer container lets the right
+    // pill drop below the title on extremely cramped screens (≤ 320px
+    // with a long rating like "Excellent — beating benchmark") instead
+    // of overflowing the card edge.
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
           <Icon className="h-3.5 w-3.5" strokeWidth={2.2} />
         </span>
-        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
+        {/* min-w-0 + truncate so a long card title ("Feed conversion
+            rate" + the right-pill "Excellent — Beating Benchmark") can
+            ellipsize cleanly on phones instead of pushing the pill off
+            the card. */}
+        <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
       </div>
-      {rightSlot}
+      {rightSlot && <div className="shrink-0">{rightSlot}</div>}
     </div>
   );
 }
@@ -662,12 +692,16 @@ function DailyBars({
     mint: 'from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)]',
   }[tone];
   return (
-    <div className="grid grid-cols-5 gap-1.5">
+    // Tighter gap on phones (gap-1) widens each column so the value
+    // label ("120L", "1.2kg") doesn't get squeezed. sm+ relaxes back
+    // to gap-1.5. min-w-0 on every cell + truncate on the labels stops
+    // an outlier like "12,000L" from blowing out the column width.
+    <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
       {items.map((d) => {
         const v = d.value ?? 0;
         const h = v > 0 ? Math.max(8, Math.round((v / max) * 64)) : 4;
         return (
-          <div key={d.date} className="flex flex-col items-center">
+          <div key={d.date} className="flex min-w-0 flex-col items-center">
             <div className="relative flex h-16 w-full items-end justify-center">
               <div
                 className={cn(
@@ -677,10 +711,12 @@ function DailyBars({
                 style={{ height: `${h}px` }}
               />
             </div>
-            <p className="mt-1 text-[10px] font-semibold text-[var(--color-brand-fg)]">
+            <p className="mt-1 w-full truncate text-center text-[10px] font-semibold text-[var(--color-brand-fg)]">
               {d.value == null ? '—' : `${fmtCompact(v)}${unit}`}
             </p>
-            <p className="text-[9px] text-[var(--color-brand-muted-soft)]">{shortDate(d.date)}</p>
+            <p className="w-full truncate text-center text-[9px] text-[var(--color-brand-muted-soft)]">
+              {shortDate(d.date)}
+            </p>
           </div>
         );
       })}
