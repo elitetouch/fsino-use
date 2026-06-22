@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Bird, Droplet, Skull, Syringe, Wheat, ChevronRight, Egg,
-  Check, CheckCircle2, X as XIcon, Info, ChevronDown,
+  Check, BadgeCheck, X as XIcon, Info, ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 import type {
@@ -108,6 +108,12 @@ export function FeedConsumptionCard({
   const series = data?.series;
   const isTwiceADay = series?.mode === 'expert';
 
+  // Learn-more drawer — matches the wizard's pattern (each step has
+  // its own LearnMoreDrawer). User asked specifically to make the
+  // footer's "Learn more" active "just like other Learn more in the
+  // app", so this card grows its own drawer with FCR explainer copy.
+  const [learnOpen, setLearnOpen] = useState(false);
+
   // FCR gauge — centered scale so the figma's 1.45 example lands
   // near the middle (green zone). Range [0.4, 2.4] gives:
   //   broiler optimal 1.4–1.8  → 50–70%  (emerald → sky transition)
@@ -115,10 +121,15 @@ export function FeedConsumptionCard({
   //                                       below makes sense)
   //   layer in-prod   2.0–2.5  → 80–100% (sky)
   //
-  // Clamp the pill's centerline to [7%, 93%] so it doesn't bleed off
-  // the bar edge on extremes — about one pill-half on a 320 px phone.
+  // Clamp the pill's centerline to [12%, 88%] so it stays clear of
+  // the Low / High labels even at extreme FCRs (broiler 0.6 →
+  // clamps to 12%, layer 4.0 → clamps to 88%). The previous [7, 93]
+  // was tight enough that the right-edge case (the user's 9.59
+  // example, which clamps in) put the pill literally touching the
+  // "High" text. A 12 % buffer keeps the pill comfortably inside
+  // the gradient bar.
   const rawPct = fcr == null ? null : Math.max(0, Math.min(1, (fcr - 0.4) / 2.0)) * 100;
-  const pct = rawPct == null ? null : Math.max(7, Math.min(93, rawPct));
+  const pct = rawPct == null ? null : Math.max(12, Math.min(88, rawPct));
 
   return (
     <Card>
@@ -145,19 +156,32 @@ export function FeedConsumptionCard({
           <p className="mb-2 text-[12.5px] font-bold text-[var(--color-brand-fg)]">
             Feed conversion rate (FCR)
           </p>
-          {/* Bar + Low/High labels in one row. The bar itself is a
-              4-stop linear gradient (rose → amber → emerald → sky) so
-              the figma's segmented look reproduces without N coloured
-              divs. The value pill is positioned over the bar with a
-              white ring to lift it off the gradient. */}
-          <div className="relative flex h-7 items-center gap-2">
-            <span className="text-[11px] font-semibold text-[var(--color-brand-muted)]">
+          {/*
+            Two structural changes vs the previous version:
+            1. The pill now lives in an OVERLAY div that sits on top of
+               the bar (relative parent, absolute child) instead of
+               inside the bar's overflow-hidden box. The bar can clip
+               its gradient cleanly while the pill — which is much
+               taller than the 6 px bar — paints in full.
+            2. "Low" and "High" labels are NOT in the same flex row as
+               the bar anymore. Instead they sit at fixed left/right
+               anchors on the same line as the bar via absolute
+               positioning, with a 28 px gutter on each side. That gives
+               the pill (clamped to 12 % / 88 %) a guaranteed ~8 px
+               buffer from the labels at the extremes, so an FCR of
+               9.59 (clamped) no longer bumps into "High".
+          */}
+          <div className="relative h-7">
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-[var(--color-brand-muted)]">
               Low
             </span>
-            <div className="relative h-1.5 flex-1 overflow-hidden rounded-full">
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-[var(--color-brand-muted)]">
+              High
+            </span>
+            <div className="absolute inset-x-9 top-1/2 -translate-y-1/2">
               <div
                 aria-hidden
-                className="absolute inset-0 rounded-full"
+                className="h-1.5 w-full rounded-full"
                 style={{
                   background:
                     'linear-gradient(to right, #be123c 0%, #f97316 28%, #16a34a 55%, #0284c7 78%)',
@@ -172,9 +196,6 @@ export function FeedConsumptionCard({
                 </div>
               )}
             </div>
-            <span className="text-[11px] font-semibold text-[var(--color-brand-muted)]">
-              High
-            </span>
           </div>
         </div>
       )}
@@ -210,7 +231,22 @@ export function FeedConsumptionCard({
         </div>
       )}
 
-      <FeedCardFooter onClick={onEdit} label={empty ? 'Log feed' : 'Edit record'} />
+      <FeedCardFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log feed' : 'Edit record'}
+      />
+
+      {/* Inline drawer — mirrors the wizard's LearnMoreDrawer pattern.
+          Renders as a bottom-sheet on phones (slides up) and a
+          centered modal on sm+ viewports. Content explains FCR so the
+          farmer can act on the rating word ("excellent" vs "poor"). */}
+      <FcrLearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        fcr={fcr}
+        ratingWord={ratingWord}
+      />
     </Card>
   );
 }
@@ -272,29 +308,150 @@ function DailyAmountSection({
 }
 
 /**
- * Feed-card footer — green-check "Learn more" pill on the left, a
- * compact "Edit record ›" on the right. Distinct from the
- * vaccination card's sky-blue info badge so the two cards have
- * recognisably different footers despite the same role.
+ * Feed-card footer — green BadgeCheck "Learn more" on the left, a
+ * compact "Edit record ›" on the right.
+ *
+ * Two corrections from the previous iteration:
+ *   - Icon was `CheckCircle2` (plain circle + tick). The figma's icon
+ *     is a verified-badge style — scalloped/sunburst frame around a
+ *     centered tick. Lucide ships exactly that as `BadgeCheck`, so
+ *     the swap is one-for-one with no SVG handwriting.
+ *   - "Learn more" is now ACTUALLY clickable (was inert before). It
+ *     opens an inline drawer with FCR explainer copy — mirrors the
+ *     wizard's per-step LearnMoreDrawer pattern so the affordance
+ *     feels consistent across the app.
  */
-function FeedCardFooter({ onClick, label }: { onClick?: () => void; label: string }) {
+function FeedCardFooter({
+  onLearnMore,
+  onEdit,
+  editLabel,
+}: {
+  onLearnMore: () => void;
+  onEdit?: () => void;
+  editLabel: string;
+}) {
   return (
     <div className="mt-4 flex items-center justify-between gap-2 border-t border-[var(--color-brand-border)] pt-2.5">
       <button
         type="button"
+        onClick={onLearnMore}
         className="inline-flex items-center gap-1 text-[12px] font-bold text-[var(--color-brand-primary-deep)] hover:underline"
       >
-        <CheckCircle2 className="h-3.5 w-3.5 fill-[var(--color-brand-primary)] text-white" strokeWidth={2.4} />
+        <BadgeCheck className="h-4 w-4 fill-[var(--color-brand-primary)] text-white" strokeWidth={2.4} />
         Learn more
       </button>
       <button
         type="button"
-        onClick={onClick}
+        onClick={onEdit}
         className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
       >
-        {label}
+        {editLabel}
         <ChevronRight className="h-3 w-3" />
       </button>
+    </div>
+  );
+}
+
+/**
+ * Inline learn-more drawer specifically for the FCR card. Reuses the
+ * same bottom-sheet / centered-modal shape as the wizard's
+ * LearnMoreDrawer (components/record/wizard-shell.tsx) so the
+ * affordance feels familiar.
+ *
+ * Renders a brief explainer of:
+ *   - What FCR is
+ *   - How the gauge zones map to ratings (red / amber / green / blue)
+ *   - The user's current value + rating in context
+ */
+function FcrLearnMoreDrawer({
+  open,
+  onClose,
+  fcr,
+  ratingWord,
+}: {
+  open: boolean;
+  onClose: () => void;
+  fcr: number | null;
+  ratingWord: string | null;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      <div aria-hidden className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[520px] sm:rounded-2xl"
+      >
+        <header className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
+          <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">
+            Feed conversion rate (FCR)
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        </header>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-[13px] leading-relaxed text-[var(--color-brand-fg)]">
+          <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
+            What FCR tells you
+          </h3>
+          <p>
+            FCR is the <strong>feed-to-output ratio</strong>: how many kilograms
+            of feed your birds eat for every kilogram of meat (broilers) or eggs
+            (layers) they produce. Lower is better &mdash; less feed for the same
+            output.
+          </p>
+
+          {fcr != null && (
+            <p>
+              Your current FCR is{' '}
+              <strong className="text-[var(--color-brand-primary-deep)]">
+                {fcr.toFixed(2)}
+              </strong>
+              {ratingWord ? <> &mdash; rated <strong>{ratingWord}</strong>.</> : '.'}
+            </p>
+          )}
+
+          <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
+            Gauge zones
+          </h3>
+          <ul className="space-y-1.5">
+            <li className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-rose-600" />
+              <span><strong>Red (suspiciously low)</strong> &mdash; usually a logging error. Double-check your feed-amount entries are in the right unit.</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-orange-500" />
+              <span><strong>Orange (below target)</strong> &mdash; birds are growing slower than the benchmark suggests for the feed they&rsquo;re eating.</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-[var(--color-brand-primary)]" />
+              <span><strong>Green (on target)</strong> &mdash; you&rsquo;re in the breed&rsquo;s expected efficiency window. Keep doing what you&rsquo;re doing.</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-sky-600" />
+              <span><strong>Blue (above target)</strong> &mdash; more feed per kg of output than the benchmark. Common causes: feed waste, low-quality feed, illness, or wrong stocking density.</span>
+            </li>
+          </ul>
+
+          <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
+            How we compute it
+          </h3>
+          <p>
+            We sum your lifetime feed (kg, with bags auto-converted) and divide
+            by your birds&rsquo; live weight (current_birds &times; latest average
+            weight) for broilers and pre-lay pullets, or by total kg of eggs
+            for layers in production. Log a bird weight or some eggs to keep
+            the number fresh.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
