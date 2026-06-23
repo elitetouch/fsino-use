@@ -47,7 +47,10 @@ interface WaterStepProps {
 
 /** Picker/form router — see feed-step.tsx for the pattern's rationale. */
 export function WaterStep(props: WaterStepProps) {
-  const choice = useEntryChoice(props.existingList);
+  // See FeedStep for the rationale — twice-a-day prefs show the picker
+  // on a single existing entry instead of jumping into edit.
+  const allowMultiplePerDay = !!props.prefs.effectiveDailyRecord.water?.twice_a_day;
+  const choice = useEntryChoice(props.existingList, { allowMultiplePerDay });
   if (choice.showPicker) {
     return (
       <WaterPickerView

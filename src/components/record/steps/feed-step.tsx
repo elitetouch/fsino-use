@@ -103,7 +103,13 @@ interface FeedStepProps {
  * useState initialisers re-run against the new `existing` value.
  */
 export function FeedStep(props: FeedStepProps) {
-  const choice = useEntryChoice(props.existingList);
+  // When the user's effective pref is twice-a-day for feed, a single
+  // existing entry shouldn't drop the user into edit mode — they likely
+  // came back to log the OTHER half of the day. The picker lets them
+  // choose explicitly. Falls back to today's "edit-the-one-entry"
+  // shortcut for once-a-day pref.
+  const allowMultiplePerDay = !!props.prefs.effectiveDailyRecord.feed?.twice_a_day;
+  const choice = useEntryChoice(props.existingList, { allowMultiplePerDay });
 
   if (choice.showPicker) {
     return (

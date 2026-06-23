@@ -86,7 +86,10 @@ interface EggCollectionStepProps {
 }
 
 export function EggCollectionStep(props: EggCollectionStepProps) {
-  const choice = useEntryChoice(props.existingList);
+  // See FeedStep for the rationale — twice-a-day prefs show the picker
+  // on a single existing entry instead of jumping into edit.
+  const allowMultiplePerDay = !!props.prefs.effectiveDailyRecord.eggs?.twice_a_day;
+  const choice = useEntryChoice(props.existingList, { allowMultiplePerDay });
   if (choice.showPicker) {
     return (
       <EggCollectionPickerView

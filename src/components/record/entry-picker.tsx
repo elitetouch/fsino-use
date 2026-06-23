@@ -45,10 +45,24 @@ export interface EntryChoiceApi {
   goToPicker: () => void;
 }
 
-export function useEntryChoice(existingList: DailyRecordDto[]): EntryChoiceApi {
+export function useEntryChoice(
+  existingList: DailyRecordDto[],
+  opts: { allowMultiplePerDay?: boolean } = {},
+): EntryChoiceApi {
   const [choice, setChoice] = useState<EntryChoice>(() => {
     if (existingList.length === 0) return { kind: 'add' };
-    if (existingList.length === 1) return { kind: 'edit', record: existingList[0]! };
+    if (existingList.length === 1) {
+      // When the user's preference allows two entries per day for this
+      // event (e.g. twice-a-day feed / water / eggs), don't silently
+      // drop them into edit mode after the first entry of the day —
+      // show the picker so they can choose between editing the morning
+      // entry or adding the evening one. The once-a-day case keeps
+      // today's smooth "edit the single entry" behaviour: a farmer who
+      // logs once per day, then re-enters the wizard to fix a typo,
+      // shouldn't get the extra "pick or add" gate they don't need.
+      if (opts.allowMultiplePerDay) return { kind: 'picking' };
+      return { kind: 'edit', record: existingList[0]! };
+    }
     return { kind: 'picking' };
   });
 
