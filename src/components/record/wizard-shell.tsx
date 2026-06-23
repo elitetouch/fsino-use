@@ -326,12 +326,22 @@ function sanitiseNumeric(raw: string): string {
 export function BeigeAlert({
   title, children,
 }: { title?: string; children: React.ReactNode }) {
+  // Bail out when there is nothing to say. Several steps call
+  // `<BeigeAlert>{firstHint(...)}</BeigeAlert>` where the hint helper
+  // returns null when the server has no guidance — without this guard
+  // we paint an empty amber bar on the page (the exact "what is this
+  // empty alert doing there" bug the user reported).
+  const hasBody = !(children === null || children === undefined || children === false || children === '');
+  if (!title && !hasBody) return null;
+
   return (
     <div className="rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-3">
       {title && (
         <p className="mb-0.5 text-[12px] font-bold text-amber-900">{title}</p>
       )}
-      <p className="text-[12px] leading-snug text-amber-900">{children}</p>
+      {hasBody && (
+        <p className="text-[12px] leading-snug text-amber-900">{children}</p>
+      )}
     </div>
   );
 }
