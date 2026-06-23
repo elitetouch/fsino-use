@@ -35,6 +35,13 @@ export function useCreateDailyRecord(flockId: string) {
       // Cycle detail dashboard summarises records; nudge it.
       qc.invalidateQueries({ queryKey: ['cycle', flockId] });
       qc.invalidateQueries({ queryKey: ['flock', flockId] });
+      // Pen dashboard powers every card on /home and /cycles/[id]
+      // (feed, water, mortality, eggs, vaccination). Without this
+      // invalidation the user submits a record, navigates back to the
+      // dashboard, and sees yesterday's numbers until they hard-refresh.
+      // Keyed by penId on the consumer side — broadcast to all penIds
+      // by omitting the second key segment.
+      qc.invalidateQueries({ queryKey: ['pen-dashboard'] });
       // If the POST shrank the flock (mortality/sale/bird_count), the
       // flock's current_birds also changed — kick the flocks-list query
       // so any dashboards reading aggregate counts pick it up.
@@ -127,6 +134,9 @@ export function useUpdateDailyRecord(flockId: string) {
       qc.invalidateQueries({ queryKey: ['daily-records', flockId] });
       qc.invalidateQueries({ queryKey: ['cycle', flockId] });
       qc.invalidateQueries({ queryKey: ['flock', flockId] });
+      // Same rationale as createDailyRecord — edits change the
+      // aggregates that drive every dashboard card.
+      qc.invalidateQueries({ queryKey: ['pen-dashboard'] });
     },
     onError: (err) => {
       toast.error(apiErrorMessage(err, 'Could not save your edits.'));

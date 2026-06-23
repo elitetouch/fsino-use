@@ -490,6 +490,36 @@ function capitalizeFirst(s: string): string {
 
 // ────────────── WATER CONSUMPTION ──────────────
 
+/**
+ * Water consumption card — rebuilt to match the figma "Easy / Expert /
+ * First entry state / Empty state" frames exactly, mirroring the feed
+ * card's treatment so every dashboard card reads as a consistent pair.
+ *
+ * Layout (top → bottom):
+ *
+ *   [icon] Water consumption                            [black 420ml pill]
+ *   Over the last five days, you have provided a daily
+ *   average of 420ml of water per bird.
+ *
+ *   Daily water amount      (or Morning / Evening sections in expert)
+ *   Jan 1   Jan 2   Jan 3   Jan 4   Jan 5
+ *   [1,2l]  [12l]   [120l]  [1.200l][12.000l]
+ *
+ *   ✓ Learn more                                            Edit record ›
+ *
+ * Critical deltas vs the previous DailyBars treatment:
+ *
+ *   - Bar chart REMOVED. Figma is a pill grid identical to the feed
+ *     card; bars made the row taller and the values harder to scan.
+ *   - Header pill is the bird-count style (black background) showing
+ *     just "420ml" — the bird-per-day context lives in the body
+ *     sentence instead, matching the figma's compact pill.
+ *   - Empty state replaces the daily/morning/evening pill grids with
+ *     "No water amount entered." inline copy under each section
+ *     heading, matching the figma's "Empty state" frame.
+ *   - Twice-a-day (expert) preference splits into Morning + Evening
+ *     sections, same structural pattern as the feed card.
+ */
 export function WaterConsumptionCard({
   data,
   onEdit,
@@ -498,7 +528,8 @@ export function WaterConsumptionCard({
   onEdit?: () => void;
 }) {
   const avg = data?.summary.avgMlPerBirdPerDay ?? null;
-  const items = recentDailyPoints(data?.series, 5);
+  const series = data?.series;
+  const isTwiceADay = series?.mode === 'expert';
   const empty = avg == null;
   const [learnOpen, setLearnOpen] = useState(false);
 
@@ -509,27 +540,51 @@ export function WaterConsumptionCard({
         title="Water consumption"
         rightSlot={
           avg != null ? (
-            <span className="rounded-md bg-[var(--color-brand-primary-dark)] px-2 py-0.5 text-[11px] font-bold text-white">
-              {Math.round(avg)} ml/bird/day
+            // Black pill matches the figma's "420ml" badge. Bird-count
+            // and egg-collection cards already use this treatment; reusing
+            // it here keeps the count-style pills visually grouped.
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+              {Math.round(avg)}ml
             </span>
           ) : undefined
         }
       />
-      <p className="mt-2 text-[12px] text-[var(--color-brand-muted)]">
-        {empty
-          ? 'No water consumption recorded yet.'
-          : firstInsight(data) ?? 'Average daily water per bird across recent days.'}
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          'No water amount entered.'
+        ) : (
+          <>
+            Over the last five days, you have provided a daily average of{' '}
+            <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+              {Math.round(avg!)}ml of water
+            </strong>{' '}
+            per bird.
+          </>
+        )}
       </p>
 
-      {/* Render the 5-day grid unconditionally so missing-day "—" columns
-          show up even before the user has logged a single record.
-          Mirrors the figma's "Empty state" frame which still shows the
-          5 date columns with dashes. */}
-      <div className="mt-3">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
-          Daily water amount
-        </p>
-        <DailyBars items={items} unit="L" tone="sky" />
+      <div className="mt-4 space-y-3">
+        {isTwiceADay && series?.mode === 'expert' ? (
+          <>
+            <WaterAmountSection
+              title="Morning water amount"
+              items={(series.morning ?? []).slice(-5)}
+              empty={empty}
+            />
+            <WaterAmountSection
+              title="Evening water amount"
+              items={(series.evening ?? []).slice(-5)}
+              empty={empty}
+            />
+          </>
+        ) : (
+          <WaterAmountSection
+            title="Daily water amount"
+            items={recentDailyPoints(series, 5)}
+            empty={empty}
+          />
+        )}
       </div>
 
       <LearnMoreFooter
@@ -546,6 +601,54 @@ export function WaterConsumptionCard({
         <WaterLearnMoreBody avg={avg} />
       </LearnMoreDrawer>
     </Card>
+  );
+}
+
+/**
+ * One section of the water card: section title + either the 5-column
+ * pill grid OR the "No water amount entered." placeholder text used in
+ * the figma's empty-state frame.
+ *
+ * Separate from DailyAmountSection (used by the feed card) because the
+ * empty-state copy and the lack of brand/itemType right slot are
+ * specific to water — folding the variants into a single component
+ * would muddy the prop signature.
+ */
+function WaterAmountSection({
+  title,
+  items,
+  empty,
+}: {
+  title: string;
+  items: Array<{ date: string; value: number | null }>;
+  empty: boolean;
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        {title}
+      </p>
+      {empty ? (
+        <p className="text-[11.5px] italic text-[var(--color-brand-muted)]">
+          No water amount entered.
+        </p>
+      ) : (
+        <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
+          {items.map((d) => (
+            <div key={d.date} className="flex min-w-0 flex-col items-center">
+              <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+                {shortDate(d.date)}
+              </p>
+              <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+                <span className="truncate">
+                  {d.value == null ? '—' : `${fmtCompact(d.value)} l`}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -76,8 +76,11 @@ export function Sidebar() {
         }))
         .filter((g) => g.items.length > 0);
 
+  // sticky top-0 + self-start pins the rail to the viewport while the
+  // main column scrolls — without these, the sidebar inherits the page
+  // flow and scrolls away as the dashboard content grows tall.
   return (
-    <aside className="hidden h-screen w-[260px] shrink-0 flex-col border-r border-[var(--color-brand-border)] bg-white lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col self-start border-r border-[var(--color-brand-border)] bg-white lg:flex">
       {/* Sidebar logo block — same proportions as the super-admin
           sidebar: the logo (cloud + bird + wordmark) takes a generous
           ~160px width centred at the top of the rail. */}
