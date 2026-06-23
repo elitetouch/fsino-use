@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -17,6 +17,7 @@ import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { readUser } from '@/lib/auth';
 import { readCurrentFarmId, useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
+import { readLastCycle, writeLastCycle } from '@/lib/last-cycle';
 
 /**
  * Dashboard — cycle-aware.
@@ -63,12 +64,54 @@ export default function HomePage() {
     enabled: !!currentFarmId,
   });
 
-  // Default to most-recently-placed flock as the "current cycle".
+  // Hydration-safe read of the per-staff, per-farm last-visited cycle.
+  // Starts null on the server, syncs once on mount when localStorage
+  // is available. The (userId, farmId) tuple is the cache key so two
+  // staff on the same farm — or the same staff on two farms — never
+  // share memory.
+  const [lastCycleId, setLastCycleId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!currentFarmId || !user?.id) return;
+    setLastCycleId(readLastCycle(currentFarmId, user.id));
+  }, [currentFarmId, user?.id]);
+
+  // Pick the current cycle. Order of preference:
+  //   1. Last-visited (validated against the active flocks list — an
+  //      archived/deleted id silently falls through so we never pin
+  //      the dashboard to a cycle the server will refuse to load).
+  //   2. Most-recently-placed flock — the sensible default for a
+  //      first-visit user or anyone whose last cycle was archived.
   const cycle = useMemo<FlockDto | undefined>(() => {
     const items = flocks.data?.flocks ?? [];
     if (items.length === 0) return undefined;
+    if (lastCycleId) {
+      const remembered = items.find((f) => f.id === lastCycleId);
+      if (remembered) return remembered;
+    }
     return items.slice().sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''))[0];
-  }, [flocks.data]);
+  }, [flocks.data, lastCycleId]);
+
+  // If the remembered id no longer points at an active flock, purge
+  // it so subsequent loads stop trying. (Also covers the case where
+  // the user archived their last cycle from another device.)
+  useEffect(() => {
+    if (!currentFarmId || !user?.id || !lastCycleId) return;
+    const items = flocks.data?.flocks ?? [];
+    if (items.length > 0 && !items.some((f) => f.id === lastCycleId)) {
+      writeLastCycle(currentFarmId, user.id, null);
+      setLastCycleId(null);
+    }
+  }, [flocks.data, lastCycleId, currentFarmId, user?.id]);
+
+  // Mirror the home-page selection into the last-cycle memory. This
+  // covers the case where the user uses the CyclePicker on the home
+  // page itself — the picker pushes to /cycles/[id] which records the
+  // visit, but we also want the *default* the home page resolved on
+  // first paint to be sticky if the user lingers and reloads.
+  useEffect(() => {
+    if (!currentFarmId || !user?.id || !cycle?.id) return;
+    writeLastCycle(currentFarmId, user.id, cycle.id);
+  }, [currentFarmId, user?.id, cycle?.id]);
 
   const totalBirds = (flocks.data?.flocks ?? []).reduce(
     (s, f) => s + (f.currentBirds ?? f.placedBirds ?? 0),

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   Bird, Droplet, Skull, Syringe, Wheat, ChevronRight, Egg,
-  Check, BadgeCheck, X as XIcon, Info, ChevronDown,
+  Check, BadgeCheck, X as XIcon, ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 import type {
@@ -231,7 +231,7 @@ export function FeedConsumptionCard({
         </div>
       )}
 
-      <FeedCardFooter
+      <LearnMoreFooter
         onLearnMore={() => setLearnOpen(true)}
         onEdit={onEdit}
         editLabel={empty ? 'Log feed' : 'Edit record'}
@@ -241,12 +241,13 @@ export function FeedConsumptionCard({
           Renders as a bottom-sheet on phones (slides up) and a
           centered modal on sm+ viewports. Content explains FCR so the
           farmer can act on the rating word ("excellent" vs "poor"). */}
-      <FcrLearnMoreDrawer
+      <LearnMoreDrawer
         open={learnOpen}
         onClose={() => setLearnOpen(false)}
-        fcr={fcr}
-        ratingWord={ratingWord}
-      />
+        title="Feed conversion rate (FCR)"
+      >
+        <FcrLearnMoreBody fcr={fcr} ratingWord={ratingWord} />
+      </LearnMoreDrawer>
     </Card>
   );
 }
@@ -308,27 +309,30 @@ function DailyAmountSection({
 }
 
 /**
- * Feed-card footer — green BadgeCheck "Learn more" on the left, a
- * compact "Edit record ›" on the right.
+ * Unified card footer — green BadgeCheck "Learn more" on the left, a
+ * compact "Edit record ›" on the right. Every data card on the dashboard
+ * (Feed, Water, Mortality, Egg, Vaccination) renders this same shape so
+ * the affordance is consistent — matches the figma's bottom-row treatment
+ * across every dashboard card. The Learn more button always opens an
+ * inline LearnMoreDrawer; the right slot can either be the edit button
+ * (data cards) or a custom action like Show all (vaccination).
  *
- * Two corrections from the previous iteration:
- *   - Icon was `CheckCircle2` (plain circle + tick). The figma's icon
- *     is a verified-badge style — scalloped/sunburst frame around a
- *     centered tick. Lucide ships exactly that as `BadgeCheck`, so
- *     the swap is one-for-one with no SVG handwriting.
- *   - "Learn more" is now ACTUALLY clickable (was inert before). It
- *     opens an inline drawer with FCR explainer copy — mirrors the
- *     wizard's per-step LearnMoreDrawer pattern so the affordance
- *     feels consistent across the app.
+ * Icon choice: BadgeCheck = verified-badge style — scalloped/sunburst
+ * frame around a centered tick. Matches the figma exactly; CheckCircle2
+ * would be a plain circle which is wrong.
  */
-function FeedCardFooter({
+function LearnMoreFooter({
   onLearnMore,
   onEdit,
   editLabel,
+  rightSlot,
 }: {
   onLearnMore: () => void;
+  /** Right-side edit button click. Omitted when rightSlot is supplied. */
   onEdit?: () => void;
-  editLabel: string;
+  editLabel?: string;
+  /** Override the right side entirely (e.g. vaccination's Show all toggle). */
+  rightSlot?: ReactNode;
 }) {
   return (
     <div className="mt-4 flex items-center justify-between gap-2 border-t border-[var(--color-brand-border)] pt-2.5">
@@ -340,39 +344,36 @@ function FeedCardFooter({
         <BadgeCheck className="h-4 w-4 fill-[var(--color-brand-primary)] text-white" strokeWidth={2.4} />
         Learn more
       </button>
-      <button
-        type="button"
-        onClick={onEdit}
-        className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
-      >
-        {editLabel}
-        <ChevronRight className="h-3 w-3" />
-      </button>
+      {rightSlot ?? (editLabel ? (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
+        >
+          {editLabel}
+          <ChevronRight className="h-3 w-3" />
+        </button>
+      ) : null)}
     </div>
   );
 }
 
 /**
- * Inline learn-more drawer specifically for the FCR card. Reuses the
- * same bottom-sheet / centered-modal shape as the wizard's
- * LearnMoreDrawer (components/record/wizard-shell.tsx) so the
- * affordance feels familiar.
- *
- * Renders a brief explainer of:
- *   - What FCR is
- *   - How the gauge zones map to ratings (red / amber / green / blue)
- *   - The user's current value + rating in context
+ * Generic Learn-more drawer — bottom-sheet on phones, centered modal on
+ * sm+ viewports. Every card renders this same chrome; the body changes
+ * (FCR explainer for feed, water-intake explainer for water, etc.) so
+ * the visual rhythm of the app stays consistent.
  */
-function FcrLearnMoreDrawer({
+function LearnMoreDrawer({
   open,
   onClose,
-  fcr,
-  ratingWord,
+  title,
+  children,
 }: {
   open: boolean;
   onClose: () => void;
-  fcr: number | null;
-  ratingWord: string | null;
+  title: string;
+  children: ReactNode;
 }) {
   if (!open) return null;
   return (
@@ -384,9 +385,7 @@ function FcrLearnMoreDrawer({
         className="relative z-10 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[520px] sm:rounded-2xl"
       >
         <header className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
-          <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">
-            Feed conversion rate (FCR)
-          </p>
+          <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">{title}</p>
           <button
             type="button"
             onClick={onClose}
@@ -398,61 +397,73 @@ function FcrLearnMoreDrawer({
         </header>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-[13px] leading-relaxed text-[var(--color-brand-fg)]">
-          <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
-            What FCR tells you
-          </h3>
-          <p>
-            FCR is the <strong>feed-to-output ratio</strong>: how many kilograms
-            of feed your birds eat for every kilogram of meat (broilers) or eggs
-            (layers) they produce. Lower is better &mdash; less feed for the same
-            output.
-          </p>
-
-          {fcr != null && (
-            <p>
-              Your current FCR is{' '}
-              <strong className="text-[var(--color-brand-primary-deep)]">
-                {fcr.toFixed(2)}
-              </strong>
-              {ratingWord ? <> &mdash; rated <strong>{ratingWord}</strong>.</> : '.'}
-            </p>
-          )}
-
-          <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
-            Gauge zones
-          </h3>
-          <ul className="space-y-1.5">
-            <li className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-rose-600" />
-              <span><strong>Red (suspiciously low)</strong> &mdash; usually a logging error. Double-check your feed-amount entries are in the right unit.</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-orange-500" />
-              <span><strong>Orange (below target)</strong> &mdash; birds are growing slower than the benchmark suggests for the feed they&rsquo;re eating.</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-[var(--color-brand-primary)]" />
-              <span><strong>Green (on target)</strong> &mdash; you&rsquo;re in the breed&rsquo;s expected efficiency window. Keep doing what you&rsquo;re doing.</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-sky-600" />
-              <span><strong>Blue (above target)</strong> &mdash; more feed per kg of output than the benchmark. Common causes: feed waste, low-quality feed, illness, or wrong stocking density.</span>
-            </li>
-          </ul>
-
-          <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
-            How we compute it
-          </h3>
-          <p>
-            We sum your lifetime feed (kg, with bags auto-converted) and divide
-            by your birds&rsquo; live weight (current_birds &times; latest average
-            weight) for broilers and pre-lay pullets, or by total kg of eggs
-            for layers in production. Log a bird weight or some eggs to keep
-            the number fresh.
-          </p>
+          {children}
         </div>
       </div>
     </div>
+  );
+}
+
+/** Small heading shared by every drawer body so they all read the same. */
+function DrawerSectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
+      {children}
+    </h3>
+  );
+}
+
+/** FCR card drawer body. */
+function FcrLearnMoreBody({ fcr, ratingWord }: { fcr: number | null; ratingWord: string | null }) {
+  return (
+    <>
+      <DrawerSectionHeading>What FCR tells you</DrawerSectionHeading>
+      <p>
+        FCR is the <strong>feed-to-output ratio</strong>: how many kilograms
+        of feed your birds eat for every kilogram of meat (broilers) or eggs
+        (layers) they produce. Lower is better &mdash; less feed for the same
+        output.
+      </p>
+
+      {fcr != null && (
+        <p>
+          Your current FCR is{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {fcr.toFixed(2)}
+          </strong>
+          {ratingWord ? <> &mdash; rated <strong>{ratingWord}</strong>.</> : '.'}
+        </p>
+      )}
+
+      <DrawerSectionHeading>Gauge zones</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-rose-600" />
+          <span><strong>Red (suspiciously low)</strong> &mdash; usually a logging error. Double-check your feed-amount entries are in the right unit.</span>
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-orange-500" />
+          <span><strong>Orange (below target)</strong> &mdash; birds are growing slower than the benchmark suggests for the feed they&rsquo;re eating.</span>
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-[var(--color-brand-primary)]" />
+          <span><strong>Green (on target)</strong> &mdash; you&rsquo;re in the breed&rsquo;s expected efficiency window. Keep doing what you&rsquo;re doing.</span>
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 shrink-0 rounded-full bg-sky-600" />
+          <span><strong>Blue (above target)</strong> &mdash; more feed per kg of output than the benchmark. Common causes: feed waste, low-quality feed, illness, or wrong stocking density.</span>
+        </li>
+      </ul>
+
+      <DrawerSectionHeading>How we compute it</DrawerSectionHeading>
+      <p>
+        We sum your lifetime feed (kg, with bags auto-converted) and divide
+        by your birds&rsquo; live weight (current_birds &times; latest average
+        weight) for broilers and pre-lay pullets, or by total kg of eggs
+        for layers in production. Log a bird weight or some eggs to keep
+        the number fresh.
+      </p>
+    </>
   );
 }
 
@@ -489,6 +500,7 @@ export function WaterConsumptionCard({
   const avg = data?.summary.avgMlPerBirdPerDay ?? null;
   const items = recentDailyPoints(data?.series, 5);
   const empty = avg == null;
+  const [learnOpen, setLearnOpen] = useState(false);
 
   return (
     <Card>
@@ -509,17 +521,64 @@ export function WaterConsumptionCard({
           : firstInsight(data) ?? 'Average daily water per bird across recent days.'}
       </p>
 
-      {items.length > 0 && (
-        <div className="mt-3">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
-            Daily water amount
-          </p>
-          <DailyBars items={items} unit="L" tone="sky" />
-        </div>
-      )}
+      {/* Render the 5-day grid unconditionally so missing-day "—" columns
+          show up even before the user has logged a single record.
+          Mirrors the figma's "Empty state" frame which still shows the
+          5 date columns with dashes. */}
+      <div className="mt-3">
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
+          Daily water amount
+        </p>
+        <DailyBars items={items} unit="L" tone="sky" />
+      </div>
 
-      <CardFooter onClick={onEdit} label={empty ? 'Log water' : 'Edit record'} />
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log water' : 'Edit record'}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Water consumption"
+      >
+        <WaterLearnMoreBody avg={avg} />
+      </LearnMoreDrawer>
     </Card>
+  );
+}
+
+function WaterLearnMoreBody({ avg }: { avg: number | null }) {
+  return (
+    <>
+      <DrawerSectionHeading>Why daily water matters</DrawerSectionHeading>
+      <p>
+        Birds drink roughly 1.8&times; what they eat by weight. A sudden drop in
+        water intake is often the <strong>first warning sign</strong> of illness
+        or heat stress &mdash; usually a day or two before mortality climbs.
+      </p>
+      {avg != null && (
+        <p>
+          Your birds currently average{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {Math.round(avg)} ml per bird per day
+          </strong>.
+        </p>
+      )}
+      <DrawerSectionHeading>Typical ranges</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li>Broilers: 150&ndash;300 ml/bird/day, rising with age.</li>
+        <li>Layers in production: 200&ndash;350 ml/bird/day.</li>
+        <li>Hot weather can push intake 50&ndash;100% higher.</li>
+      </ul>
+      <DrawerSectionHeading>What to do</DrawerSectionHeading>
+      <p>
+        Log water daily &mdash; even an estimate. A 20% week-on-week drop is
+        worth investigating: check waterlines, drinker height, and bird
+        behaviour before it becomes a mortality spike.
+      </p>
+    </>
   );
 }
 
@@ -535,8 +594,9 @@ export function MortalityCard({
   const rate = data?.summary.rate ?? null;
   const rateLabel = data?.summary.rateLabel ?? null;
   const items = recentDailyPoints(data?.series, 5);
-  const empty = rate == null && items.length === 0;
+  const empty = rate == null && items.every((d) => d.value == null);
   const cause = data?.summary.primaryCause ?? null;
+  const [learnOpen, setLearnOpen] = useState(false);
 
   // Healthy: green; watch: amber; concerning: red.
   const labelTone = !rateLabel ? null
@@ -573,17 +633,62 @@ export function MortalityCard({
         </p>
       )}
 
-      {items.length > 0 && (
-        <div className="mt-3">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
-            Birds dead or culled
-          </p>
-          <DailyBars items={items} unit="" tone="rose" />
-        </div>
-      )}
+      <div className="mt-3">
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
+          Birds dead or culled
+        </p>
+        <DailyBars items={items} unit="" tone="rose" />
+      </div>
 
-      <CardFooter onClick={onEdit} label={empty ? 'Log mortality' : 'Edit record'} />
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log mortality' : 'Edit record'}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Mortality rate"
+      >
+        <MortalityLearnMoreBody rate={rate} rateLabel={rateLabel} />
+      </LearnMoreDrawer>
     </Card>
+  );
+}
+
+function MortalityLearnMoreBody({ rate, rateLabel }: { rate: number | null; rateLabel: string | null }) {
+  return (
+    <>
+      <DrawerSectionHeading>What this number means</DrawerSectionHeading>
+      <p>
+        Mortality rate is the percentage of birds you&rsquo;ve lost since the
+        cycle started &mdash; both natural deaths and culls. Tracking it
+        day-by-day catches outbreaks early; a spike of 0.5&ndash;1% in a single
+        day deserves a vet call.
+      </p>
+      {rate != null && (
+        <p>
+          Current rate is{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {rate.toFixed(2)}%
+          </strong>
+          {rateLabel ? <> &mdash; rated <strong>{rateLabel.toLowerCase()}</strong>.</> : '.'}
+        </p>
+      )}
+      <DrawerSectionHeading>Typical benchmarks</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li><strong>Broilers:</strong> &lt; 5% cumulative over the cycle is healthy.</li>
+        <li><strong>Layers:</strong> &lt; 1% per month in production is healthy.</li>
+        <li>Brooding (week 1&ndash;2): expect 1&ndash;2%; higher means investigate.</li>
+      </ul>
+      <DrawerSectionHeading>Logging tip</DrawerSectionHeading>
+      <p>
+        Always record a <strong>cause</strong> alongside the count &mdash; over
+        time, the primary-cause breakdown tells you whether to invest in
+        biosecurity, climate, or feed quality.
+      </p>
+    </>
   );
 }
 
@@ -601,7 +706,8 @@ export function EggCollectionCard({
   const lifetimeDamaged = data?.summary.lifetimeDamagedEggs ?? 0;
   const items = recentDailyPoints(data?.series, 5);
   const layRate = data?.summary.layRatePct ?? null;
-  const empty = lifetimeGood === 0 && items.length === 0;
+  const empty = lifetimeGood === 0 && items.every((d) => d.value == null);
+  const [learnOpen, setLearnOpen] = useState(false);
 
   return (
     <Card>
@@ -636,17 +742,61 @@ export function EggCollectionCard({
         </p>
       )}
 
-      {items.length > 0 && (
-        <div className="mt-3">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
-            Eggs per day
-          </p>
-          <DailyBars items={items} unit="" tone="mint" />
-        </div>
-      )}
+      <div className="mt-3">
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
+          Eggs per day
+        </p>
+        <DailyBars items={items} unit="" tone="mint" />
+      </div>
 
-      <CardFooter onClick={onEdit} label={empty ? 'Log eggs' : 'Edit record'} />
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log eggs' : 'Edit record'}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Egg collection"
+      >
+        <EggLearnMoreBody layRate={layRate} avgPerDay={avgPerDay} />
+      </LearnMoreDrawer>
     </Card>
+  );
+}
+
+function EggLearnMoreBody({ layRate, avgPerDay }: { layRate: number | null; avgPerDay: number | null }) {
+  return (
+    <>
+      <DrawerSectionHeading>What lay rate tells you</DrawerSectionHeading>
+      <p>
+        Lay rate is the percentage of your hens that laid an egg today. A flock
+        of 1,000 layers producing 850 eggs has an 85% lay rate. It&rsquo;s the
+        single best signal of layer-flock health and feed quality.
+      </p>
+      {layRate != null && (
+        <p>
+          Current rate is{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {layRate.toFixed(1)}%
+          </strong>
+          {avgPerDay != null ? <> ({avgPerDay.toLocaleString()} eggs/day).</> : '.'}
+        </p>
+      )}
+      <DrawerSectionHeading>Typical ranges</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li><strong>Peak lay (week 28&ndash;35):</strong> 90&ndash;95% for commercial layers.</li>
+        <li><strong>Sustained lay (week 36&ndash;65):</strong> 80&ndash;88% is normal.</li>
+        <li>A 5%+ drop in 48 hours warrants checking lighting, feed, and water.</li>
+      </ul>
+      <DrawerSectionHeading>Damaged eggs</DrawerSectionHeading>
+      <p>
+        Track damaged separately &mdash; a damaged-egg rate above 2&ndash;3%
+        usually points at <strong>nest design, collection timing, or calcium
+        deficiency</strong>, all of which are fixable.
+      </p>
+    </>
   );
 }
 
@@ -675,10 +825,8 @@ export function EggCollectionCard({
  */
 export function VaccinationCard({
   data,
-  onManage,
 }: {
   data?: VaccinationCardDto | null;
-  onManage?: () => void;
 }) {
   const summary = data?.summary;
   const items = data?.items ?? [];
@@ -694,6 +842,7 @@ export function VaccinationCard({
   // whether we cap to 5 visible rows (matching the figma's preview
   // count) or expand to the full schedule.
   const [showAll, setShowAll] = useState(false);
+  const [learnOpen, setLearnOpen] = useState(false);
   const ordered = chronologicalOrder(items);
   const VISIBLE_DEFAULT = 5;
   const visibleItems = showAll ? ordered : ordered.slice(0, VISIBLE_DEFAULT);
@@ -749,20 +898,14 @@ export function VaccinationCard({
         </ul>
       )}
 
-      {/* Figma footer: blue "Learn more about this" badge on the left,
-          "Show all ⌄" on the right. Only render the toggle when the
-          schedule is long enough to need collapsing (or already
-          expanded so the user can collapse it back). */}
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-brand-border)] pt-3">
-        <button
-          type="button"
-          onClick={onManage}
-          className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-[11.5px] font-semibold text-sky-700 hover:bg-sky-100"
-        >
-          <Info className="h-3 w-3" strokeWidth={2.5} />
-          Learn more about this
-        </button>
-        {ordered.length > VISIBLE_DEFAULT && (
+      {/* Unified footer — same green BadgeCheck Learn more as every
+          other card on the dashboard. The right slot carries the
+          Show all toggle when the schedule is long enough to need
+          collapsing, otherwise nothing — matches the figma's
+          consistent footer treatment across all cards. */}
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        rightSlot={ordered.length > VISIBLE_DEFAULT ? (
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
@@ -776,9 +919,73 @@ export function VaccinationCard({
               )}
             />
           </button>
-        )}
-      </div>
+        ) : undefined}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Vaccination schedule"
+      >
+        <VaccinationLearnMoreBody
+          completed={completed}
+          total={total}
+          overdue={overdue + criticalOverdue}
+          dueToday={dueToday}
+        />
+      </LearnMoreDrawer>
     </Card>
+  );
+}
+
+function VaccinationLearnMoreBody({
+  completed, total, overdue, dueToday,
+}: {
+  completed: number; total: number; overdue: number; dueToday: number;
+}) {
+  return (
+    <>
+      <DrawerSectionHeading>How the schedule works</DrawerSectionHeading>
+      <p>
+        The schedule is generated from your flock&rsquo;s <strong>breed</strong>
+        {' '}and <strong>placement date</strong>. Each row shows the calendar
+        date the dose is due; the right-side indicator tells you whether it
+        was given, missed, or upcoming.
+      </p>
+      {total > 0 && (
+        <p>
+          You&rsquo;ve completed{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {completed} of {total}
+          </strong>
+          {' '}scheduled doses
+          {overdue > 0 ? <>, with <strong className="text-rose-700">{overdue} overdue</strong></> : null}
+          {dueToday > 0 ? <>, and <strong>{dueToday} due today</strong></> : null}
+          .
+        </p>
+      )}
+      <DrawerSectionHeading>Reading the indicators</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li className="flex items-start gap-2">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-brand-primary)]" strokeWidth={3} />
+          <span><strong>Green check</strong> &mdash; dose was given. We matched it from your daily records.</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <XIcon className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" strokeWidth={3} />
+          <span><strong>Red X</strong> &mdash; dose was missed. Critical vaccines (Newcastle, Gumboro, Marek&rsquo;s) shown in deeper red.</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="mt-1.5 inline-block h-[3px] w-4 shrink-0 rounded-full bg-[var(--color-brand-border)]" />
+          <span><strong>Grey dash</strong> &mdash; upcoming, no action needed yet.</span>
+        </li>
+      </ul>
+      <DrawerSectionHeading>Why this matters</DrawerSectionHeading>
+      <p>
+        Missing a critical vaccine at the wrong age can wipe out a pen.
+        Log vaccinations <strong>the day you give them</strong> &mdash; we&rsquo;ll
+        auto-match them against the schedule so a green check appears here.
+      </p>
+    </>
   );
 }
 
@@ -996,27 +1203,6 @@ function CardHeader({
   );
 }
 
-function CardFooter({ onClick, label }: { onClick?: () => void; label: string }) {
-  return (
-    <div className="mt-3 flex items-center justify-between border-t border-[var(--color-brand-border)] pt-2.5">
-      <button
-        type="button"
-        className="text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
-      >
-        Learn more
-      </button>
-      <button
-        type="button"
-        onClick={onClick}
-        className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
-      >
-        {label}
-        <ChevronRight className="h-3 w-3" />
-      </button>
-    </div>
-  );
-}
-
 function DailyBars({
   items,
   unit,
@@ -1071,7 +1257,13 @@ function labelForProduction(t: FlockDto['productionType']): string {
   return t === 'broiler' ? 'Broilers for meat production' : t === 'layer' ? 'Layers for egg production' : 'Dual-purpose';
 }
 
-/** Pull the last `n` daily points from any series shape, in chronological order. */
+/**
+ * Pull the last `n` daily points from any series shape, in chronological
+ * order. Crucially, days WITHOUT records are preserved with value=null
+ * so the UI can render them as "—" — the figma's "any day with no
+ * record shows a dash" rule, which would silently collapse if we
+ * filtered nulls out at the merge step.
+ */
 function recentDailyPoints(
   series:
     | { mode: 'easy' | 'daily'; daily?: Array<{ date: string; value: number | null }> }
@@ -1081,17 +1273,22 @@ function recentDailyPoints(
 ): Array<{ date: string; value: number | null }> {
   if (!series) return [];
   if (series.mode === 'expert') {
-    // Combine morning + evening by date.
-    const byDate = new Map<string, number>();
-    for (const p of series.morning ?? []) {
-      if (p.value != null) byDate.set(p.date, (byDate.get(p.date) ?? 0) + p.value);
-    }
-    for (const p of series.evening ?? []) {
-      if (p.value != null) byDate.set(p.date, (byDate.get(p.date) ?? 0) + p.value);
-    }
-    const merged = [...byDate.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, value]) => ({ date, value }));
+    // Backend ships morning + evening sharing the same date set. Walk
+    // morning's dates as the spine; combine each date's morning and
+    // evening values; null when BOTH halves are missing so the day
+    // still appears as a "—" column instead of being dropped.
+    const morning = series.morning ?? [];
+    const evening = series.evening ?? [];
+    const eveningByDate = new Map<string, number | null>();
+    for (const p of evening) eveningByDate.set(p.date, p.value);
+
+    const merged = morning.map((m) => {
+      const eVal = eveningByDate.get(m.date) ?? null;
+      const both = (m.value == null && eVal == null)
+        ? null
+        : (m.value ?? 0) + (eVal ?? 0);
+      return { date: m.date, value: both };
+    });
     return merged.slice(-n);
   }
   const daily = series.daily ?? [];

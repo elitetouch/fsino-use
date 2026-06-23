@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   BreedSummaryCard, FeedConsumptionCard, WaterConsumptionCard,
@@ -33,6 +34,7 @@ export function CycleCardsGrid({
   /** Active flock's pen id. Required for the dashboard query. */
   penId: string | undefined;
 }) {
+  const router = useRouter();
   const dashboard = useQuery({
     queryKey: ['pen-dashboard', penId],
     queryFn: () => endpoints.getPenDashboard(penId!),
@@ -48,13 +50,31 @@ export function CycleCardsGrid({
     || (cycle.productionType as string) === 'mixed'
     || cycle.productionType === 'dual_purpose';
 
+  // Card footers route to the same wizard the user adds with — the
+  // wizard already handles edit-mode safely:
+  //   - EntryPicker surfaces when >=2 records of the same event_type
+  //     exist for the day, so we never silently overwrite another
+  //     staff's entry.
+  //   - Server-side UpdateFlockDailyRecord enforces "staff can only
+  //     edit records they themselves created" — foreign rows 403
+  //     with a clear toast.
+  //   - Bird-count invariants (mortality/sale can't exceed current
+  //     birds, etc.) are validated server-side, so partial edits
+  //     can't corrupt the cycle's running totals.
+  // We don't build a parallel "edit only" path — every safeguard
+  // would have to be reimplemented and kept in sync.
+  const openRecord = () => router.push(`/cycles/${cycle.id}/record`);
+
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <BreedSummaryCard flock={cycle} />
-      <FeedConsumptionCard data={cards?.feed} />
-      <WaterConsumptionCard data={cards?.water} />
-      <MortalityCard data={cards?.mortality} />
-      {isLayerOrMixed && <EggCollectionCard data={cards?.eggCollection} />}
+      <FeedConsumptionCard data={cards?.feed} onEdit={openRecord} />
+      <WaterConsumptionCard data={cards?.water} onEdit={openRecord} />
+      <MortalityCard data={cards?.mortality} onEdit={openRecord} />
+      {isLayerOrMixed && <EggCollectionCard data={cards?.eggCollection} onEdit={openRecord} />}
+      {/* VaccinationCard's footer now matches every other card's
+          Learn-more pattern — no edit slot; vaccinations are managed
+          via the wizard step rather than a card-level edit jump. */}
       <VaccinationCard data={cards?.vaccination} />
     </div>
   );

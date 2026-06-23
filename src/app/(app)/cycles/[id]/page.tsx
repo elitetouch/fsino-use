@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,8 @@ import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
 import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
+import { readUser } from '@/lib/auth';
+import { writeLastCycle } from '@/lib/last-cycle';
 import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +55,18 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
   const pen: PenDto | undefined = (pens.data?.pens ?? []).find((p) => p.id === cycle?.penId);
   const allCycles: FlockDto[] = flocks.data?.flocks ?? [];
   const ordinal = Math.max(1, allCycles.findIndex((c) => c.id === id) + 1);
+
+  // Remember the last cycle this user opened on this farm so the
+  // dashboard can land them back here next time. Only write once we've
+  // confirmed the cycle actually belongs to the active farm's flocks —
+  // otherwise a deep-link to an archived/foreign id would poison the
+  // memory and pin the user to a cycle that errors on read.
+  useEffect(() => {
+    if (!farmId || !cycle) return;
+    const user = readUser();
+    if (!user?.id) return;
+    writeLastCycle(farmId, user.id, cycle.id);
+  }, [farmId, cycle]);
 
   return (
     <div className="space-y-5">
