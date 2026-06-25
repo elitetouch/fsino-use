@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   BreedSummaryCard, FeedConsumptionCard, WaterConsumptionCard,
   MortalityCard, BirdsSoldCard, BirdWeightCard,
-  EggCollectionCard, VaccinationCard,
+  EggCollectionCard, EggSizeCard, EggWeightCard, VaccinationCard,
 } from '@/components/app/cycle-cards';
 import { endpoints, type FlockDto } from '@/lib/api';
 
@@ -75,6 +75,8 @@ export function CycleCardsGrid({
       <BirdsSoldCard data={cards?.birdsSold} onEdit={openRecord} />
       <BirdWeightCard data={cards?.weight} onEdit={openRecord} />
       {isLayerOrMixed && <EggCollectionCard data={cards?.eggCollection} onEdit={openRecord} />}
+      {isLayerOrMixed && <EggSizeCard data={cards?.eggSize} onEdit={openRecord} />}
+      {isLayerOrMixed && <EggWeightCard data={cards?.eggWeight} onEdit={openRecord} />}
       {/* VaccinationCard's footer now matches every other card's
           Learn-more pattern — no edit slot; vaccinations are managed
           via the wizard step rather than a card-level edit jump. */}

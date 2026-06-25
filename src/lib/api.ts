@@ -829,14 +829,34 @@ export type WeightCardDto = DashboardCardBase & {
   series: DashboardSeries;
 };
 
+/**
+ * Each egg-collection series point ships the day's good count as
+ * `value` AND the raw good/damaged breakdown so the card can render
+ * the figma's "Good:" + "Damaged:" sub-rows under each Morning /
+ * Evening section.
+ */
+export type EggSeriesPoint = {
+  date: string;
+  label: string;
+  hasRecord: boolean;
+  value: number | null;
+  good?: number | null;
+  damaged?: number | null;
+  unit?: string;
+};
+
+export type EggCollectionSeries =
+  | { mode: 'easy' | 'daily'; daily: EggSeriesPoint[] }
+  | { mode: 'expert'; morning: EggSeriesPoint[]; evening: EggSeriesPoint[] };
+
 export type EggCollectionCardDto = DashboardCardBase & {
   summary: {
-    lifetimeGoodEggs: number;
-    lifetimeDamagedEggs: number;
-    avgPerDay: number | null;
-    layRatePct: number | null;
+    dailyAverage: number | null;
+    lifetimeGood: number;
+    lifetimeDamaged: number;
+    layRate: number | null;
   };
-  series?: DashboardSeries;
+  series?: EggCollectionSeries | null;
 };
 
 export type EggSizeCardDto = DashboardCardBase & {
@@ -844,13 +864,15 @@ export type EggSizeCardDto = DashboardCardBase & {
     dominantSize: string | null;
     distribution: Record<string, number> | null;
   };
+  series?: DashboardSeries | null;
 };
 
 export type EggWeightCardDto = DashboardCardBase & {
   summary: {
-    latestAvgGrams: number | null;
-    lifetimeKg: number | null;
+    avgWeightG: number | null;
+    unit: string;
   };
+  series?: DashboardSeries | null;
 };
 
 /**

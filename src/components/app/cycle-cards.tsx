@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import type {
   FeedCardDto, FlockDto, MortalityCardDto, BirdsSoldCardDto, WeightCardDto,
-  EggCollectionCardDto, VaccinationCardDto, VaccinationItemDto, WaterCardDto,
+  EggCollectionCardDto, EggSizeCardDto, EggWeightCardDto, EggSeriesPoint,
+  VaccinationCardDto, VaccinationItemDto, WaterCardDto,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -1176,6 +1177,36 @@ function formatKg(v: number): string {
 
 // ────────────── EGG COLLECTION ──────────────
 
+/**
+ * Egg collection card — rebuilt to match the figma's four egg-collection
+ * frames exactly (easy / expert / first-entry / partial-empty).
+ *
+ *   Easy mode (once-a-day pref):
+ *     [icon] Egg collection                      [black "1,093 eggs" pill]
+ *     Over the last five days, your birds have laid an average of
+ *     1,093 eggs per day.
+ *
+ *     Eggs collected
+ *     Jan 1  Jan 2  Jan 3  Jan 4  Jan 5
+ *     [1,254][1,231][1,092][1,087][1,254]
+ *
+ *   Expert mode (twice-a-day pref) — two sections, each with Good and
+ *   Damaged sub-rows:
+ *
+ *     Morning egg collection
+ *               Jan 2  Jan 3  Jan 4  Jan 5
+ *     Good:    [1,231][1,092][1,087][1,254]
+ *     Damaged: [28]   [11]   [43]   [27]      ← worst "Damaged" rendered red
+ *
+ *     Evening egg collection ... (same layout, sharp drop in Good rendered red)
+ *
+ *   Footer: ✓ Learn more                                    Edit record ›
+ *
+ * Description sentence reads "Over the last N days, your birds have laid
+ * an average of X eggs per day." where N = data-day count in the
+ * displayed window — matches the figma's "last four days" copy when
+ * Jan 1 had no data.
+ */
 export function EggCollectionCard({
   data,
   onEdit,
@@ -1183,12 +1214,33 @@ export function EggCollectionCard({
   data?: EggCollectionCardDto | null;
   onEdit?: () => void;
 }) {
-  const avgPerDay = data?.summary.avgPerDay ?? null;
-  const lifetimeGood = data?.summary.lifetimeGoodEggs ?? 0;
-  const lifetimeDamaged = data?.summary.lifetimeDamagedEggs ?? 0;
-  const items = recentDailyPoints(data?.series, 5);
-  const layRate = data?.summary.layRatePct ?? null;
-  const empty = lifetimeGood === 0 && items.every((d) => d.value == null);
+  const avgPerDay = data?.summary.dailyAverage ?? null;
+  const lifetimeGood = data?.summary.lifetimeGood ?? 0;
+  const lifetimeDamaged = data?.summary.lifetimeDamaged ?? 0;
+  const layRate = data?.summary.layRate ?? null;
+  const series = data?.series ?? null;
+  const isTwiceADay = series?.mode === 'expert';
+
+  // Pick the per-section items (last 5) for the morning / evening split,
+  // or the daily series for the once-a-day layout. The frontend trims
+  // to 5; backend already ships exactly 5.
+  const morningItems = isTwiceADay && series?.mode === 'expert' ? series.morning.slice(-5) : [];
+  const eveningItems = isTwiceADay && series?.mode === 'expert' ? series.evening.slice(-5) : [];
+  const dailyItems = !isTwiceADay && (series?.mode === 'easy' || series?.mode === 'daily')
+    ? series.daily.slice(-5)
+    : [];
+
+  // Count of days with at least one record — drives the "last N days"
+  // copy. For twice-a-day, a day counts if EITHER moment recorded.
+  const dataDayCount = isTwiceADay
+    ? new Set(
+        [...morningItems, ...eveningItems]
+          .filter((p) => p.hasRecord)
+          .map((p) => p.date),
+      ).size
+    : dailyItems.filter((p) => p.hasRecord).length;
+
+  const empty = lifetimeGood === 0 && dataDayCount === 0;
   const [learnOpen, setLearnOpen] = useState(false);
 
   return (
@@ -1197,39 +1249,60 @@ export function EggCollectionCard({
         icon={Egg}
         title="Egg collection"
         rightSlot={
-          !empty ? (
-            // Egg collection count pill — figma uses BLACK for count
-            // ("1,093 eggs" / "1,254 eggs"), aligning with the bird-
-            // count convention in BreedSummaryCard.
+          avgPerDay != null ? (
+            // Black "1,093 eggs" pill — same treatment as the bird-count
+            // / birds-sold pills, deliberately count-style not rating-coloured.
             <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
-              {avgPerDay != null ? `${avgPerDay}/day` : `${lifetimeGood} total`}
+              {Math.round(avgPerDay).toLocaleString()} eggs
             </span>
           ) : undefined
         }
       />
-      <p className="mt-2 text-[12px] text-[var(--color-brand-muted)]">
-        {empty
-          ? 'No eggs collected yet.'
-          : layRate != null
-            ? `Current lay rate is ${layRate.toFixed(1)}%.`
-            : 'Eggs collected across recent days.'}
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          'No eggs collected yet.'
+        ) : avgPerDay != null && dataDayCount > 0 ? (
+          <>
+            Over the last {numberWord(dataDayCount)} day{dataDayCount === 1 ? '' : 's'},
+            your birds have laid an average of{' '}
+            <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+              {Math.round(avgPerDay).toLocaleString()} eggs per day
+            </strong>
+            .
+          </>
+        ) : (
+          'Eggs collected across recent days.'
+        )}
       </p>
 
-      {(lifetimeDamaged > 0) && (
-        <p className="mt-2 text-[11.5px] text-[var(--color-brand-fg-soft)]">
+      <div className="mt-4 space-y-4">
+        {isTwiceADay ? (
+          <>
+            <EggMomentSection title="Morning egg collection" items={morningItems} />
+            <EggMomentSection title="Evening egg collection" items={eveningItems} />
+          </>
+        ) : (
+          <EggDailySection title="Eggs collected" items={dailyItems} />
+        )}
+      </div>
+
+      {/* Lifetime damaged-eggs hint stays as a secondary tooltip-style
+          line for both modes — useful context that doesn't fit in the
+          per-day pills. Hidden when no damage has ever been logged. */}
+      {lifetimeDamaged > 0 && (
+        <p className="mt-3 text-[11.5px] text-[var(--color-brand-fg-soft)]">
           Lifetime:{' '}
-          <strong className="text-[var(--color-brand-fg)]">{lifetimeGood.toLocaleString()} good</strong>
+          <strong className="text-[var(--color-brand-fg)]">
+            {lifetimeGood.toLocaleString()} good
+          </strong>
           {' · '}
-          <span className="text-rose-700">{lifetimeDamaged.toLocaleString()} damaged</span>
+          <span className="text-rose-700">
+            {lifetimeDamaged.toLocaleString()} damaged
+          </span>
+          {layRate != null ? <> · lay rate {layRate.toFixed(1)}%</> : null}
         </p>
       )}
-
-      <div className="mt-3">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
-          Eggs per day
-        </p>
-        <DailyBars items={items} unit="" tone="mint" />
-      </div>
 
       <LearnMoreFooter
         onLearnMore={() => setLearnOpen(true)}
@@ -1248,6 +1321,161 @@ export function EggCollectionCard({
   );
 }
 
+/**
+ * Daily section for once-a-day pref — one row of total-eggs pills, like
+ * the figma "Eggs collected" row. Simple: just shows the day's good
+ * count, dashes for missing days. Renders as many columns as the
+ * backend ships (1 on first-entry, up to 5 normally).
+ */
+function EggDailySection({
+  title,
+  items,
+}: {
+  title: string;
+  items: EggSeriesPoint[];
+}) {
+  if (items.length === 0) return null;
+  const cols = Math.min(5, items.length);
+  return (
+    <div>
+      <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        {title}
+      </p>
+      <div
+        className="grid gap-1 sm:gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {items.map((d) => (
+          <div key={d.date} className="flex min-w-0 flex-col items-center">
+            <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+              {shortDate(d.date)}
+            </p>
+            <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+              <span className="truncate">
+                {d.value == null ? '—' : Math.round(d.value).toLocaleString()}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Twice-a-day section — section title above a left-labeled grid with
+ * two rows: "Good:" and "Damaged:". Mirrors the figma's "Morning egg
+ * collection" / "Evening egg collection" blocks exactly.
+ *
+ * Outlier highlighting:
+ *   - Good row: any value < 80% of the row's max gets the red pill —
+ *     a sharp drop is the signal that warrants attention (the figma's
+ *     "804" in the evening Good row).
+ *   - Damaged row: the row max gets the red pill — a damage spike is
+ *     the signal (the figma's "43").
+ */
+function EggMomentSection({
+  title,
+  items,
+}: {
+  title: string;
+  items: EggSeriesPoint[];
+}) {
+  if (items.length === 0) return null;
+  const cols = Math.min(5, items.length);
+
+  const goodValues = items.map((i) => i.good ?? null);
+  const damagedValues = items.map((i) => i.damaged ?? null);
+  const goodMax = goodValues.reduce<number>((m, v) => (v != null && v > m ? v : m), 0);
+  const damagedMax = damagedValues.reduce<number>((m, v) => (v != null && v > m ? v : m), 0);
+
+  return (
+    <div>
+      <p className="mb-2 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        {title}
+      </p>
+
+      <div className="space-y-1.5">
+        {/* Date label row */}
+        <div
+          className="grid items-end gap-1 sm:gap-1.5"
+          style={{ gridTemplateColumns: `4.5rem repeat(${cols}, minmax(0, 1fr))` }}
+        >
+          <div />
+          {items.map((d) => (
+            <p key={d.date} className="w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+              {shortDate(d.date)}
+            </p>
+          ))}
+        </div>
+
+        {/* Good row */}
+        <div
+          className="grid items-center gap-1 sm:gap-1.5"
+          style={{ gridTemplateColumns: `4.5rem repeat(${cols}, minmax(0, 1fr))` }}
+        >
+          <p className="text-[11.5px] font-semibold text-[var(--color-brand-muted)]">Good:</p>
+          {items.map((d) => {
+            const isDrop = goodMax > 0
+              && d.good != null
+              && d.good < goodMax * 0.8;
+            return (
+              <span
+                key={d.date}
+                className={cn(
+                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                  isDrop
+                    ? 'bg-rose-50 text-rose-600'
+                    : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
+                )}
+              >
+                <span className="truncate">
+                  {d.good == null ? '—' : Math.round(d.good).toLocaleString()}
+                </span>
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Damaged row */}
+        <div
+          className="grid items-center gap-1 sm:gap-1.5"
+          style={{ gridTemplateColumns: `4.5rem repeat(${cols}, minmax(0, 1fr))` }}
+        >
+          <p className="text-[11.5px] font-semibold text-[var(--color-brand-muted)]">Damaged:</p>
+          {items.map((d) => {
+            const isSpike = damagedMax > 0
+              && d.damaged != null
+              && d.damaged > 0
+              && d.damaged === damagedMax;
+            return (
+              <span
+                key={d.date}
+                className={cn(
+                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                  isSpike
+                    ? 'bg-rose-50 text-rose-600'
+                    : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
+                )}
+              >
+                <span className="truncate">
+                  {d.damaged == null ? '—' : Math.round(d.damaged).toLocaleString()}
+                </span>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** "five" / "four" / "three" / "two" / "one" / fallback to digits. */
+function numberWord(n: number): string {
+  const words: Record<number, string> = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five' };
+  return words[n] ?? n.toString();
+}
+
 function EggLearnMoreBody({ layRate, avgPerDay }: { layRate: number | null; avgPerDay: number | null }) {
   return (
     <>
@@ -1263,7 +1491,7 @@ function EggLearnMoreBody({ layRate, avgPerDay }: { layRate: number | null; avgP
           <strong className="text-[var(--color-brand-primary-deep)]">
             {layRate.toFixed(1)}%
           </strong>
-          {avgPerDay != null ? <> ({avgPerDay.toLocaleString()} eggs/day).</> : '.'}
+          {avgPerDay != null ? <> ({Math.round(avgPerDay).toLocaleString()} eggs/day).</> : '.'}
         </p>
       )}
       <DrawerSectionHeading>Typical ranges</DrawerSectionHeading>
@@ -1278,6 +1506,319 @@ function EggLearnMoreBody({ layRate, avgPerDay }: { layRate: number | null; avgP
         usually points at <strong>nest design, collection timing, or calcium
         deficiency</strong>, all of which are fixable.
       </p>
+    </>
+  );
+}
+
+// ────────────── EGG SIZE ──────────────
+
+/**
+ * Egg size card — matches the figma "Medium" frame.
+ *
+ *   [icon] Egg size                                   [black "Medium" pill]
+ *   Your birds lay mostly [medium sized] eggs.
+ *
+ *   Egg size
+ *   Jan 1   Jan 4   Jan 7   Jan 10  Jan 14
+ *   [Small] [Medium][Jumbo] [Medium][Medium]
+ *
+ * Sporadic event — size grading is done weekly, so the backend ships
+ * the last N graded dates regardless of calendar gap. Empty state shows
+ * "No egg size grading yet." in place of the pill grid.
+ */
+export function EggSizeCard({
+  data,
+  onEdit,
+}: {
+  data?: EggSizeCardDto | null;
+  onEdit?: () => void;
+}) {
+  const dominant = data?.summary.dominantSize ?? null;
+  const series = data?.series ?? null;
+  const items: Array<{ date: string; value: string | null }> = series && (series.mode === 'easy' || series.mode === 'daily')
+    ? series.daily.slice(-5).map((p) => ({
+        date: p.date,
+        // EggSize series uses string values (e.g. "Medium") not numbers.
+        // The reducer ships these as `value` so we read directly.
+        value: typeof p.value === 'string' ? p.value : null,
+      }))
+    : [];
+  const empty = !dominant && items.length === 0;
+  const [learnOpen, setLearnOpen] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader
+        icon={Egg}
+        title="Egg size"
+        rightSlot={
+          dominant ? (
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+              {dominant}
+            </span>
+          ) : undefined
+        }
+      />
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          'No egg size grading yet.'
+        ) : dominant ? (
+          <>
+            Your birds lay mostly{' '}
+            <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+              {dominant.toLowerCase()} sized
+            </strong>{' '}
+            eggs.
+          </>
+        ) : (
+          'Egg size readings across recent gradings.'
+        )}
+      </p>
+
+      {items.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            Egg size
+          </p>
+          <SporadicCategoricalGrid items={items} highlight={dominant} />
+        </div>
+      )}
+
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log eggs' : 'Edit record'}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Egg size"
+      >
+        <EggSizeLearnMoreBody dominant={dominant} />
+      </LearnMoreDrawer>
+    </Card>
+  );
+}
+
+function EggSizeLearnMoreBody({ dominant }: { dominant: string | null }) {
+  return (
+    <>
+      <DrawerSectionHeading>What egg size tracks</DrawerSectionHeading>
+      <p>
+        Grading by size tells you whether your flock has matured into its
+        target egg-size band. Young layers start at <strong>Peewee</strong>
+        / <strong>Small</strong> and trend up to <strong>Medium</strong> and
+        <strong> Large</strong> as they age &mdash; an early plateau is a
+        nutrition or lighting signal.
+      </p>
+      {dominant && (
+        <p>
+          Your birds&rsquo; dominant size is currently{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">{dominant}</strong>.
+        </p>
+      )}
+      <DrawerSectionHeading>USDA / Nigerian grades</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li><strong>Peewee:</strong> &lt; 43 g per egg</li>
+        <li><strong>Small:</strong> 43&ndash;53 g</li>
+        <li><strong>Medium:</strong> 53&ndash;63 g</li>
+        <li><strong>Large:</strong> 63&ndash;73 g</li>
+        <li><strong>Extra Large / Jumbo:</strong> 73 g and above</li>
+      </ul>
+    </>
+  );
+}
+
+/**
+ * Pill grid for categorical sporadic values (e.g. egg-size labels).
+ * Optional `highlight` value shows that pill in the brand-deep style,
+ * letting the dominant grade pop visually within the row.
+ */
+function SporadicCategoricalGrid({
+  items,
+  highlight,
+}: {
+  items: Array<{ date: string; value: string | null }>;
+  highlight: string | null;
+}) {
+  if (items.length === 0) return null;
+  const cols = Math.min(5, items.length);
+  return (
+    <div
+      className="grid gap-1 sm:gap-1.5"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {items.map((d) => {
+        const isDominant = !!highlight && d.value === highlight;
+        return (
+          <div key={d.date} className="flex min-w-0 flex-col items-center">
+            <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+              {shortDate(d.date)}
+            </p>
+            <span className={cn(
+              'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+              isDominant
+                ? 'bg-[var(--color-brand-fg)] text-white'
+                : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
+            )}>
+              <span className="truncate">{d.value ?? '—'}</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ────────────── EGG WEIGHT ──────────────
+
+/**
+ * Egg weight card — matches the figma "49 gram" frame.
+ *
+ *   [icon] Egg weight                                [black "49 gram" pill]
+ *   Over the last five weighing, the average weight of a single egg
+ *   was 49 grams.
+ *
+ *   Egg weight
+ *   Jan 1   Jan 4   Jan 7   Jan 10  Jan 14
+ *   [48]    [55]    [41]    [52]    [50]      ← min rendered red
+ *
+ * Sporadic — weight is sampled weekly. Outlier highlighting marks the
+ * minimum reading (a sudden drop in egg weight is the warning signal;
+ * a higher weight is rarely a concern).
+ */
+export function EggWeightCard({
+  data,
+  onEdit,
+}: {
+  data?: EggWeightCardDto | null;
+  onEdit?: () => void;
+}) {
+  const avgG = data?.summary.avgWeightG ?? null;
+  const unit = data?.summary.unit ?? 'g';
+  const series = data?.series ?? null;
+  const items = series && (series.mode === 'easy' || series.mode === 'daily')
+    ? series.daily.slice(-5)
+    : [];
+  const dataCount = items.filter((p) => p.value != null).length;
+  const empty = avgG == null && dataCount === 0;
+  const [learnOpen, setLearnOpen] = useState(false);
+
+  // Mark the minimum non-null reading in red — the figma's "41" sits
+  // below the rest of the row to flag the worst sample.
+  const minValue = items.reduce<number | null>((min, p) => {
+    if (typeof p.value !== 'number') return min;
+    return min == null || p.value < min ? p.value : min;
+  }, null);
+
+  return (
+    <Card>
+      <CardHeader
+        icon={Scale}
+        title="Egg weight"
+        rightSlot={
+          avgG != null ? (
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+              {Math.round(avgG)} gram
+            </span>
+          ) : undefined
+        }
+      />
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          'No egg weight readings yet.'
+        ) : avgG != null && dataCount > 0 ? (
+          <>
+            Over the last {numberWord(dataCount)} weighing{dataCount === 1 ? '' : 's'},
+            the average weight of a single egg was{' '}
+            <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+              {Math.round(avgG)} gram{Math.round(avgG) === 1 ? '' : 's'}
+            </strong>
+            .
+          </>
+        ) : (
+          'Egg weight readings across recent samples.'
+        )}
+      </p>
+
+      {items.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            Egg weight
+          </p>
+          <div
+            className="grid gap-1 sm:gap-1.5"
+            style={{ gridTemplateColumns: `repeat(${Math.min(5, items.length)}, minmax(0, 1fr))` }}
+          >
+            {items.map((d) => {
+              const v = typeof d.value === 'number' ? d.value : null;
+              const isWorst = minValue != null && v === minValue && items.length > 1;
+              return (
+                <div key={d.date} className="flex min-w-0 flex-col items-center">
+                  <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+                    {shortDate(d.date)}
+                  </p>
+                  <span className={cn(
+                    'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                    isWorst
+                      ? 'bg-rose-50 text-rose-600'
+                      : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
+                  )}>
+                    <span className="truncate">{v == null ? '—' : Math.round(v).toString()}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log eggs' : 'Edit record'}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Egg weight"
+      >
+        <EggWeightLearnMoreBody avgG={avgG} unit={unit} />
+      </LearnMoreDrawer>
+    </Card>
+  );
+}
+
+function EggWeightLearnMoreBody({ avgG, unit }: { avgG: number | null; unit: string }) {
+  return (
+    <>
+      <DrawerSectionHeading>Why egg weight matters</DrawerSectionHeading>
+      <p>
+        Egg weight tracks <strong>shell quality and bird nutrition</strong> &mdash;
+        a sudden drop usually means the flock is short on protein, calcium,
+        or both. Sample 10&ndash;20 eggs and weigh them every week so the
+        trend stays honest.
+      </p>
+      {avgG != null && (
+        <p>
+          Latest average is{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {Math.round(avgG)} {unit === 'g' ? 'grams' : unit}
+          </strong>.
+        </p>
+      )}
+      <DrawerSectionHeading>International grades (per egg)</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li><strong>Peewee:</strong> &lt; 43 g</li>
+        <li><strong>Small:</strong> 43&ndash;53 g</li>
+        <li><strong>Medium:</strong> 53&ndash;63 g</li>
+        <li><strong>Large:</strong> 63&ndash;73 g</li>
+        <li><strong>Extra Large / Jumbo:</strong> 73 g and above</li>
+      </ul>
     </>
   );
 }
