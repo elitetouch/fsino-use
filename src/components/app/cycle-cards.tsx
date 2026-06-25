@@ -2002,7 +2002,8 @@ export function VaccinationCard({
         <VaccinationLearnMoreBody
           completed={completed}
           total={total}
-          overdue={overdue + criticalOverdue}
+          overdue={overdue}
+          criticalOverdue={criticalOverdue}
           dueToday={dueToday}
         />
       </LearnMoreDrawer>
@@ -2127,18 +2128,23 @@ function SuggestionRow({ suggestion }: { suggestion: VaccinationSuggestionDto })
 }
 
 function VaccinationLearnMoreBody({
-  completed, total, overdue, dueToday,
+  completed, total, overdue, criticalOverdue, dueToday,
 }: {
-  completed: number; total: number; overdue: number; dueToday: number;
+  completed: number;
+  total: number;
+  /** Total overdue rows. criticalOverdue is a SUBSET of this, not a separate bucket — don't sum them. */
+  overdue: number;
+  criticalOverdue: number;
+  dueToday: number;
 }) {
   return (
     <>
       <DrawerSectionHeading>How the schedule works</DrawerSectionHeading>
       <p>
-        The schedule is generated from your flock&rsquo;s <strong>breed</strong>
-        {' '}and <strong>placement date</strong>. Each row shows the calendar
-        date the dose is due; the right-side indicator tells you whether it
-        was given, missed, or upcoming.
+        This card covers <strong>this cycle only</strong>. The schedule is generated
+        from your flock&rsquo;s <strong>breed</strong> and <strong>placement date</strong>.
+        Each row shows the calendar date the dose is due; the right-side indicator
+        tells you whether it was given, missed, or upcoming.
       </p>
       {total > 0 && (
         <p>
@@ -2147,7 +2153,12 @@ function VaccinationLearnMoreBody({
             {completed} of {total}
           </strong>
           {' '}scheduled doses
-          {overdue > 0 ? <>, with <strong className="text-rose-700">{overdue} overdue</strong></> : null}
+          {overdue > 0 ? (
+            <>
+              , with <strong className="text-rose-700">{overdue} overdue</strong>
+              {criticalOverdue > 0 ? <> ({criticalOverdue} critical)</> : null}
+            </>
+          ) : null}
           {dueToday > 0 ? <>, and <strong>{dueToday} due today</strong></> : null}
           .
         </p>
