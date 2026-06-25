@@ -2,12 +2,12 @@
 
 import { useState, type ReactNode } from 'react';
 import {
-  Bird, Droplet, Skull, Syringe, Wheat, ChevronRight, Egg,
+  Bird, Droplet, Skull, Syringe, Wheat, ChevronRight, Egg, Scale, BadgeDollarSign,
   Check, BadgeCheck, X as XIcon, ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 import type {
-  FeedCardDto, FlockDto, MortalityCardDto,
+  FeedCardDto, FlockDto, MortalityCardDto, BirdsSoldCardDto, WeightCardDto,
   EggCollectionCardDto, VaccinationCardDto, VaccinationItemDto, WaterCardDto,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -687,6 +687,32 @@ function WaterLearnMoreBody({ avg }: { avg: number | null }) {
 
 // ────────────── MORTALITY ──────────────
 
+/**
+ * Mortality card — rebuilt to match the figma frames exactly.
+ *
+ *   [icon] Mortality rate                          [black "2,1%" pill]
+ *   Your flock shows a [low] mortality rate, a total of 23 birds have
+ *   died or were culled.
+ *
+ *   Birds dead or culled
+ *   Jan 1  Jan 2  Jan 3  Jan 4  Jan 5
+ *   [0]    [2]    [5]    [1]    [2]      ← "5" rendered red as the spike
+ *
+ *   Primary cause of death
+ *   [Entered cause] was the primary cause of death.
+ *
+ *   ✓ Learn more                                      Edit record ›
+ *
+ * Critical deltas vs the previous DailyBars treatment:
+ *   - Beige pill grid (no bars). Matches Feed/Water visual rhythm.
+ *   - Black pill in header (figma "2,1%" is black, not coloured by rating).
+ *   - Worst day in the visible window is rendered red to draw the eye —
+ *     replaces the old per-bar rose gradient. Days with 0 stay neutral
+ *     (a peaceful day shouldn't shout).
+ *   - "Primary cause of death" surfaces as its own section with the
+ *     figma's "[Entered cause] was the primary cause of death."
+ *     sentence, not a single inline word.
+ */
 export function MortalityCard({
   data,
   onEdit,
@@ -696,16 +722,27 @@ export function MortalityCard({
 }) {
   const rate = data?.summary.rate ?? null;
   const rateLabel = data?.summary.rateLabel ?? null;
+  const totalDead = data?.summary.totalDead ?? 0;
   const items = recentDailyPoints(data?.series, 5);
-  const empty = rate == null && items.every((d) => d.value == null);
+  const empty = rate == null && totalDead === 0;
   const cause = data?.summary.primaryCause ?? null;
   const [learnOpen, setLearnOpen] = useState(false);
 
-  // Healthy: green; watch: amber; concerning: red.
-  const labelTone = !rateLabel ? null
-    : rateLabel.toLowerCase().includes('healthy') ? 'bg-[var(--color-brand-primary-dark)]'
-    : rateLabel.toLowerCase().includes('watch') ? 'bg-amber-600'
-    : 'bg-rose-600';
+  // Worst day of the visible window — the column that gets the red
+  // pill. Only highlight if there's a positive spike (a stretch of 0s
+  // shouldn't pick any column).
+  const maxValue = items.reduce(
+    (m, d) => (typeof d.value === 'number' && d.value > m ? d.value : m),
+    0,
+  );
+
+  // Strip the [brackets] off the rateLabel so we can drop the bracketed
+  // word into the figma's "Your flock shows a [low] mortality rate"
+  // sentence with proper styling — same pattern Feed uses for its
+  // rating word.
+  const rateWord = rateLabel
+    ? rateLabel.replace(/[\[\]]/g, '').trim().toLowerCase()
+    : null;
 
   return (
     <Card>
@@ -714,33 +751,78 @@ export function MortalityCard({
         title="Mortality rate"
         rightSlot={
           rate != null ? (
-            <span className={cn(
-              'rounded-md px-2 py-0.5 text-[11px] font-bold text-white',
-              labelTone ?? 'bg-[var(--color-brand-primary-dark)]',
-            )}>
-              {rate.toFixed(1)}%
+            // Black pill — figma uses black for the headline % regardless
+            // of rating word (the rating colour is conveyed in the
+            // description sentence, not the pill).
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+              {rate.toFixed(1).replace('.', ',')}%
             </span>
           ) : undefined
         }
       />
-      <p className="mt-2 text-[12px] text-[var(--color-brand-muted)]">
-        {empty
-          ? 'No mortality logged yet.'
-          : firstInsight(data) ?? 'Birds dead or culled across recent days.'}
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          'No mortality logged yet.'
+        ) : (
+          <>
+            Your flock shows {rateWord ? articleFor(rateWord) : 'a'}{' '}
+            {rateWord && (
+              <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+                {rateWord}
+              </strong>
+            )}{' '}
+            mortality rate, a total of{' '}
+            <strong className="font-bold text-[var(--color-brand-fg)]">
+              {totalDead} bird{totalDead === 1 ? '' : 's'}
+            </strong>{' '}
+            {totalDead === 1 ? 'has' : 'have'} died or {totalDead === 1 ? 'was' : 'were'} culled.
+          </>
+        )}
       </p>
 
-      {cause && (
-        <p className="mt-2 text-[11.5px] text-[var(--color-brand-fg-soft)]">
-          Primary cause:{' '}
-          <strong className="text-[var(--color-brand-fg)]">{cause}</strong>
-        </p>
-      )}
-
-      <div className="mt-3">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
+      <div className="mt-4">
+        <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
           Birds dead or culled
         </p>
-        <DailyBars items={items} unit="" tone="rose" />
+        <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
+          {items.map((d) => {
+            const isSpike = typeof d.value === 'number' && d.value > 0 && d.value === maxValue;
+            return (
+              <div key={d.date} className="flex min-w-0 flex-col items-center">
+                <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+                  {shortDate(d.date)}
+                </p>
+                <span className={cn(
+                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                  isSpike
+                    ? 'bg-rose-50 text-rose-600'
+                    : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
+                )}>
+                  <span className="truncate">
+                    {d.value == null ? '—' : Math.round(d.value).toString()}
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          Primary cause of death
+        </p>
+        <p className="text-[12px] leading-snug text-[var(--color-brand-fg-soft)]">
+          {cause ? (
+            <>
+              <strong className="font-bold text-[var(--color-brand-fg)]">{cause}</strong>{' '}
+              was the primary cause of death.
+            </>
+          ) : (
+            <span className="italic text-[var(--color-brand-muted)]">No primary cause recorded.</span>
+          )}
+        </p>
       </div>
 
       <LearnMoreFooter
@@ -793,6 +875,303 @@ function MortalityLearnMoreBody({ rate, rateLabel }: { rate: number | null; rate
       </p>
     </>
   );
+}
+
+// ────────────── BIRDS SOLD ──────────────
+
+/**
+ * Birds sold card — matches the figma "280 birds" / "100 birds" frames.
+ *
+ *   [icon] Birds sold                              [black "280 birds" pill]
+ *   You have sold 19% of the birds in this pen.
+ *
+ *   Birds sold
+ *   Jan 1  Feb 23 Mar 14 Apr 4  Apr 26
+ *   [100]  [30]   [50]   [50]   [50]
+ *
+ * Unlike feed/water/mortality which are daily, sales are sporadic
+ * events; the backend ships only the dates that actually have sales
+ * (last 5), so this card renders N columns where N ≤ 5 — matching the
+ * figma's "first entry state" with a single Jan 1 column.
+ */
+export function BirdsSoldCard({
+  data,
+  onEdit,
+}: {
+  data?: BirdsSoldCardDto | null;
+  onEdit?: () => void;
+}) {
+  const totalSold = data?.summary.totalSold ?? 0;
+  const percent = data?.summary.percentOfFlock ?? null;
+  const items = recentDailyPoints(data?.series, 5);
+  const empty = totalSold === 0;
+  const [learnOpen, setLearnOpen] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader
+        icon={BadgeDollarSign}
+        title="Birds sold"
+        rightSlot={
+          totalSold > 0 ? (
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+              {totalSold.toLocaleString()} birds
+            </span>
+          ) : undefined
+        }
+      />
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          'No birds sold from this pen yet.'
+        ) : percent != null ? (
+          <>
+            You have sold{' '}
+            <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+              {percent.toFixed(percent < 10 ? 1 : 0).replace('.', ',')}%
+            </strong>{' '}
+            of the birds in this pen.
+          </>
+        ) : (
+          <>
+            <strong className="font-bold text-[var(--color-brand-primary-deep)]">
+              {totalSold.toLocaleString()}
+            </strong>{' '}
+            birds sold from this pen.
+          </>
+        )}
+      </p>
+
+      {items.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            Birds sold
+          </p>
+          <SporadicPillGrid items={items} renderValue={(v) => Math.round(v).toLocaleString()} />
+        </div>
+      )}
+
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log a sale' : 'Edit record'}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Birds sold"
+      >
+        <BirdsSoldLearnMoreBody totalSold={totalSold} percent={percent} />
+      </LearnMoreDrawer>
+    </Card>
+  );
+}
+
+function BirdsSoldLearnMoreBody({ totalSold, percent }: { totalSold: number; percent: number | null }) {
+  return (
+    <>
+      <DrawerSectionHeading>What this tracks</DrawerSectionHeading>
+      <p>
+        Birds sold counts every bird that has left this pen as a sale &mdash;
+        useful for tracking cash flow and seeing how the cycle is winding down.
+        Combined with the mortality card, you get a complete picture of where
+        every placed bird went.
+      </p>
+      {percent != null && (
+        <p>
+          You have sold{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {percent.toFixed(1)}%
+          </strong>{' '}
+          of the placed birds &mdash; {totalSold.toLocaleString()} birds in total.
+        </p>
+      )}
+      <DrawerSectionHeading>Logging tip</DrawerSectionHeading>
+      <p>
+        Record the <strong>sale amount</strong> with each entry &mdash; the
+        finance section uses these numbers to compute revenue and margin
+        per cycle.
+      </p>
+    </>
+  );
+}
+
+/**
+ * Pill grid for SPORADIC events (weight, sales). Renders one column
+ * per data point — variable width up to 5, not a fixed 5-column grid
+ * with dashes. Matches the figma's "first entry state" frames which
+ * show a single column when there's only one reading.
+ */
+function SporadicPillGrid({
+  items,
+  renderValue,
+}: {
+  items: Array<{ date: string; value: number | null }>;
+  renderValue: (v: number) => string;
+}) {
+  if (items.length === 0) return null;
+  // Grid that grows up to 5 columns then wraps; min-w-0 on each cell so
+  // long values truncate inside their pill rather than blowing out.
+  const cols = Math.min(5, items.length);
+  return (
+    <div
+      className="grid gap-1 sm:gap-1.5"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {items.map((d) => (
+        <div key={d.date} className="flex min-w-0 flex-col items-center">
+          <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+            {shortDate(d.date)}
+          </p>
+          <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+            <span className="truncate">
+              {d.value == null ? '—' : renderValue(d.value)}
+            </span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ────────────── BIRD WEIGHT ──────────────
+
+/**
+ * Bird weight card — matches the figma "1,71 kg" frame.
+ *
+ *   [icon] Bird weight                            [black "1,71 kg" pill]
+ *   Your birds show [good] weight gain.
+ *
+ *   Average bird weight
+ *   Jan 1   Jan 8   Jan 15  Jan 22  Jan 29
+ *   [0,35]  [0,71]  [1,12]  [1,56]  [1,71] kg
+ *
+ * Sporadic event — backend ships the last 5 weigh-ins regardless of
+ * calendar gap (weight is usually logged weekly). Grid width matches
+ * available data so the figma's "first entry" single-column case is
+ * native, not a "—" padding workaround.
+ */
+export function BirdWeightCard({
+  data,
+  onEdit,
+}: {
+  data?: WeightCardDto | null;
+  onEdit?: () => void;
+}) {
+  const latest = data?.summary.latestAvgWeightKg ?? null;
+  const statusLabel = data?.summary.statusLabel ?? null;
+  const items = recentDailyPoints(data?.series, 5);
+  const empty = latest == null;
+  const [learnOpen, setLearnOpen] = useState(false);
+
+  // Same rating-word pattern as the FCR and mortality descriptions —
+  // strip the [brackets] backend ships around the rating word so it can
+  // live inside the figma's "Your birds show [good] weight gain." sentence.
+  const ratingWord = statusLabel
+    ? statusLabel.replace(/[\[\]]/g, '').trim().toLowerCase()
+    : null;
+
+  return (
+    <Card>
+      <CardHeader
+        icon={Scale}
+        title="Bird weight"
+        rightSlot={
+          latest != null ? (
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+              {formatKg(latest)} kg
+            </span>
+          ) : undefined
+        }
+      />
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {empty ? (
+          'No bird weight measurements yet.'
+        ) : ratingWord ? (
+          <>
+            Your birds show {articleFor(ratingWord)}{' '}
+            <strong className={cn(
+              'font-bold',
+              ratingWord === 'good' ? 'text-[var(--color-brand-primary-deep)]'
+                : ratingWord === 'poor' ? 'text-rose-600'
+                : 'text-[var(--color-brand-fg)]',
+            )}>
+              {ratingWord}
+            </strong>{' '}
+            weight gain.
+          </>
+        ) : (
+          'Latest bird weight measurements across recent readings.'
+        )}
+      </p>
+
+      {items.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            Average bird weight
+          </p>
+          <SporadicPillGrid items={items} renderValue={(v) => `${formatKg(v)} kg`} />
+        </div>
+      )}
+
+      <LearnMoreFooter
+        onLearnMore={() => setLearnOpen(true)}
+        onEdit={onEdit}
+        editLabel={empty ? 'Log a weight' : 'Edit record'}
+      />
+
+      <LearnMoreDrawer
+        open={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        title="Bird weight"
+      >
+        <BirdWeightLearnMoreBody latest={latest} ratingWord={ratingWord} />
+      </LearnMoreDrawer>
+    </Card>
+  );
+}
+
+function BirdWeightLearnMoreBody({ latest, ratingWord }: { latest: number | null; ratingWord: string | null }) {
+  return (
+    <>
+      <DrawerSectionHeading>Why weight matters</DrawerSectionHeading>
+      <p>
+        Average bird weight is the cleanest signal of <strong>growth and feed
+        efficiency</strong>. Weigh a representative sample weekly so the FCR
+        denominator stays fresh and the trend line tells you when feed type,
+        environment or health needs attention.
+      </p>
+      {latest != null && (
+        <p>
+          Latest reading is{' '}
+          <strong className="text-[var(--color-brand-primary-deep)]">
+            {formatKg(latest)} kg
+          </strong>
+          {ratingWord ? <> &mdash; rated <strong>{ratingWord}</strong>.</> : '.'}
+        </p>
+      )}
+      <DrawerSectionHeading>How we rate gain</DrawerSectionHeading>
+      <ul className="space-y-1.5">
+        <li><strong>Good</strong> &mdash; latest reading is at least 2% above the first in the window.</li>
+        <li><strong>Flat</strong> &mdash; within ±2%; usually means investigate.</li>
+        <li><strong>Poor</strong> &mdash; latest reading is at least 2% lower; rare and serious.</li>
+      </ul>
+      <DrawerSectionHeading>Logging tip</DrawerSectionHeading>
+      <p>
+        Weigh the same 10&ndash;20 birds at the same time of day each week
+        &mdash; bird-to-bird variation otherwise drowns out the real growth
+        signal.
+      </p>
+    </>
+  );
+}
+
+/** "1.71" → "1,71" matching the figma's European decimal style. */
+function formatKg(v: number): string {
+  const rounded = Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2);
+  return rounded.replace('.', ',');
 }
 
 // ────────────── EGG COLLECTION ──────────────

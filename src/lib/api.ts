@@ -811,17 +811,22 @@ export type MortalityCardDto = DashboardCardBase & {
 export type BirdsSoldCardDto = DashboardCardBase & {
   summary: {
     totalSold: number;
+    percentOfFlock: number | null; // 0–100
     revenue: number | null;
     currency: string | null;
+    placedBirds: number;
   };
+  series: DashboardSeries;
 };
 
 export type WeightCardDto = DashboardCardBase & {
   summary: {
-    latestAvgKg: number | null;
-    target?: number | null;
-    deltaPct?: number | null;
+    latestAvgWeightKg: number | null;
+    status: string; // 'good' | 'flat' | 'poor'
+    statusLabel: string; // "[good]" | "[flat]" | "[poor]"
+    trend: string; // 'up' | 'flat' | 'down'
   };
+  series: DashboardSeries;
 };
 
 export type EggCollectionCardDto = DashboardCardBase & {
