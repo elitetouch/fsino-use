@@ -138,6 +138,37 @@ export const endpoints = {
   profile: () => unwrap<AppUserDto>(api.get('/profile')),
 
   /**
+   * PATCH /profile — text-only fields. Backend accepts `sometimes`,
+   * so omit a key to leave it unchanged. Email/phone changes flip the
+   * verified-at column to null on the server (the response carries
+   * emailChanged / phoneChanged so the UI can prompt re-verification).
+   */
+  updateProfile: (payload: Partial<{ name: string; email: string; phone: string }>) =>
+    unwrap<{ user: AppUserDto; emailChanged: boolean; phoneChanged: boolean }>(
+      api.patch('/profile', payload),
+    ),
+
+  /**
+   * Multipart PATCH /profile for photo. Backend reads `photo` (file) or
+   * `remove_photo=1` (clear). Other text fields can ride along in the
+   * same form if needed — we don't here because the page sends them via
+   * the JSON path above for clarity.
+   */
+  uploadProfilePhoto: (file: File) => {
+    const fd = new FormData();
+    fd.append('photo', file);
+    fd.append('_method', 'PATCH'); // Laravel form-method spoofing for multipart PATCH
+    return unwrap<{ user: AppUserDto }>(
+      api.post('/profile', fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    );
+  },
+
+  removeProfilePhoto: () =>
+    unwrap<{ user: AppUserDto }>(
+      api.patch('/profile', { remove_photo: true }),
+    ),
+
+  /**
    * Verify the email by submitting the 6-digit code emailed via
    * EmailVerificationCodeMail. Authenticated route — the bearer issued
    * by /register must be present (axios interceptor handles it).
@@ -162,6 +193,36 @@ export const endpoints = {
 
   showFarm: (id: string) =>
     unwrap<{ farm: FarmDto }>(api.get(`/farms/${id}`)),
+
+  /**
+   * PATCH /farms/{id} — owner-only on the backend. All fields are
+   * `sometimes`, so the client can send just the deltas. Logo upload
+   * uses the multipart helper below.
+   */
+  updateFarm: (id: string, payload: Partial<{
+    name: string;
+    state: string;
+    address: string;
+    lga: string;
+    timezone: string;
+    farm_type: string;
+    primary_production: 'broiler' | 'layer' | 'mixed';
+    estimated_capacity: number;
+    target_market: string;
+  }>) =>
+    unwrap<{ farm: FarmDto }>(api.patch(`/farms/${id}`, payload)),
+
+  uploadFarmLogo: (id: string, file: File) => {
+    const fd = new FormData();
+    fd.append('logo', file);
+    fd.append('_method', 'PATCH');
+    return unwrap<{ farm: FarmDto }>(
+      api.post(`/farms/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    );
+  },
+
+  removeFarmLogo: (id: string) =>
+    unwrap<{ farm: FarmDto }>(api.patch(`/farms/${id}`, { remove_logo: true })),
 
   // ───────────── Pens (require X-Farm-ID — auto-injected) ─────────────
   listPens: () => unwrap<{ pens: PenDto[] }>(api.get('/pens')),

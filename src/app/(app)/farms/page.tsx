@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Tractor, Plus, MapPin } from 'lucide-react';
+import { Tractor, Plus, MapPin, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { canCreateFarm, endpoints, type FarmDto } from '@/lib/api';
@@ -94,6 +94,30 @@ function FarmCard({ farm, active }: { farm: FarmDto; active: boolean }) {
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Capacity</p>
         </div>
       </div>
+      {/* Manage link — escape hatch to the farm-detail / edit page.
+          Rendered as a span (not a nested anchor) so it doesn't violate
+          the outer <button>'s "no interactive children" rule, and uses
+          stopPropagation so a tap on "Manage" doesn't also trigger the
+          farm-switch the parent button performs. */}
+      <span
+        role="link"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          window.location.href = `/farms/${farm.id}`;
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = `/farms/${farm.id}`;
+          }
+        }}
+        className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+      >
+        <Settings className="h-3 w-3" />
+        Manage farm
+      </span>
     </button>
   );
 }
