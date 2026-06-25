@@ -67,7 +67,12 @@ export default function ProfilePage() {
   }, [profileQuery.data]);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    // `w-full max-w-full overflow-x-hidden` is a deliberate belt-and-
+    // braces guard. Even if a child card somehow ships an unexpectedly
+    // long value (a 64-character email, a sprawling vaccine name, etc.),
+    // the page itself cannot push beyond the viewport so the user never
+    // gets a horizontal scrollbar or a pinch-to-zoom prompt.
+    <div className="w-full max-w-full space-y-4 overflow-x-hidden sm:space-y-6">
       <PageHeader
         eyebrow="Account"
         title="Your profile"
@@ -84,7 +89,7 @@ export default function ProfilePage() {
         // contact form's labels or the farms list rows.
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <IdentityBlock user={user} farms={farmsQuery.data?.farms ?? []} />
-          <div className="space-y-3 sm:space-y-4">
+          <div className="min-w-0 space-y-3 sm:space-y-4">
             <ContactBlock user={user} />
             <FarmsBlock farms={farmsQuery.data?.farms ?? []} loading={farmsQuery.isLoading} />
           </div>
@@ -142,22 +147,25 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
     e.target.value = ''; // allow re-picking the same file
   };
 
-  // On mobile, the identity card lays out HORIZONTALLY (avatar left,
-  // name + role + memberships right) so it doesn't eat half the screen
-  // with a centered avatar before the user can see contact details.
-  // On sm+ it reverts to the centered hero treatment we render in the
-  // 2-column desktop layout.
+  // Centered, vertical layout at every breakpoint. The previous
+  // horizontal-on-mobile variant introduced a flex row where the text
+  // wrapper could fight the avatar for width, which on narrow phones
+  // (320–360px) produced subtle overflow when long names + role pills +
+  // the Remove-photo Button (whitespace-nowrap by Button defaults) all
+  // tried to fit on the same row. Going vertical removes that whole
+  // class of bug — the avatar takes one row, every text element takes
+  // a row of its own with full breakpoint width.
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-6">
-      <div className="flex items-center gap-4 text-left sm:flex-col sm:gap-0 sm:text-center">
+    <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-6">
+      <div className="flex flex-col items-center gap-3 text-center">
         <div className="relative shrink-0">
-          <Avatar src={user.photoUrl ?? null} name={user.name} size={80} sizeSm={104} />
+          <Avatar src={user.photoUrl ?? null} name={user.name} size={88} sizeSm={104} />
           <button
             type="button"
             onClick={onPick}
             disabled={upload.isPending}
             className={cn(
-              'absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)] sm:-bottom-1 sm:-right-1 sm:h-9 sm:w-9',
+              'absolute -bottom-1 -right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)]',
               upload.isPending && 'opacity-60',
             )}
             aria-label="Upload photo"
@@ -173,13 +181,16 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
           />
         </div>
 
-        <div className="min-w-0 flex-1 sm:flex-none">
-          <p className="truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:mt-4 sm:text-[18px]">
+        <div className="w-full min-w-0">
+          {/* break-words handles the pathological "single 40-character
+              token" case (e.g. a typed-in display name without spaces);
+              line-clamp-2 keeps the avatar block predictable in height. */}
+          <p className="line-clamp-2 break-words text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">
             {user.name}
           </p>
           {topRole && (
             <span className={cn(
-              'mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
+              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
               topRole === 'owner'
                 ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                 : topRole === 'manager'
@@ -190,25 +201,25 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
               {topRole}
             </span>
           )}
-          <p className="mt-1 truncate text-[11.5px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
             {farms.length === 0
               ? 'No farm memberships yet'
               : `${farms.length} ${farms.length === 1 ? 'farm' : 'farms'}`}
           </p>
-
-          {user.photoUrl && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 h-8 text-[11.5px] text-[var(--color-brand-muted)] sm:mt-4"
-              onClick={() => remove.mutate()}
-              disabled={remove.isPending}
-            >
-              <Trash2 className="h-3 w-3" />
-              Remove photo
-            </Button>
-          )}
         </div>
+
+        {user.photoUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-[11.5px] text-[var(--color-brand-muted)]"
+            onClick={() => remove.mutate()}
+            disabled={remove.isPending}
+          >
+            <Trash2 className="h-3 w-3" />
+            Remove photo
+          </Button>
+        )}
       </div>
     </article>
   );
@@ -325,7 +336,7 @@ function ContactBlock({ user }: { user: AppUserDto }) {
 
   if (editing) {
     return (
-      <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
+      <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
         </div>
@@ -415,10 +426,10 @@ function ContactBlock({ user }: { user: AppUserDto }) {
   }
 
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
+    <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
-        <Button variant="outline" size="sm" className="h-8 text-[11.5px]" onClick={() => setEditing(true)}>
+        <Button variant="outline" size="sm" className="h-8 shrink-0 text-[11.5px]" onClick={() => setEditing(true)}>
           <Pencil className="h-3 w-3" />
           Edit
         </Button>
@@ -455,43 +466,32 @@ function DetailRow({
   badge?: { label: string; tone: 'green' | 'amber' };
 }) {
   return (
-    <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5">
-      {/* On phones the badge wraps to a second line under the value so
-          a long email isn't crushed to 8 characters by the badge — at
-          sm+ the row stays one line. */}
-      <div className="flex items-center gap-3 sm:justify-between">
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
-          <p className="truncate text-[13px] font-semibold text-[var(--color-brand-fg)]">{value}</p>
+          {/* break-all (not truncate) on the value: emails / phone
+              numbers are a single unbroken token, so word-break needs
+              to be character-level. truncate hides text that no
+              ellipsis can really fix on a narrow viewport — wrapping is
+              better than concealing. */}
+          <p className="break-all text-[13px] font-semibold text-[var(--color-brand-fg)]">{value}</p>
+          {badge && (
+            <span className={cn(
+              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
+              badge.tone === 'green'
+                ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
+                : 'bg-amber-100 text-amber-800',
+            )}>
+              {badge.tone === 'green' ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
+              {badge.label}
+            </span>
+          )}
         </div>
-        {badge && (
-          <span className={cn(
-            'hidden shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider sm:inline-flex',
-            badge.tone === 'green'
-              ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
-              : 'bg-amber-100 text-amber-800',
-          )}>
-            {badge.tone === 'green' ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
-            {badge.label}
-          </span>
-        )}
       </div>
-      {badge && (
-        <div className="mt-2 flex sm:hidden">
-          <span className={cn(
-            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
-            badge.tone === 'green'
-              ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
-              : 'bg-amber-100 text-amber-800',
-          )}>
-            {badge.tone === 'green' ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
-            {badge.label}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
@@ -500,12 +500,12 @@ function DetailRow({
 
 function FarmsBlock({ farms, loading }: { farms: FarmDto[]; loading: boolean }) {
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
-      <div className="mb-3 flex items-center justify-between">
+    <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Your farms</h2>
         <Link
           href="/farms"
-          className="text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+          className="shrink-0 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
         >
           View all
         </Link>
@@ -527,38 +527,36 @@ function FarmsBlock({ farms, loading }: { farms: FarmDto[]; loading: boolean }) 
             <li key={f.id}>
               <Link
                 href={`/farms/${f.id}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5 hover:border-[var(--color-brand-primary)]/40 hover:bg-white"
+                className="flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5 hover:border-[var(--color-brand-primary)]/40 hover:bg-white"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
-                    {f.logoUrl ? (
-                      <img src={f.logoUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
-                    ) : (
-                      <Tractor className="h-4 w-4" strokeWidth={2.2} />
-                    )}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-[var(--color-brand-fg)]">{f.name}</p>
-                    <p className="truncate text-[11px] text-[var(--color-brand-muted)]">
-                      {[f.state, f.address].filter(Boolean).join(' · ') || 'No location set'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {f.membership?.role && (
-                    <span className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
-                      f.membership.role === 'owner'
-                        ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
-                        : f.membership.role === 'manager'
-                          ? 'bg-sky-50 text-sky-700'
-                          : 'bg-[var(--color-brand-bg)] text-[var(--color-brand-fg-soft)]',
-                    )}>
-                      {f.membership.role}
-                    </span>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
+                  {f.logoUrl ? (
+                    <img src={f.logoUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
+                  ) : (
+                    <Tractor className="h-4 w-4" strokeWidth={2.2} />
                   )}
-                  <ChevronRight className="h-4 w-4 text-[var(--color-brand-muted)]" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  {/* line-clamp-2 + break-words handles farms with long
+                      names without the row growing taller than two lines. */}
+                  <p className="line-clamp-2 break-words text-[13px] font-semibold text-[var(--color-brand-fg)]">{f.name}</p>
+                  <p className="line-clamp-1 break-words text-[11px] text-[var(--color-brand-muted)]">
+                    {[f.state, f.address].filter(Boolean).join(' · ') || 'No location set'}
+                  </p>
                 </div>
+                {f.membership?.role && (
+                  <span className={cn(
+                    'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                    f.membership.role === 'owner'
+                      ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
+                      : f.membership.role === 'manager'
+                        ? 'bg-sky-50 text-sky-700'
+                        : 'bg-[var(--color-brand-bg)] text-[var(--color-brand-fg-soft)]',
+                  )}>
+                    {f.membership.role}
+                  </span>
+                )}
+                <ChevronRight className="hidden h-4 w-4 shrink-0 text-[var(--color-brand-muted)] sm:block" />
               </Link>
             </li>
           ))}
