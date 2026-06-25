@@ -67,7 +67,7 @@ export default function ProfilePage() {
   }, [profileQuery.data]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         eyebrow="Account"
         title="Your profile"
@@ -79,9 +79,12 @@ export default function ProfilePage() {
       ) : !user ? (
         <ErrorState onRetry={() => qc.invalidateQueries({ queryKey: ['profile'] })} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        // Single column on mobile (cards stack), 2-col only at lg+ where
+        // the viewport can carry both side-by-side without cramping the
+        // contact form's labels or the farms list rows.
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <IdentityBlock user={user} farms={farmsQuery.data?.farms ?? []} />
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <ContactBlock user={user} />
             <FarmsBlock farms={farmsQuery.data?.farms ?? []} loading={farmsQuery.isLoading} />
           </div>
@@ -139,17 +142,22 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
     e.target.value = ''; // allow re-picking the same file
   };
 
+  // On mobile, the identity card lays out HORIZONTALLY (avatar left,
+  // name + role + memberships right) so it doesn't eat half the screen
+  // with a centered avatar before the user can see contact details.
+  // On sm+ it reverts to the centered hero treatment we render in the
+  // 2-column desktop layout.
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-6">
-      <div className="flex flex-col items-center text-center">
-        <div className="relative">
-          <Avatar src={user.photoUrl ?? null} name={user.name} size={104} />
+    <article className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-6">
+      <div className="flex items-center gap-4 text-left sm:flex-col sm:gap-0 sm:text-center">
+        <div className="relative shrink-0">
+          <Avatar src={user.photoUrl ?? null} name={user.name} size={80} sizeSm={104} />
           <button
             type="button"
             onClick={onPick}
             disabled={upload.isPending}
             className={cn(
-              'absolute -bottom-1 -right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)]',
+              'absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)] sm:-bottom-1 sm:-right-1 sm:h-9 sm:w-9',
               upload.isPending && 'opacity-60',
             )}
             aria-label="Upload photo"
@@ -165,46 +173,72 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
           />
         </div>
 
-        <p className="mt-4 text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)]">
-          {user.name}
-        </p>
-        {topRole && (
-          <span className={cn(
-            'mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
-            topRole === 'owner'
-              ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
-              : topRole === 'manager'
-                ? 'bg-sky-50 text-sky-700'
-                : 'bg-[var(--color-brand-bg)] text-[var(--color-brand-fg-soft)]',
-          )}>
-            {topRole === 'owner' && <Crown className="h-3 w-3" />}
-            {topRole}
-          </span>
-        )}
-        <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
-          {farms.length === 0
-            ? 'No farm memberships yet'
-            : `${farms.length} ${farms.length === 1 ? 'farm' : 'farms'}`}
-        </p>
+        <div className="min-w-0 flex-1 sm:flex-none">
+          <p className="truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:mt-4 sm:text-[18px]">
+            {user.name}
+          </p>
+          {topRole && (
+            <span className={cn(
+              'mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
+              topRole === 'owner'
+                ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
+                : topRole === 'manager'
+                  ? 'bg-sky-50 text-sky-700'
+                  : 'bg-[var(--color-brand-bg)] text-[var(--color-brand-fg-soft)]',
+            )}>
+              {topRole === 'owner' && <Crown className="h-3 w-3" />}
+              {topRole}
+            </span>
+          )}
+          <p className="mt-1 truncate text-[11.5px] text-[var(--color-brand-muted)]">
+            {farms.length === 0
+              ? 'No farm memberships yet'
+              : `${farms.length} ${farms.length === 1 ? 'farm' : 'farms'}`}
+          </p>
 
-        {user.photoUrl && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4 h-8 text-[11.5px] text-[var(--color-brand-muted)]"
-            onClick={() => remove.mutate()}
-            disabled={remove.isPending}
-          >
-            <Trash2 className="h-3 w-3" />
-            Remove photo
-          </Button>
-        )}
+          {user.photoUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 text-[11.5px] text-[var(--color-brand-muted)] sm:mt-4"
+              onClick={() => remove.mutate()}
+              disabled={remove.isPending}
+            >
+              <Trash2 className="h-3 w-3" />
+              Remove photo
+            </Button>
+          )}
+        </div>
       </div>
     </article>
   );
 }
 
-function Avatar({ src, name, size }: { src: string | null; name: string; size: number }) {
+/**
+ * Mobile-aware avatar — defaults to `size` (mobile) and bumps to
+ * `sizeSm` at the `sm:` breakpoint via inline CSS variables consumed in
+ * an arbitrary-value class. Lets the identity card show a compact 80px
+ * thumbnail next to a horizontal row on phones and the full 104px hero
+ * on tablets/desktop without two render paths.
+ */
+function Avatar({
+  src, name, size, sizeSm,
+}: {
+  src: string | null;
+  name: string;
+  size: number;
+  sizeSm?: number;
+}) {
+  const smSize = sizeSm ?? size;
+  const style = {
+    '--avatar-size': `${size}px`,
+    '--avatar-size-sm': `${smSize}px`,
+  } as React.CSSProperties;
+  const fontStyle = {
+    ...style,
+    fontSize: `${Math.round(size * 0.38)}px`,
+  } as React.CSSProperties;
+
   if (src) {
     return (
       // key={src} forces React to swap the <img> when the URL changes,
@@ -214,10 +248,8 @@ function Avatar({ src, name, size }: { src: string | null; name: string; size: n
         key={src}
         src={src}
         alt={name}
-        width={size}
-        height={size}
-        className="rounded-full border-2 border-[var(--color-brand-border)] object-cover"
-        style={{ width: size, height: size }}
+        className="block h-[var(--avatar-size)] w-[var(--avatar-size)] rounded-full border-2 border-[var(--color-brand-border)] object-cover sm:h-[var(--avatar-size-sm)] sm:w-[var(--avatar-size-sm)]"
+        style={style}
       />
     );
   }
@@ -228,8 +260,8 @@ function Avatar({ src, name, size }: { src: string | null; name: string; size: n
     .join('') || 'F';
   return (
     <div
-      className="flex items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-white shadow-[0_8px_24px_-12px_rgba(15,80,30,0.30)]"
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}
+      className="flex h-[var(--avatar-size)] w-[var(--avatar-size)] items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-white shadow-[0_8px_24px_-12px_rgba(15,80,30,0.30)] sm:h-[var(--avatar-size-sm)] sm:w-[var(--avatar-size-sm)]"
+      style={fontStyle}
     >
       <span className="font-bold tracking-tight">{initials}</span>
     </div>
@@ -293,7 +325,7 @@ function ContactBlock({ user }: { user: AppUserDto }) {
 
   if (editing) {
     return (
-      <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+      <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
         </div>
@@ -348,15 +380,14 @@ function ContactBlock({ user }: { user: AppUserDto }) {
               </p>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            <Button type="submit" size="sm" disabled={save.isPending}>
-              {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              Save changes
-            </Button>
+          {/* Full-width-stacked buttons on mobile so the thumb has a
+              comfortable Save target; inline pair on sm+. */}
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
               onClick={() => {
                 setEditing(false);
                 setErrors({});
@@ -368,6 +399,15 @@ function ContactBlock({ user }: { user: AppUserDto }) {
             >
               Cancel
             </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="w-full sm:w-auto"
+              disabled={save.isPending}
+            >
+              {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Save changes
+            </Button>
           </div>
         </form>
       </article>
@@ -375,7 +415,7 @@ function ContactBlock({ user }: { user: AppUserDto }) {
   }
 
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
         <Button variant="outline" size="sm" className="h-8 text-[11.5px]" onClick={() => setEditing(true)}>
@@ -415,26 +455,42 @@ function DetailRow({
   badge?: { label: string; tone: 'green' | 'amber' };
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5">
-      <div className="flex min-w-0 items-center gap-3">
+    <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5">
+      {/* On phones the badge wraps to a second line under the value so
+          a long email isn't crushed to 8 characters by the badge — at
+          sm+ the row stays one line. */}
+      <div className="flex items-center gap-3 sm:justify-between">
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
           <p className="truncate text-[13px] font-semibold text-[var(--color-brand-fg)]">{value}</p>
         </div>
+        {badge && (
+          <span className={cn(
+            'hidden shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider sm:inline-flex',
+            badge.tone === 'green'
+              ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
+              : 'bg-amber-100 text-amber-800',
+          )}>
+            {badge.tone === 'green' ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
+            {badge.label}
+          </span>
+        )}
       </div>
       {badge && (
-        <span className={cn(
-          'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
-          badge.tone === 'green'
-            ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
-            : 'bg-amber-100 text-amber-800',
-        )}>
-          {badge.tone === 'green' ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
-          {badge.label}
-        </span>
+        <div className="mt-2 flex sm:hidden">
+          <span className={cn(
+            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
+            badge.tone === 'green'
+              ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
+              : 'bg-amber-100 text-amber-800',
+          )}>
+            {badge.tone === 'green' ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
+            {badge.label}
+          </span>
+        </div>
       )}
     </div>
   );
@@ -444,7 +500,7 @@ function DetailRow({
 
 function FarmsBlock({ farms, loading }: { farms: FarmDto[]; loading: boolean }) {
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Your farms</h2>
         <Link

@@ -41,7 +41,7 @@ export default function FarmDetailPage({ params }: { params: Promise<{ id: strin
   const canEdit = farm?.membership?.role === 'owner';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <Link
           href="/farms"
@@ -64,9 +64,9 @@ export default function FarmDetailPage({ params }: { params: Promise<{ id: strin
             description={[farm.state, farm.address].filter(Boolean).join(' · ') || 'No location set'}
           />
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <LogoBlock farm={farm} canEdit={canEdit} />
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <DetailsBlock farm={farm} canEdit={canEdit} />
               <StatsBlock farm={farm} />
             </div>
@@ -108,18 +108,19 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not remove the logo.')),
   });
 
+  // See /profile IdentityBlock for the horizontal-on-mobile rationale.
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-6">
-      <div className="flex flex-col items-center text-center">
-        <div className="relative">
-          <Logo src={farm.logoUrl ?? null} size={104} />
+    <article className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-6">
+      <div className="flex items-center gap-4 text-left sm:flex-col sm:gap-0 sm:text-center">
+        <div className="relative shrink-0">
+          <Logo src={farm.logoUrl ?? null} size={80} sizeSm={104} />
           {canEdit && (
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={upload.isPending}
               className={cn(
-                'absolute -bottom-1 -right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)]',
+                'absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)] sm:-bottom-1 sm:-right-1 sm:h-9 sm:w-9',
                 upload.isPending && 'opacity-60',
               )}
               aria-label="Upload logo"
@@ -140,41 +141,60 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
           />
         </div>
 
-        <p className="mt-4 text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)]">{farm.name}</p>
-        {farm.membership?.role && (
-          <span className={cn(
-            'mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
-            farm.membership.role === 'owner'
-              ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
-              : farm.membership.role === 'manager'
-                ? 'bg-sky-50 text-sky-700'
-                : 'bg-[var(--color-brand-bg)] text-[var(--color-brand-fg-soft)]',
-          )}>
-            You are {farm.membership.role}
-          </span>
-        )}
-        <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
-          {productionLabel(farm.primaryProduction)}
-        </p>
+        <div className="min-w-0 flex-1 sm:flex-none">
+          <p className="truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:mt-4 sm:text-[18px]">{farm.name}</p>
+          {farm.membership?.role && (
+            <span className={cn(
+              'mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
+              farm.membership.role === 'owner'
+                ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
+                : farm.membership.role === 'manager'
+                  ? 'bg-sky-50 text-sky-700'
+                  : 'bg-[var(--color-brand-bg)] text-[var(--color-brand-fg-soft)]',
+            )}>
+              You are {farm.membership.role}
+            </span>
+          )}
+          <p className="mt-1 truncate text-[11.5px] text-[var(--color-brand-muted)]">
+            {productionLabel(farm.primaryProduction)}
+          </p>
 
-        {canEdit && farm.logoUrl && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4 h-8 text-[11.5px] text-[var(--color-brand-muted)]"
-            onClick={() => remove.mutate()}
-            disabled={remove.isPending}
-          >
-            <Trash2 className="h-3 w-3" />
-            Remove logo
-          </Button>
-        )}
+          {canEdit && farm.logoUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 text-[11.5px] text-[var(--color-brand-muted)] sm:mt-4"
+              onClick={() => remove.mutate()}
+              disabled={remove.isPending}
+            >
+              <Trash2 className="h-3 w-3" />
+              Remove logo
+            </Button>
+          )}
+        </div>
       </div>
     </article>
   );
 }
 
-function Logo({ src, size }: { src: string | null; size: number }) {
+/**
+ * Mobile-aware logo — same trick as the profile Avatar: `size` is the
+ * mobile width and `sizeSm` is the sm: width, both threaded through
+ * inline CSS variables so the markup stays single-render.
+ */
+function Logo({
+  src, size, sizeSm,
+}: {
+  src: string | null;
+  size: number;
+  sizeSm?: number;
+}) {
+  const smSize = sizeSm ?? size;
+  const style = {
+    '--logo-size': `${size}px`,
+    '--logo-size-sm': `${smSize}px`,
+  } as React.CSSProperties;
+
   if (src) {
     return (
       // key={src} — see Avatar in /profile for the rationale.
@@ -182,19 +202,17 @@ function Logo({ src, size }: { src: string | null; size: number }) {
         key={src}
         src={src}
         alt=""
-        width={size}
-        height={size}
-        className="rounded-2xl border-2 border-[var(--color-brand-border)] object-cover"
-        style={{ width: size, height: size }}
+        className="block h-[var(--logo-size)] w-[var(--logo-size)] rounded-2xl border-2 border-[var(--color-brand-border)] object-cover sm:h-[var(--logo-size-sm)] sm:w-[var(--logo-size-sm)]"
+        style={style}
       />
     );
   }
   return (
     <div
-      className="flex items-center justify-center rounded-2xl border-2 border-white bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-white shadow-[0_8px_24px_-12px_rgba(15,80,30,0.30)]"
-      style={{ width: size, height: size }}
+      className="flex h-[var(--logo-size)] w-[var(--logo-size)] items-center justify-center rounded-2xl border-2 border-white bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-white shadow-[0_8px_24px_-12px_rgba(15,80,30,0.30)] sm:h-[var(--logo-size-sm)] sm:w-[var(--logo-size-sm)]"
+      style={style}
     >
-      <Tractor className="h-10 w-10" />
+      <Tractor className="h-8 w-8 sm:h-10 sm:w-10" />
     </div>
   );
 }
@@ -258,7 +276,7 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
 
   if (editing) {
     return (
-      <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+      <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
         </div>
@@ -342,15 +360,12 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
             </div>
             <FieldError message={errors.primary_production} />
           </div>
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            <Button type="submit" size="sm" disabled={save.isPending}>
-              {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              Save changes
-            </Button>
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
               onClick={() => {
                 setEditing(false);
                 setErrors({});
@@ -364,6 +379,15 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
             >
               Cancel
             </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="w-full sm:w-auto"
+              disabled={save.isPending}
+            >
+              {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Save changes
+            </Button>
           </div>
         </form>
       </article>
@@ -371,7 +395,7 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
   }
 
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
         {canEdit && (
@@ -429,7 +453,7 @@ function DetailRow({
 
 function StatsBlock({ farm }: { farm: FarmDto }) {
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Activity</h2>
       </div>
