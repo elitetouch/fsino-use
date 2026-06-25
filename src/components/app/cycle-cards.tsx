@@ -1947,7 +1947,7 @@ export function VaccinationCard({
           >
             <div className="min-w-0">
               <p className="text-[11.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
-                Other vaccines you&rsquo;ve given
+                {offScheduleHeading(offSchedule)}
               </p>
               <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
                 {offSchedule.length} entr{offSchedule.length === 1 ? 'y' : 'ies'} outside the schedule.
@@ -2023,6 +2023,27 @@ export function VaccinationCard({
  * invalidates and this row will be promoted to a schedule row in
  * future flocks (the materializer pulls farm extras at flock creation).
  */
+/**
+ * Heading that reflects the actual contents of the off-schedule list.
+ * The vaccination card covers vaccinations AND treatments AND
+ * medications (the protocol can prescribe any of them), so the heading
+ * adapts: "vaccines" / "treatments" / "medications" when the section
+ * is uniform, "entries" when mixed. This is the fix for the
+ * user-reported confusion of seeing a treatment row under a heading
+ * that read "Other vaccines you've given".
+ */
+function offScheduleHeading(items: VaccinationOffScheduleItemDto[]): string {
+  if (items.length === 0) return 'Other entries outside the schedule';
+  const kinds = new Set(items.map((i) => i.eventType));
+  if (kinds.size === 1) {
+    const only = items[0]!.eventType;
+    if (only === 'treatment') return "Other treatments you've given";
+    if (only === 'medication') return "Other medications you've given";
+    return "Other vaccines you've given";
+  }
+  return "Other entries you've given";
+}
+
 function OffScheduleRow({ item }: { item: VaccinationOffScheduleItemDto }) {
   const add = useAddFarmExtraVaccination();
 

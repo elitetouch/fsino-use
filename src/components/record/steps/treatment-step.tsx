@@ -63,7 +63,10 @@ interface TreatmentStepProps {
 }
 
 export function TreatmentStep(props: TreatmentStepProps) {
-  const choice = useEntryChoice(props.existingList);
+  // Treatments are inherently multi-entry per day — a flock may need
+  // two different treatments on the same day (e.g. antibiotic +
+  // dewormer). See vaccination-step.tsx for the same rationale.
+  const choice = useEntryChoice(props.existingList, { allowMultiplePerDay: true });
   if (choice.showPicker) {
     return (
       <TreatmentPickerView

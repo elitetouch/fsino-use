@@ -55,7 +55,13 @@ interface VaccinationStepProps {
 }
 
 export function VaccinationStep(props: VaccinationStepProps) {
-  const choice = useEntryChoice(props.existingList);
+  // Vaccinations are inherently multi-entry per day — a flock may need
+  // two doses on the same day (e.g. Newcastle + Gumboro). Always open
+  // the picker on a single existing entry so the farmer can pick
+  // "edit that one" or "add another", same as feed/water/eggs in
+  // twice-a-day mode. Don't gate this behind a preference flag —
+  // there's no "once a day" semantic for vaccines.
+  const choice = useEntryChoice(props.existingList, { allowMultiplePerDay: true });
   if (choice.showPicker) {
     return (
       <VaccinationPickerView
