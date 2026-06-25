@@ -41,7 +41,11 @@ export default function FarmDetailPage({ params }: { params: Promise<{ id: strin
   const canEdit = farm?.membership?.role === 'owner';
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    // See /profile for the rationale on these page-level guards:
+    // w-full max-w-full + overflow-x-hidden is the belt that prevents
+    // any unexpectedly-wide child from producing a horizontal scrollbar
+    // on a narrow phone viewport.
+    <div className="w-full max-w-full space-y-4 overflow-x-hidden sm:space-y-6">
       <div className="flex items-center justify-between">
         <Link
           href="/farms"
@@ -66,7 +70,7 @@ export default function FarmDetailPage({ params }: { params: Promise<{ id: strin
 
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <LogoBlock farm={farm} canEdit={canEdit} />
-            <div className="space-y-3 sm:space-y-4">
+            <div className="min-w-0 space-y-3 sm:space-y-4">
               <DetailsBlock farm={farm} canEdit={canEdit} />
               <StatsBlock farm={farm} />
             </div>
@@ -108,19 +112,22 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not remove the logo.')),
   });
 
-  // See /profile IdentityBlock for the horizontal-on-mobile rationale.
+  // Centered vertical stack at every breakpoint — same rationale as
+  // /profile IdentityBlock. The horizontal-on-mobile variant put the
+  // logo, a variable-width name, a role pill and a whitespace-nowrap
+  // Button on the same flex row; safe at 360px+, fragile below.
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-6">
-      <div className="flex items-center gap-4 text-left sm:flex-col sm:gap-0 sm:text-center">
+    <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-6">
+      <div className="flex flex-col items-center gap-3 text-center">
         <div className="relative shrink-0">
-          <Logo src={farm.logoUrl ?? null} size={80} sizeSm={104} />
+          <Logo src={farm.logoUrl ?? null} size={88} sizeSm={104} />
           {canEdit && (
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={upload.isPending}
               className={cn(
-                'absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)] sm:-bottom-1 sm:-right-1 sm:h-9 sm:w-9',
+                'absolute -bottom-1 -right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[var(--color-brand-primary)] text-white shadow-md transition hover:bg-[var(--color-brand-primary-deep)]',
                 upload.isPending && 'opacity-60',
               )}
               aria-label="Upload logo"
@@ -141,11 +148,11 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
           />
         </div>
 
-        <div className="min-w-0 flex-1 sm:flex-none">
-          <p className="truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:mt-4 sm:text-[18px]">{farm.name}</p>
+        <div className="w-full min-w-0">
+          <p className="line-clamp-2 break-words text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">{farm.name}</p>
           {farm.membership?.role && (
             <span className={cn(
-              'mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
+              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
               farm.membership.role === 'owner'
                 ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                 : farm.membership.role === 'manager'
@@ -155,23 +162,23 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
               You are {farm.membership.role}
             </span>
           )}
-          <p className="mt-1 truncate text-[11.5px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
             {productionLabel(farm.primaryProduction)}
           </p>
-
-          {canEdit && farm.logoUrl && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 h-8 text-[11.5px] text-[var(--color-brand-muted)] sm:mt-4"
-              onClick={() => remove.mutate()}
-              disabled={remove.isPending}
-            >
-              <Trash2 className="h-3 w-3" />
-              Remove logo
-            </Button>
-          )}
         </div>
+
+        {canEdit && farm.logoUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-[11.5px] text-[var(--color-brand-muted)]"
+            onClick={() => remove.mutate()}
+            disabled={remove.isPending}
+          >
+            <Trash2 className="h-3 w-3" />
+            Remove logo
+          </Button>
+        )}
       </div>
     </article>
   );
@@ -276,7 +283,7 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
 
   if (editing) {
     return (
-      <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
+      <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
         </div>
@@ -395,11 +402,11 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
   }
 
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
+    <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
         {canEdit && (
-          <Button variant="outline" size="sm" className="h-8 text-[11.5px]" onClick={() => setEditing(true)}>
+          <Button variant="outline" size="sm" className="h-8 shrink-0 text-[11.5px]" onClick={() => setEditing(true)}>
             <Pencil className="h-3 w-3" />
             Edit
           </Button>
@@ -437,13 +444,19 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
-        <Icon className="h-4 w-4" strokeWidth={2.2} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
-        <p className="truncate text-[13px] font-semibold text-[var(--color-brand-fg)]">{value}</p>
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-2.5">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
+          <Icon className="h-4 w-4" strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
+          {/* break-words — see /profile DetailRow for the rationale.
+              Long addresses ("12B Iyaba road, Ikorodu, Lagos") and
+              breed labels don't truncate cleanly on a 320px viewport,
+              so we wrap to multiple lines instead. */}
+          <p className="break-words text-[13px] font-semibold text-[var(--color-brand-fg)]">{value}</p>
+        </div>
       </div>
     </div>
   );
@@ -453,7 +466,7 @@ function DetailRow({
 
 function StatsBlock({ farm }: { farm: FarmDto }) {
   return (
-    <article className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
+    <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Activity</h2>
       </div>
@@ -486,12 +499,16 @@ function Stat({
   value: number;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-3 py-3 text-center">
+    // min-w-0 + overflow-hidden lets a 6-digit value (1,234,567) wrap
+    // inside the cell instead of pushing the 3-column grid out of the
+    // card on a narrow phone. px tightens from 3 to 2 on mobile so the
+    // grid still has 3 readable columns at 320px.
+    <div className="min-w-0 overflow-hidden rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 px-2 py-3 text-center sm:px-3">
       <span className="mx-auto mb-1 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
         <Icon className="h-4 w-4" strokeWidth={2.2} />
       </span>
-      <p className="text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)]">{value.toLocaleString()}</p>
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
+      <p className="break-words text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">{value.toLocaleString()}</p>
+      <p className="break-words text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
     </div>
   );
 }
