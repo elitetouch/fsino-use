@@ -66,6 +66,17 @@ export function CycleCardsGrid({
   // would have to be reimplemented and kept in sync.
   const openRecord = () => router.push(`/cycles/${cycle.id}/record`);
 
+  // Backend reports `state` per card; cards in `not_applicable` (e.g.
+  // egg cards for broilers) and `not_yet` (e.g. egg cards for pre-lay
+  // layer flocks under ~16 weeks with no eggs ever logged) ship null
+  // summaries and shouldn't render — they'd just paint as empty noise
+  // on a dashboard the farmer can't act on yet. The cards reappear
+  // automatically the moment the backend flips state to something
+  // visible (any egg event logged, or the flock crosses the
+  // point-of-lay threshold).
+  const isVisible = (card?: { state?: string } | null) =>
+    !!card && card.state !== 'not_applicable' && card.state !== 'not_yet';
+
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <BreedSummaryCard flock={cycle} />
@@ -74,9 +85,15 @@ export function CycleCardsGrid({
       <MortalityCard data={cards?.mortality} onEdit={openRecord} />
       <BirdsSoldCard data={cards?.birdsSold} onEdit={openRecord} />
       <BirdWeightCard data={cards?.weight} onEdit={openRecord} />
-      {isLayerOrMixed && <EggCollectionCard data={cards?.eggCollection} onEdit={openRecord} />}
-      {isLayerOrMixed && <EggSizeCard data={cards?.eggSize} onEdit={openRecord} />}
-      {isLayerOrMixed && <EggWeightCard data={cards?.eggWeight} onEdit={openRecord} />}
+      {isLayerOrMixed && isVisible(cards?.eggCollection) && (
+        <EggCollectionCard data={cards?.eggCollection} onEdit={openRecord} />
+      )}
+      {isLayerOrMixed && isVisible(cards?.eggSize) && (
+        <EggSizeCard data={cards?.eggSize} onEdit={openRecord} />
+      )}
+      {isLayerOrMixed && isVisible(cards?.eggWeight) && (
+        <EggWeightCard data={cards?.eggWeight} onEdit={openRecord} />
+      )}
       {/* VaccinationCard's footer now matches every other card's
           Learn-more pattern — no edit slot; vaccinations are managed
           via the wizard step rather than a card-level edit jump. */}
