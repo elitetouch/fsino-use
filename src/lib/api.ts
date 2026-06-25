@@ -275,6 +275,29 @@ export const endpoints = {
       }),
     ),
 
+  // ───────────── Farm vaccination-protocol extras ─────────────
+  /**
+   * Per-farm vaccination protocol extras. Backs the
+   * "+ Add to my protocol" flow in the dashboard's vaccination card
+   * (off-schedule rows + cross-cycle suggestions).
+   *
+   * Mutations invalidate the pen-dashboard cache on the consumer side
+   * so the schedule list / off-schedule list update immediately —
+   * see use-farm-extra-vaccinations hooks.
+   */
+  listFarmExtraVaccinations: () =>
+    unwrap<{ extras: FarmExtraVaccinationDto[] }>(
+      api.get('/vaccination-protocol/extras'),
+    ),
+  addFarmExtraVaccination: (payload: FarmExtraVaccinationPayload) =>
+    unwrap<{ extra: FarmExtraVaccinationDto }>(
+      api.post('/vaccination-protocol/extras', payload),
+    ),
+  removeFarmExtraVaccination: (id: string) =>
+    unwrap<{ removed: boolean }>(
+      api.delete(`/vaccination-protocol/extras/${id}`),
+    ),
+
   // ───────────── Reference data ─────────────
   listBreeds: (params?: { production_type?: string; search?: string; country?: string }) =>
     unwrap<{ breeds: BreedDto[] }>(api.get('/breeds', { params })),
@@ -890,8 +913,75 @@ export type VaccinationCardDto = DashboardCardBase & {
     upcoming: number;
     todayKey: string;
     nextDue: VaccinationItemDto | null;
+    offScheduleCount: number;
   };
   items: VaccinationItemDto[];
+  offSchedule?: VaccinationOffScheduleItemDto[];
+  suggestions?: VaccinationSuggestionDto[];
+};
+
+/**
+ * Records the farmer logged that didn't match any schedule row —
+ * vaccines/treatments given off-protocol (their own practice).
+ * Surfaced as a "Other vaccines you've given" section under the
+ * main schedule list.
+ */
+export type VaccinationOffScheduleItemDto = {
+  id: string;
+  recordId: string;
+  eventType: 'vaccination' | 'treatment' | 'medication';
+  name: string;
+  recordedDate: string;       // YYYY-MM-DD
+  recordedDateLabel: string;  // "Mar 14"
+  ageDays: number;            // bird age on the day the record was made
+  note: string | null;
+};
+
+/**
+ * Cross-cycle pattern suggestions — vaccines given off-protocol in
+ * 2+ recent closed cycles. Tap "Add to my protocol" to call
+ * POST /vaccination-protocol/extras with the suggested fields.
+ */
+export type VaccinationSuggestionDto = {
+  name: string;
+  eventType: 'vaccination' | 'treatment' | 'medication';
+  ageDays: number;     // bird age the farmer typically gave it
+  cycleCount: number;  // distinct past cycles the pattern was seen in
+};
+
+/**
+ * Per-farm protocol extras — vaccines the farm added on top of the
+ * global protocol. Returned by GET /vaccination-protocol/extras.
+ */
+export type FarmExtraVaccinationDto = {
+  id: string;
+  farmId: string;
+  productionType: string;
+  breedId: string | null;
+  kind: string;
+  name: string;
+  diseaseTarget: string | null;
+  ageDays: number;
+  windowDays: number;
+  critical: boolean;
+  method: string | null;
+  dosage: string | null;
+  notes: string | null;
+  createdAt?: string;
+};
+
+export type FarmExtraVaccinationPayload = {
+  name: string;
+  kind?: 'vaccination' | 'treatment' | 'medication';
+  age_days: number;
+  window_days?: number;
+  critical?: boolean;
+  disease_target?: string | null;
+  method?: string | null;
+  dosage?: string | null;
+  production_type?: 'layer' | 'broiler' | 'mixed' | 'all';
+  source_record_id?: string | null;
+  notes?: string | null;
 };
 
 export type VaccinationItemDto = {

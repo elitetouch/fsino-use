@@ -3,14 +3,16 @@
 import { useState, type ReactNode } from 'react';
 import {
   Bird, Droplet, Skull, Syringe, Wheat, ChevronRight, Egg, Scale, BadgeDollarSign,
-  Check, BadgeCheck, X as XIcon, ChevronDown,
+  Check, BadgeCheck, X as XIcon, ChevronDown, CalendarPlus, Sparkles, Plus,
   type LucideIcon,
 } from 'lucide-react';
 import type {
   FeedCardDto, FlockDto, MortalityCardDto, BirdsSoldCardDto, WeightCardDto,
   EggCollectionCardDto, EggSizeCardDto, EggWeightCardDto, EggSeriesPoint,
-  VaccinationCardDto, VaccinationItemDto, WaterCardDto,
+  VaccinationCardDto, VaccinationItemDto, VaccinationOffScheduleItemDto,
+  VaccinationSuggestionDto, WaterCardDto,
 } from '@/lib/api';
+import { useAddFarmExtraVaccination } from '@/lib/use-farm-extra-vaccinations';
 import { cn } from '@/lib/utils';
 
 /**
@@ -1866,9 +1868,13 @@ export function VaccinationCard({
   // count) or expand to the full schedule.
   const [showAll, setShowAll] = useState(false);
   const [learnOpen, setLearnOpen] = useState(false);
+  const [showOffSchedule, setShowOffSchedule] = useState(false);
   const ordered = chronologicalOrder(items);
   const VISIBLE_DEFAULT = 5;
   const visibleItems = showAll ? ordered : ordered.slice(0, VISIBLE_DEFAULT);
+
+  const offSchedule = data?.offSchedule ?? [];
+  const suggestions = data?.suggestions ?? [];
 
   // Counter-pill tone — matches the figma's intent:
   //   amber pill when something is overdue or due today (needs the user's
@@ -1912,6 +1918,12 @@ export function VaccinationCard({
         </p>
       )}
 
+      {/* Phase 3 — cross-cycle suggestions. Surfaces vaccines the
+          farmer has given off-protocol in 2+ recent closed cycles, so
+          the system learns from practice rather than asking the
+          farmer to re-add them every cycle. */}
+      {suggestions.length > 0 && <SuggestionsBanner suggestions={suggestions} />}
+
       {/* List */}
       {visibleItems.length > 0 && (
         <ul className="mt-3 divide-y divide-[var(--color-brand-border)]">
@@ -1919,6 +1931,43 @@ export function VaccinationCard({
             <VaccinationRow key={row.id} item={row} />
           ))}
         </ul>
+      )}
+
+      {/* Phase 1 — "Other vaccines you've given" section. Records the
+          farmer logged that didn't match any schedule row; visible so
+          their effort is no longer silently dropped. Each row offers
+          "+ Add to my protocol" (Phase 2 plumbing) which adopts the
+          vaccine into the farm's standing protocol for future cycles. */}
+      {offSchedule.length > 0 && (
+        <div className="mt-4 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 p-3">
+          <button
+            type="button"
+            onClick={() => setShowOffSchedule((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 text-left"
+          >
+            <div className="min-w-0">
+              <p className="text-[11.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+                Other vaccines you&rsquo;ve given
+              </p>
+              <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+                {offSchedule.length} entr{offSchedule.length === 1 ? 'y' : 'ies'} outside the schedule.
+              </p>
+            </div>
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 shrink-0 text-[var(--color-brand-fg-soft)] transition-transform',
+                showOffSchedule && 'rotate-180',
+              )}
+            />
+          </button>
+          {showOffSchedule && (
+            <ul className="mt-2 divide-y divide-[var(--color-brand-border)]">
+              {offSchedule.map((row) => (
+                <OffScheduleRow key={row.id} item={row} />
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {/* Unified footer — same green BadgeCheck Learn more as every
@@ -1958,6 +2007,122 @@ export function VaccinationCard({
         />
       </LearnMoreDrawer>
     </Card>
+  );
+}
+
+/**
+ * Single row in the "Other vaccines you've given" section. Visual rhythm
+ * mirrors the main schedule row — left date column + name middle +
+ * action on the right — so the two lists scan as siblings.
+ *
+ * The "+ Add to my protocol" button calls
+ * POST /vaccination-protocol/extras with the source_record_id so the
+ * backend can trace the adoption back to the specific entry that
+ * triggered it. After the mutation succeeds the dashboard query
+ * invalidates and this row will be promoted to a schedule row in
+ * future flocks (the materializer pulls farm extras at flock creation).
+ */
+function OffScheduleRow({ item }: { item: VaccinationOffScheduleItemDto }) {
+  const add = useAddFarmExtraVaccination();
+
+  const onAdopt = () => {
+    add.mutate({
+      name: item.name,
+      kind: item.eventType,
+      age_days: item.ageDays,
+      source_record_id: item.recordId,
+    });
+  };
+
+  return (
+    <li className="flex items-center gap-3 px-2 py-2.5 -mx-2">
+      <span className="inline-flex w-[3.4rem] shrink-0 items-center text-[10.5px] font-bold uppercase leading-tight tracking-[0.08em] text-[var(--color-brand-muted)]">
+        {item.recordedDateLabel}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 break-words text-[13px] font-semibold leading-snug text-[var(--color-brand-fg)]">
+          {item.name}
+        </p>
+        <p className="mt-0.5 text-[10.5px] uppercase tracking-[0.1em] text-[var(--color-brand-muted-soft)]">
+          {item.eventType} · day {item.ageDays}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onAdopt}
+        disabled={add.isPending}
+        title="Add to my farm protocol"
+        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-brand-border)] bg-white px-2 py-1 text-[11px] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-accent)]/30 disabled:opacity-50"
+      >
+        {add.isPending ? '…' : <><Plus className="h-3 w-3" />Adopt</>}
+      </button>
+    </li>
+  );
+}
+
+/**
+ * Cross-cycle suggestions banner. Surfaces vaccines the farmer has
+ * given off-protocol in 2+ recent closed cycles — the system noticing
+ * a pattern and offering to standardise it without ever silently
+ * changing the protocol.
+ *
+ * Each suggestion has its own "+ Add" tap — the banner can't bulk-add
+ * because the farmer may want one and not another (e.g. they're sure
+ * about Coccidiostat but only sometimes give the secondary
+ * dewormer).
+ */
+function SuggestionsBanner({ suggestions }: { suggestions: VaccinationSuggestionDto[] }) {
+  return (
+    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/70 p-3">
+      <div className="flex items-start gap-2">
+        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" strokeWidth={2.2} />
+        <div className="min-w-0 flex-1">
+          <p className="text-[12px] font-bold text-amber-900">
+            Suggested for your protocol
+          </p>
+          <p className="mt-0.5 text-[11.5px] leading-snug text-amber-800">
+            We noticed these {suggestions.length === 1 ? 'is' : 'are'} given consistently
+            across your recent cycles — adopt {suggestions.length === 1 ? 'it' : 'them'} so
+            future flocks include {suggestions.length === 1 ? 'it' : 'them'} automatically.
+          </p>
+        </div>
+      </div>
+      <ul className="mt-2.5 space-y-1.5">
+        {suggestions.map((s) => (
+          <SuggestionRow key={s.name + s.ageDays} suggestion={s} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SuggestionRow({ suggestion }: { suggestion: VaccinationSuggestionDto }) {
+  const add = useAddFarmExtraVaccination();
+  const onAdopt = () => {
+    add.mutate({
+      name: suggestion.name,
+      kind: suggestion.eventType,
+      age_days: suggestion.ageDays,
+    });
+  };
+  return (
+    <li className="flex items-center gap-2 rounded-md bg-white/80 px-2 py-1.5">
+      <CalendarPlus className="h-3.5 w-3.5 shrink-0 text-amber-700" strokeWidth={2.2} />
+      <p className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[var(--color-brand-fg)]">
+        {suggestion.name}{' '}
+        <span className="font-normal text-[var(--color-brand-muted)]">
+          · day {suggestion.ageDays} · {suggestion.cycleCount} cycles
+        </span>
+      </p>
+      <button
+        type="button"
+        onClick={onAdopt}
+        disabled={add.isPending}
+        className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-200 disabled:opacity-50"
+      >
+        {add.isPending ? '…' : <><Plus className="h-3 w-3" />Adopt</>}
+      </button>
+    </li>
   );
 }
 
