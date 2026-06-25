@@ -109,8 +109,14 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
 
   const upload = useMutation({
     mutationFn: (file: File) => endpoints.uploadProfilePhoto(file),
-    onSuccess: () => {
+    // Write the server's authoritative user back into the cache so the
+    // UI updates without waiting for a refetch. Then also invalidate so
+    // any other consumer of `['profile']` revalidates against the
+    // server. setQueryData alone is faster (zero round-trips); the
+    // invalidate is the belt to its braces.
+    onSuccess: (data) => {
       toast.success('Photo updated.');
+      qc.setQueryData(['profile'], data.user);
       qc.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not upload your photo.')),
@@ -118,8 +124,9 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
 
   const remove = useMutation({
     mutationFn: () => endpoints.removeProfilePhoto(),
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('Photo removed.');
+      qc.setQueryData(['profile'], data.user);
       qc.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not remove your photo.')),
@@ -200,7 +207,11 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
 function Avatar({ src, name, size }: { src: string | null; name: string; size: number }) {
   if (src) {
     return (
+      // key={src} forces React to swap the <img> when the URL changes,
+      // bypassing both React reconciliation reuse AND any browser memory
+      // cache that holds the previous element's loaded blob.
       <img
+        key={src}
         src={src}
         alt={name}
         width={size}

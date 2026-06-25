@@ -85,8 +85,12 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
 
   const upload = useMutation({
     mutationFn: (file: File) => endpoints.uploadFarmLogo(farm.id, file),
-    onSuccess: () => {
+    // Write the server's authoritative farm back into the cache so the
+    // UI swaps the logo immediately. See profile page for the same
+    // pattern.
+    onSuccess: (data) => {
       toast.success('Logo updated.');
+      qc.setQueryData(['farm', farm.id], { farm: data.farm });
       qc.invalidateQueries({ queryKey: ['farm', farm.id] });
       qc.invalidateQueries({ queryKey: ['farms'] });
     },
@@ -95,8 +99,9 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
 
   const remove = useMutation({
     mutationFn: () => endpoints.removeFarmLogo(farm.id),
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('Logo removed.');
+      qc.setQueryData(['farm', farm.id], { farm: data.farm });
       qc.invalidateQueries({ queryKey: ['farm', farm.id] });
       qc.invalidateQueries({ queryKey: ['farms'] });
     },
@@ -172,7 +177,9 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
 function Logo({ src, size }: { src: string | null; size: number }) {
   if (src) {
     return (
+      // key={src} — see Avatar in /profile for the rationale.
       <img
+        key={src}
         src={src}
         alt=""
         width={size}

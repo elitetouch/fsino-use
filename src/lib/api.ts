@@ -150,17 +150,23 @@ export const endpoints = {
 
   /**
    * Multipart PATCH /profile for photo. Backend reads `photo` (file) or
-   * `remove_photo=1` (clear). Other text fields can ride along in the
-   * same form if needed — we don't here because the page sends them via
-   * the JSON path above for clarity.
+   * `remove_photo=1` (clear).
+   *
+   * Two non-obvious bits:
+   *   1. We don't pass `Content-Type` — axios detects FormData and sets
+   *      `multipart/form-data; boundary=...` itself. Setting it manually
+   *      strips the boundary parameter, so the server fails to parse
+   *      the body and the file appears absent (or 422s).
+   *   2. `_method=PATCH` is Laravel's form-method spoofing — the actual
+   *      HTTP verb is POST because browsers/curl can't send multipart
+   *      with PATCH reliably, so Laravel reads this field to route to
+   *      the PATCH handler.
    */
   uploadProfilePhoto: (file: File) => {
     const fd = new FormData();
     fd.append('photo', file);
-    fd.append('_method', 'PATCH'); // Laravel form-method spoofing for multipart PATCH
-    return unwrap<{ user: AppUserDto }>(
-      api.post('/profile', fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
-    );
+    fd.append('_method', 'PATCH');
+    return unwrap<{ user: AppUserDto }>(api.post('/profile', fd));
   },
 
   removeProfilePhoto: () =>
@@ -213,12 +219,12 @@ export const endpoints = {
     unwrap<{ farm: FarmDto }>(api.patch(`/farms/${id}`, payload)),
 
   uploadFarmLogo: (id: string, file: File) => {
+    // Same multipart caveats as uploadProfilePhoto — don't set
+    // Content-Type manually, and POST + _method=PATCH for spoofing.
     const fd = new FormData();
     fd.append('logo', file);
     fd.append('_method', 'PATCH');
-    return unwrap<{ farm: FarmDto }>(
-      api.post(`/farms/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
-    );
+    return unwrap<{ farm: FarmDto }>(api.post(`/farms/${id}`, fd));
   },
 
   removeFarmLogo: (id: string) =>
