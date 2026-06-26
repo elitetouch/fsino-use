@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { CyclePicker } from '@/components/app/cycle-picker';
 import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
+import { PenClimate } from '@/components/app/pen-climate';
 import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { readCurrentFarmId } from '@/lib/farm-context';
@@ -129,7 +130,11 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
       ) : !cycle ? (
         <NotFound />
       ) : tab === 'climate' ? (
-        <PlaceholderTab title="Pen climate" body="Connect a climate sensor to see temperature, humidity and CO2 trends for this pen." />
+        pen ? (
+          <PenClimate penId={pen.id} penName={pen.name} />
+        ) : (
+          <PlaceholderTab title="Pen climate" body="This cycle isn't attached to a pen yet." />
+        )
       ) : tab === 'finance' ? (
         <PlaceholderTab title="Finance" body="Track feed cost, vaccine cost and projected margin for this cycle here." />
       ) : (

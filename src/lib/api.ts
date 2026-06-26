@@ -342,6 +342,23 @@ export const endpoints = {
       }),
     ),
 
+  // ───────────── Pen climate (PENKEEP IoT) ─────────────
+  /**
+   * Live climate readings + device status for a pen's PENKEEP unit.
+   * Backend either proxies the device's /data endpoint over the
+   * tenant's hub or reads the latest persisted reading. Either way,
+   * the contract is the same — the page polls this every 30s.
+   *
+   * Returns 404 when no PENKEEP is paired with the pen, which the UI
+   * treats as the empty / setup state rather than an error.
+   */
+  getPenClimate: (penId: string) =>
+    unwrap<PenClimateDto>(api.get(`/pens/${penId}/climate`)),
+
+  /** Toggle a named relay (T1 / T2 / T3 / socket). */
+  setPenClimateRelay: (penId: string, relay: string, on: boolean) =>
+    unwrap<{ ok: true }>(api.post(`/pens/${penId}/climate/relay`, { relay, on })),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
@@ -1217,4 +1234,79 @@ export type InvitePreviewDto = {
   invite: StaffInviteDto;
   farm: FarmDto | null;
   nextAction: { type: 'login' | 'register' | 'accept'; userExists?: boolean };
+};
+
+/* ───────────────────────── Pen climate (PENKEEP IoT) ───────────────────────── */
+
+/**
+ * Single temperature zone reading. The PENKEEP unit has three of these
+ * (left / middle / right) so the page can flag a stratified pen — a
+ * cold left side often means a draught the user can act on.
+ */
+export type PenClimateZone = {
+  /** Current temperature, in the unit below. */
+  current: number;
+  /** User-set minimum threshold; below this triggers the heater. */
+  min: number;
+  /** User-set maximum threshold; above this is over-heat. */
+  max: number;
+  /** Derived bucket the device sends so the UI doesn't re-compute. */
+  status: 'low' | 'normal' | 'high';
+  /** Whether the heater wired to this zone is currently energised. */
+  heaterOn: boolean;
+  unit: 'celsius' | 'fahrenheit';
+};
+
+export type PenClimateRelay = {
+  id: string;          // 'T1' | 'T2' | 'T3' (or labelled)
+  label?: string;      // e.g. "Brooder", "Curtain motor"
+  on: boolean;
+};
+
+export type PenClimateDto = {
+  pen: { id: string; name: string };
+  /**
+   * null when no PENKEEP is paired with this pen — the page renders
+   * the setup empty state instead of a "0.0°C" wall.
+   */
+  device: {
+    type: 'penkeep';
+    version: string;          // firmware version
+    serialNumber: string | null;
+    status: 'online' | 'offline';
+    lastSeenAt: string;       // ISO
+  } | null;
+  /** null when the device has never sent a reading. */
+  current: {
+    timestamp: string;
+    zones: { left: PenClimateZone; middle: PenClimateZone; right: PenClimateZone };
+    humidity: { value: number; unit: '%RH'; status: 'low' | 'normal' | 'high' };
+    airQuality: {
+      aqi: number;
+      nh3Ppm: number;
+      co2Ppm: number;
+      status: 'good' | 'moderate' | 'poor' | 'error' | 'stabilising';
+    };
+    battery: {
+      level: number;          // 0–100
+      voltage: number;
+      charging: boolean;
+      healthPct: number;      // 0–100
+    };
+    network: {
+      ssid: string;
+      signal: 'excellent' | 'good' | 'fair' | 'poor';
+      ipAddress: string;
+    };
+    location: { lat: number; lon: number } | null;
+    relays: PenClimateRelay[];
+    socket: { on: boolean };
+  } | null;
+  subscription: {
+    startDate: string;
+    endDate: string;
+    daysRemaining: number;
+  } | null;
+  /** Flock age in days, when an active flock is in this pen. */
+  flockAgeDays: number | null;
 };
