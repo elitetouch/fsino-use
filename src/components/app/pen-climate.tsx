@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Activity, AlertTriangle, BadgeCheck, Battery, BatteryCharging, BatteryFull,
-  Calendar, CloudOff, Flame, MapPin, Plug, Power, Radio, Settings, Signal,
+  Calendar, CloudOff, Flame, MapPin, Plug, Power, QrCode, Radio, Signal,
   Thermometer, ThermometerSnowflake, ThermometerSun, Wifi, Wind, Droplet,
   ArrowRight, BarChart3, Layers,
 } from 'lucide-react';
@@ -60,7 +60,7 @@ export function PenClimate({ penId, penName }: { penId: string; penName?: string
 
   const data = query.data;
   if (!data || !data.device || !data.current) {
-    return <SetupEmptyState penName={penName} />;
+    return <SetupEmptyState penId={penId} penName={penName} />;
   }
 
   return <Live data={data} penName={penName} />;
@@ -626,7 +626,7 @@ function InfoCard({
 
 /* ─────────────────────────── Empty / setup state ─────────────────────────── */
 
-function SetupEmptyState({ penName }: { penName?: string }) {
+function SetupEmptyState({ penId, penName }: { penId: string; penName?: string }) {
   return (
     <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-6 sm:p-10">
       <div className="mx-auto max-w-[520px] text-center">
@@ -655,13 +655,13 @@ function SetupEmptyState({ penName }: { penName?: string }) {
         </ol>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button asChild size="sm" variant="outline">
-            <a href="/settings">
-              <Settings className="h-3.5 w-3.5" />
-              Open device settings
+          <Button asChild size="sm">
+            <a href={`/pens/${penId}/pair-device`}>
+              <QrCode className="h-3.5 w-3.5" />
+              Pair my PENKEEP
             </a>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild size="sm" variant="outline">
             <a href="https://farmsupport.com/penkeep" target="_blank" rel="noreferrer">
               <BarChart3 className="h-3.5 w-3.5" />
               Buy a PENKEEP

@@ -359,6 +359,26 @@ export const endpoints = {
   setPenClimateRelay: (penId: string, relay: string, on: boolean) =>
     unwrap<{ ok: true }>(api.post(`/pens/${penId}/climate/relay`, { relay, on })),
 
+  /**
+   * Verify a typed / scanned device id BEFORE the pair POST. Surfaces
+   * "this device isn't yours" / "this device is deactivated" feedback
+   * to the user before they commit to the pair.
+   */
+  lookupPenkeepDevice: (deviceId: string) =>
+    unwrap<{
+      device_id: string;
+      label: string | null;
+      status: string;
+      paired_pen_id: string | null;
+      billing_ends_at: string | null;
+    }>(api.get(`/pen-climate/lookup`, { params: { device_id: deviceId } })),
+
+  /** Pair a PENKEEP device to a pen. */
+  pairPenkeepDevice: (penId: string, deviceId: string, label?: string | null) =>
+    unwrap<{ paired: true; device_id: string }>(
+      api.post(`/pens/${penId}/climate/pair`, { device_id: deviceId, label }),
+    ),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
