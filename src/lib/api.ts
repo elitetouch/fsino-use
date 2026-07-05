@@ -379,6 +379,20 @@ export const endpoints = {
       api.post(`/pens/${penId}/climate/pair`, { device_id: deviceId, label }),
     ),
 
+  /**
+   * Force the paired PENKEEP on this pen to re-sync flock data
+   * (subscription window, placement age, batch, firmware secret) with
+   * the pen's current active flock. Useful when the device shows stale
+   * numbers because it was offline during the last automatic push.
+   *
+   * `mqtt_published: false` means the broker couldn't be reached now —
+   * the device will pick up the change on its next contact.
+   */
+  resyncPenkeep: (penId: string) =>
+    unwrap<{ mqtt_published: boolean; device_id: string }>(
+      api.post(`/pens/${penId}/climate/resync`),
+    ),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
