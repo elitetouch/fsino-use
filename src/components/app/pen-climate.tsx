@@ -88,6 +88,12 @@ function Live({ data, penName }: { data: PenClimateDto; penName?: string }) {
         firmwareVersion={device.version}
       />
 
+      {/* Above-the-fold action row — makes Resync reachable without
+          scrolling past all four data sections. */}
+      <div className="flex justify-end">
+        <ResyncButton penId={data.pen.id} />
+      </div>
+
       {/* Zone trio — primary content */}
       <section>
         <SectionHeader
@@ -157,13 +163,10 @@ function Live({ data, penName }: { data: PenClimateDto; penName?: string }) {
 
       {/* Device info grid */}
       <section>
-        <div className="flex items-start justify-between gap-3">
-          <SectionHeader
-            eyebrow="Device"
-            title="PENKEEP info"
-          />
-          <ResyncButton penId={data.pen.id} />
-        </div>
+        <SectionHeader
+          eyebrow="Device"
+          title="PENKEEP info"
+        />
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <InfoCard icon={Calendar} label="Subscription">
             {subscription ? (
