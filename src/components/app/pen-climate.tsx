@@ -5,9 +5,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Activity, AlertTriangle, BadgeCheck, Battery, BatteryCharging, BatteryFull,
-  Calendar, CloudOff, Flame, MapPin, Plug, Power, QrCode, Radio, Signal,
-  Thermometer, ThermometerSnowflake, ThermometerSun, Wifi, Wind, Droplet,
-  ArrowRight, BarChart3, Layers,
+  Calendar, CloudOff, Flame, Loader2, MapPin, Plug, Power, QrCode, Radio,
+  RefreshCw, Signal, Thermometer, ThermometerSnowflake, ThermometerSun, Wifi,
+  Wind, Droplet, ArrowRight, BarChart3, Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -157,10 +157,13 @@ function Live({ data, penName }: { data: PenClimateDto; penName?: string }) {
 
       {/* Device info grid */}
       <section>
-        <SectionHeader
-          eyebrow="Device"
-          title="PENKEEP info"
-        />
+        <div className="flex items-start justify-between gap-3">
+          <SectionHeader
+            eyebrow="Device"
+            title="PENKEEP info"
+          />
+          <ResyncButton penId={data.pen.id} />
+        </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <InfoCard icon={Calendar} label="Subscription">
             {subscription ? (
@@ -262,6 +265,46 @@ function SectionHeader({
         </p>
       )}
     </div>
+  );
+}
+
+/* ─────────────────────────── Resync button ─────────────────────────── */
+
+/**
+ * Force the paired PENKEEP to re-sync flock data with the pen's active
+ * flock. Backend republishes `new_flock_cmd`; the device reboots and
+ * refreshes its subscription window / placement age / batch on next
+ * contact. `mqtt_published: false` = broker unreachable now, so we warn
+ * rather than success.
+ */
+function ResyncButton({ penId }: { penId: string }) {
+  const qc = useQueryClient();
+  const resync = useMutation({
+    mutationFn: () => endpoints.resyncPenkeep(penId),
+    onSuccess: (res) => {
+      if (res.mqtt_published) {
+        toast.success('Resync sent. The device will reboot and refresh.');
+      } else {
+        toast.warning('Could not reach the device — it will pick up the change on next contact.');
+      }
+      qc.invalidateQueries({ queryKey: ['pen-climate', penId] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not send resync.')),
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => resync.mutate()}
+      disabled={resync.isPending}
+      className="shrink-0"
+    >
+      {resync.isPending
+        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        : <RefreshCw className="h-3.5 w-3.5" />}
+      Resync
+    </Button>
   );
 }
 
