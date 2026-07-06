@@ -416,6 +416,35 @@ export const endpoints = {
       api.post(`/pens/${penId}/climate/resync`),
     ),
 
+  /**
+   * Paginated climate readings for one flock. The backend scopes to
+   * the flock's own cycle window (start_date → archived_at / valid_until
+   * / now) so a farmer viewing "flock 42's log" never sees a stray
+   * reading from the previous cycle on the same pen.
+   */
+  listFlockClimateReadings: (
+    flockId: string,
+    params?: {
+      from?: string;
+      to?: string;
+      device_id?: string;
+      status?: 'over' | 'all';
+      per_page?: number;
+      page?: number;
+    },
+  ) =>
+    unwrap<FlockClimateReadingsResponse>(
+      api.get(`/flocks/${flockId}/climate/readings`, { params }),
+    ),
+
+  /**
+   * URL for the CSV export — the browser handles the download stream
+   * directly, no fetch/blob dance in JS. Auth is via the bearer cookie
+   * the axios instance already carries.
+   */
+  flockClimateReadingsCsvUrl: (flockId: string) =>
+    `${api.defaults.baseURL ?? ''}/flocks/${flockId}/climate/readings.csv`,
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
@@ -1318,6 +1347,31 @@ export type PenClimateRelay = {
   id: string;          // 'T1' | 'T2' | 'T3' (or labelled)
   label?: string;      // e.g. "Brooder", "Curtain motor"
   on: boolean;
+};
+
+export type FlockClimateReadingRow = {
+  id: number | string;
+  readingAt: string;
+  deviceId: string | null;
+  stationLabel: string | null;
+  zones: {
+    left: { temp: number; status: 'low' | 'normal' | 'high' | ''; heaterOn: boolean };
+    middle: { temp: number; status: 'low' | 'normal' | 'high' | ''; heaterOn: boolean };
+    right: { temp: number; status: 'low' | 'normal' | 'high' | ''; heaterOn: boolean };
+  };
+  humidity: number;
+  aqi: number;
+  nh3Ppm: number;
+  co2Ppm: number;
+  battery: { pct: number; voltage: number };
+  socketOn: boolean;
+};
+
+export type FlockClimateReadingsResponse = {
+  flock: { id: string; penId: string; startDate: string | null };
+  window: { from: string; to: string };
+  rows: FlockClimateReadingRow[];
+  meta: { total: number; perPage: number; currentPage: number; lastPage: number };
 };
 
 export type PenClimateDeviceInfo = {
