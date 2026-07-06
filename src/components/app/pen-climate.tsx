@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { PenClimateHistory } from '@/components/app/pen-climate-history';
 import {
   Activity, AlertTriangle, BadgeCheck, Battery, BatteryCharging, BatteryFull,
   Calendar, CloudOff, Flame, Loader2, MapPin, Plug, Plus, Power, QrCode, Radio,
@@ -42,6 +43,65 @@ import { cn } from '@/lib/utils';
  * current readings (no PENKEEP paired), we render a clean "pair your
  * PENKEEP" panel with the steps to take. No fake zeros.
  */
+/**
+ * Container that switches between the live climate view and the
+ * per-flock reading log. Owned here (not in the cycle page) so both
+ * sub-views share the same react-query cache for
+ * `['pen-climate', penId]` and the toggle stays close to the data.
+ *
+ * `flockId` is optional so pages without a flock context (pen detail,
+ * standalone climate pages) can still use <PenClimate> directly and
+ * skip the history tab.
+ */
+export function PenClimateWithHistory({
+  penId, penName, flockId,
+}: {
+  penId: string;
+  penName?: string;
+  flockId?: string;
+}) {
+  const [view, setView] = useState<'live' | 'history'>('live');
+
+  // Pull the same pen-climate query the live view uses so the history
+  // toggle can name the stations without a second network round-trip.
+  const climate = useQuery({
+    queryKey: ['pen-climate', penId],
+    queryFn: () => endpoints.getPenClimate(penId),
+    enabled: !!penId && !!flockId, // only needed when history is reachable
+    staleTime: 10_000,
+  });
+
+  const stations = climate.data?.stations ?? [];
+
+  return (
+    <div className="w-full max-w-full space-y-4 overflow-x-hidden">
+      {flockId && (
+        <div className="inline-flex rounded-xl border border-[var(--color-brand-border)] bg-white p-1">
+          {(['live', 'history'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors',
+                view === v
+                  ? 'bg-[var(--color-brand-primary)] text-white'
+                  : 'text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]',
+              )}
+            >
+              {v === 'live' ? 'Live' : 'History'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === 'live' || !flockId
+        ? <PenClimate penId={penId} penName={penName} />
+        : <PenClimateHistory flockId={flockId} stations={stations} />}
+    </div>
+  );
+}
+
 export function PenClimate({ penId, penName }: { penId: string; penName?: string }) {
   // Poll every 10s so the page feels near-live without a websocket.
   // Devices broadcast on a similar cadence, so this catches the freshest

@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { CyclePicker } from '@/components/app/cycle-picker';
 import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
-import { PenClimate } from '@/components/app/pen-climate';
+import { PenClimateWithHistory } from '@/components/app/pen-climate';
 import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
@@ -150,7 +150,7 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
         <NotFound />
       ) : tab === 'climate' ? (
         pen ? (
-          <PenClimate penId={pen.id} penName={pen.name} />
+          <PenClimateWithHistory penId={pen.id} penName={pen.name} flockId={cycle.id} />
         ) : (
           <PlaceholderTab title="Pen climate" body="This cycle isn't attached to a pen yet." />
         )
