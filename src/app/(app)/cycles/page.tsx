@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/app/page-header';
 import { endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
-import { readCurrentFarmId } from '@/lib/farm-context';
+import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
  * desktop user can scan everything at once.
  */
 export default function CyclesPage() {
-  const farmId = readCurrentFarmId();
+  const farmId = useCurrentFarmId();
   const [q, setQ] = useState('');
   const [penId, setPenId] = useState<string>('all');
 

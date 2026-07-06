@@ -15,7 +15,7 @@ import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
 import { PenClimate } from '@/components/app/pen-climate';
 import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
-import { readCurrentFarmId } from '@/lib/farm-context';
+import { useCurrentFarmId } from '@/lib/farm-context';
 import { readUser } from '@/lib/auth';
 import { writeLastCycle } from '@/lib/last-cycle';
 import { fmtDate } from '@/lib/format';
@@ -37,7 +37,8 @@ type Tab = 'results' | 'climate' | 'finance';
  */
 export default function CycleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const farmId = readCurrentFarmId();
+  const farmId = useCurrentFarmId();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>('results');
 
   const flocks = useQuery({
@@ -68,6 +69,16 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
     if (!user?.id) return;
     writeLastCycle(farmId, user.id, cycle.id);
   }, [farmId, cycle]);
+
+  // Farm switched to one whose flocks don't include this cycle id —
+  // e.g. the user was viewing a farm-A cycle and picked farm B in the
+  // topbar. Bounce back to /cycles for the newly-selected farm rather
+  // than render an empty picker + "not attached to a pen" placeholder.
+  useEffect(() => {
+    if (!farmId) return;
+    if (flocks.isLoading || !flocks.data) return;
+    if (!cycle) router.replace('/cycles');
+  }, [farmId, flocks.isLoading, flocks.data, cycle, router]);
 
   return (
     <div className="space-y-5">

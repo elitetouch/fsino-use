@@ -15,7 +15,7 @@ import {
   type FarmMemberDto, type StaffInviteDto,
 } from '@/lib/api';
 import { Gate } from '@/lib/access';
-import { readCurrentFarmId } from '@/lib/farm-context';
+import { readCurrentFarmId, useCurrentFarmId } from '@/lib/farm-context';
 import { fmtDate } from '@/lib/format';
 import { STAFF_DEFAULT_PRESET, type FarmRole } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
  * Farms page) flips the query key and the list refetches.
  */
 export default function UsersPage() {
-  const farmId = readCurrentFarmId();
+  const farmId = useCurrentFarmId();
   const [openInvite, setOpenInvite] = useState(false);
 
   const members = useQuery({

@@ -23,7 +23,7 @@ import {
   type BreedDto,
   type TokenBalanceDto,
 } from '@/lib/api';
-import { readCurrentFarmId } from '@/lib/farm-context';
+import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
 /**
@@ -89,18 +89,11 @@ type FormValues = z.infer<typeof schema>;
 export default function SetupFlocksPage() {
   const router = useRouter();
   const qc = useQueryClient();
-  const [farmId, setFarmId] = useState<string | null>(null);
+  // Reactive: previously readCurrentFarmId() was captured on mount,
+  // so a farm switch mid-flow left queryKeys pinned to the old farm.
+  // Outsider handling lives in AccessGuard now.
+  const farmId = useCurrentFarmId();
   const [step, setStep] = useState<SubStep>('basics');
-
-  useEffect(() => {
-    const id = readCurrentFarmId();
-    if (!id) {
-      toast.error('Set up your farm first.');
-      router.replace('/setup/farm');
-      return;
-    }
-    setFarmId(id);
-  }, [router]);
 
   const pens = useQuery({
     queryKey: ['pens', farmId],
