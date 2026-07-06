@@ -438,12 +438,22 @@ export const endpoints = {
     ),
 
   /**
-   * URL for the CSV export — the browser handles the download stream
-   * directly, no fetch/blob dance in JS. Auth is via the bearer cookie
-   * the axios instance already carries.
+   * Fetch the flock climate CSV via axios so the bearer + X-Farm-ID
+   * headers ride along. A plain <a href> can't carry them and the
+   * server bounces to `login` (which doesn't exist in this API-only
+   * app) and 500s.
+   *
+   * Returns the raw response Blob so the caller can trigger the
+   * browser download via a synthetic anchor.
    */
-  flockClimateReadingsCsvUrl: (flockId: string) =>
-    `${api.defaults.baseURL ?? ''}/flocks/${flockId}/climate/readings.csv`,
+  downloadFlockClimateReadingsCsv: (
+    flockId: string,
+    params?: { from?: string; to?: string; device_id?: string; status?: 'over' | 'all' },
+  ) =>
+    api.get<Blob>(`/flocks/${flockId}/climate/readings.csv`, {
+      params,
+      responseType: 'blob',
+    }).then((r) => r.data),
 
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**

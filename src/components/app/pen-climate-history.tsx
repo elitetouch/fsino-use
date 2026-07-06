@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, ChevronLeft, ChevronRight, Download, Filter, Loader2, Thermometer, Wind } from 'lucide-react';
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { ChevronLeft, ChevronRight, Download, Filter, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { endpoints, type FlockClimateReadingRow, type PenClimateStation } from '@/lib/api';
+import { apiErrorMessage, endpoints, type FlockClimateReadingRow, type PenClimateStation } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 /**
@@ -58,16 +59,30 @@ export function PenClimateHistory({
   const meta = query.data?.meta;
   const window = query.data?.window;
 
-  const csvHref = useMemo(() => {
-    const base = endpoints.flockClimateReadingsCsvUrl(flockId);
-    const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
-    if (deviceId) params.set('device_id', deviceId);
-    if (statusFilter === 'over') params.set('status', 'over');
-    const qs = params.toString();
-    return qs ? `${base}?${qs}` : base;
-  }, [flockId, from, to, deviceId, statusFilter]);
+  // CSV can't ride a plain <a href> because the tenant API is bearer +
+  // X-Farm-ID authed — the browser doesn't send those on a link click,
+  // so the server bounces to `login` (undefined) and 500s. Fetch via
+  // axios, get a Blob, download it via a synthetic anchor.
+  const csvExport = useMutation({
+    mutationFn: () =>
+      endpoints.downloadFlockClimateReadingsCsv(flockId, {
+        from: from || undefined,
+        to: to || undefined,
+        device_id: deviceId || undefined,
+        status: statusFilter === 'over' ? 'over' : undefined,
+      }),
+    onSuccess: (blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `flock-${flockId.slice(0, 8)}-climate-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not export the CSV.')),
+  });
 
   const multiStation = stations.length > 1;
 
@@ -139,11 +154,16 @@ export function PenClimateHistory({
                 </span>
               )}
             </p>
-            <Button asChild size="sm" variant="outline">
-              <a href={csvHref} download>
-                <Download className="h-3.5 w-3.5" />
-                Export CSV
-              </a>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => csvExport.mutate()}
+              disabled={csvExport.isPending}
+            >
+              {csvExport.isPending
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <Download className="h-3.5 w-3.5" />}
+              Export CSV
             </Button>
           </div>
         </div>
