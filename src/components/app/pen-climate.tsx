@@ -42,14 +42,16 @@ import { cn } from '@/lib/utils';
  * PENKEEP" panel with the steps to take. No fake zeros.
  */
 export function PenClimate({ penId, penName }: { penId: string; penName?: string }) {
-  // Poll every 30s so the page stays current without a websocket.
-  // Background refetches don't show a skeleton — the previous reading
-  // stays painted until the new one lands.
+  // Poll every 10s so the page feels near-live without a websocket.
+  // Devices broadcast on a similar cadence, so this catches the freshest
+  // reading soon after it lands in the database. Background refetches
+  // don't show a skeleton — the previous reading stays painted until
+  // the new one arrives.
   const query = useQuery({
     queryKey: ['pen-climate', penId],
     queryFn: () => endpoints.getPenClimate(penId),
     enabled: !!penId,
-    refetchInterval: 30_000,
+    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
     retry: 1,
   });

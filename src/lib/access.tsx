@@ -23,8 +23,9 @@
  * RequireFarmPermission middleware; this file is purely UX.
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldOff, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -274,8 +275,35 @@ interface AccessGuardProps {
  */
 export function AccessGuard({ perm, anyOf, ownerOnly, rule, children }: AccessGuardProps) {
   const p = usePermissions();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // A brand-new signup has zero farm memberships. Every ROUTE_ACCESS
+  // rule fails for them (satisfies() requires farm+role to be set), so
+  // without special handling they'd land on /home, see "You don't have
+  // access to this page", and be stuck. The right move is to bounce
+  // them straight into /setup/farm — the only place they can act.
+  const inSetupFarm = pathname === '/setup/farm' || pathname?.startsWith('/setup/farm/');
+
+  useEffect(() => {
+    if (!p.loading && p.outsider && !inSetupFarm) {
+      router.replace('/setup/farm');
+    }
+  }, [p.loading, p.outsider, inSetupFarm, router]);
 
   if (p.loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-brand-border)] border-t-[var(--color-brand-primary)]" />
+      </div>
+    );
+  }
+
+  // Outsider case: only /setup/farm is allowed to render. Everything
+  // else shows the same spinner while the redirect in the effect above
+  // takes effect.
+  if (p.outsider) {
+    if (inSetupFarm) return <>{children}</>;
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-brand-border)] border-t-[var(--color-brand-primary)]" />
