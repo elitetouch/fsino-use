@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { FlockCard } from '@/components/app/flock-card';
 import { endpoints, type PenDto, type FlockDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
-import { readCurrentFarmId } from '@/lib/farm-context';
+import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
 type Tab = 'pens' | 'flocks';
@@ -22,7 +22,7 @@ type Tab = 'pens' | 'flocks';
  * their respective detail pages.
  */
 export default function PensFlocksPage() {
-  const farmId = readCurrentFarmId();
+  const farmId = useCurrentFarmId();
   const [tab, setTab] = useState<Tab>('pens');
 
   const pens = useQuery({

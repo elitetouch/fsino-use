@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
 import { apiErrorMessage, endpoints, type CreatePenPayload, type PenDto } from '@/lib/api';
-import { readCurrentFarmId } from '@/lib/farm-context';
+import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
 /**
@@ -56,17 +55,10 @@ type FormValues = z.infer<typeof schema>;
 export default function SetupPensPage() {
   const router = useRouter();
   const qc = useQueryClient();
-  const [farmId, setFarmId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const id = readCurrentFarmId();
-    if (!id) {
-      toast.error('Set up your farm first.');
-      router.replace('/setup/farm');
-      return;
-    }
-    setFarmId(id);
-  }, [router]);
+  // Reactive so query keys re-key on farm switch (previously stale after
+  // a farm change). Outsider (no farm at all) is handled upstream by
+  // AccessGuard — this page assumes a farm is selected.
+  const farmId = useCurrentFarmId();
 
   const pens = useQuery({
     queryKey: ['pens', farmId],

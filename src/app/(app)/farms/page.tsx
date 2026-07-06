@@ -6,12 +6,14 @@ import { Tractor, Plus, MapPin, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { canCreateFarm, endpoints, type FarmDto } from '@/lib/api';
-import { readCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
+import { useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
 export default function FarmsPage() {
   const farms = useQuery({ queryKey: ['farms'], queryFn: () => endpoints.listFarms() });
-  const current = readCurrentFarmId();
+  // Reactive so the "current" highlight follows a switch made elsewhere
+  // (topbar / mobile drawer) without needing a manual refresh.
+  const current = useCurrentFarmId();
   // Mirror the backend authorization — invited staff can only switch
   // between farms they belong to, not start new ones.
   const allowedToCreate = canCreateFarm(farms.data?.farms);

@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { endpoints, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
-import { readCurrentFarmId } from '@/lib/farm-context';
+import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
 export default function PensPage() {
-  const farmId = readCurrentFarmId();
+  const farmId = useCurrentFarmId();
   const pens = useQuery({
     queryKey: ['pens', farmId],
     queryFn: () => endpoints.listPens(),
