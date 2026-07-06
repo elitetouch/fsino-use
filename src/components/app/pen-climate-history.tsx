@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 import { ChevronLeft, ChevronRight, Download, Filter, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiErrorMessage, endpoints, type FlockClimateReadingRow, type PenClimateStation } from '@/lib/api';
@@ -81,7 +82,31 @@ export function PenClimateHistory({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     },
-    onError: (err) => toast.error(apiErrorMessage(err, 'Could not export the CSV.')),
+    // When responseType is 'blob', an error response arrives as a Blob
+    // — apiErrorMessage can't read it, so the toast falls back to the
+    // generic default and we lose the actual server message. Decode
+    // the blob to text, try to parse JSON, and surface whatever the
+    // server actually said.
+    onError: async (err) => {
+      let message = 'Could not export the CSV.';
+      if (err instanceof AxiosError && err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          try {
+            const json = JSON.parse(text) as { message?: string };
+            if (json.message) message = json.message;
+          } catch {
+            // Response body isn't JSON — surface a short prefix so the
+            // user sees SOMETHING actionable rather than "Could not
+            // export" for every failure mode.
+            if (text) message = text.slice(0, 200);
+          }
+        } catch { /* blob unreadable — keep the default */ }
+      } else {
+        message = apiErrorMessage(err, message);
+      }
+      toast.error(message);
+    },
   });
 
   const multiStation = stations.length > 1;
