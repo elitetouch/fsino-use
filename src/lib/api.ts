@@ -355,9 +355,19 @@ export const endpoints = {
   getPenClimate: (penId: string) =>
     unwrap<PenClimateDto>(api.get(`/pens/${penId}/climate`)),
 
-  /** Toggle a named relay (T1 / T2 / T3 / socket). */
-  setPenClimateRelay: (penId: string, relay: string, on: boolean) =>
-    unwrap<{ ok: true }>(api.post(`/pens/${penId}/climate/relay`, { relay, on })),
+  /**
+   * Toggle a named relay (T1 / T2 / T3 / socket) on a specific station.
+   * `deviceId` is optional so single-station pens can call without
+   * knowing the id — the backend defaults to the pen's only device.
+   */
+  setPenClimateRelay: (penId: string, relay: string, on: boolean, deviceId?: string) =>
+    unwrap<{ ok: true; device_id: string }>(
+      api.post(`/pens/${penId}/climate/relay`, {
+        relay,
+        on,
+        ...(deviceId ? { device_id: deviceId } : {}),
+      }),
+    ),
 
   /**
    * Verify a typed / scanned device id BEFORE the pair POST. Surfaces
@@ -373,10 +383,23 @@ export const endpoints = {
       billing_ends_at: string | null;
     }>(api.get(`/pen-climate/lookup`, { params: { device_id: deviceId } })),
 
-  /** Pair a PENKEEP device to a pen. */
-  pairPenkeepDevice: (penId: string, deviceId: string, label?: string | null) =>
+  /**
+   * Pair a PENKEEP device to a pen. `stationLabel` names the physical
+   * spot inside the pen ("Front", "Back", "Aisle A") — nullable, and
+   * only needed when the pen already has another device on it.
+   */
+  pairPenkeepDevice: (
+    penId: string,
+    deviceId: string,
+    label?: string | null,
+    stationLabel?: string | null,
+  ) =>
     unwrap<{ paired: true; device_id: string }>(
-      api.post(`/pens/${penId}/climate/pair`, { device_id: deviceId, label }),
+      api.post(`/pens/${penId}/climate/pair`, {
+        device_id: deviceId,
+        label,
+        ...(stationLabel !== undefined ? { station_label: stationLabel } : {}),
+      }),
     ),
 
   /**
@@ -1297,45 +1320,60 @@ export type PenClimateRelay = {
   on: boolean;
 };
 
+export type PenClimateDeviceInfo = {
+  deviceId: string;
+  type: 'penkeep';
+  version: string;          // firmware version
+  serialNumber: string | null;
+  status: 'online' | 'offline';
+  lastSeenAt: string;       // ISO
+};
+
+export type PenClimateReading = {
+  timestamp: string;
+  zones: { left: PenClimateZone; middle: PenClimateZone; right: PenClimateZone };
+  humidity: { value: number; unit: '%RH'; status: 'low' | 'normal' | 'high' };
+  airQuality: {
+    aqi: number;
+    nh3Ppm: number;
+    co2Ppm: number;
+    status: 'good' | 'moderate' | 'poor' | 'error' | 'stabilising';
+  };
+  battery: {
+    level: number;          // 0–100
+    voltage: number;
+    charging: boolean;
+    healthPct: number;      // 0–100
+  };
+  network: {
+    ssid: string;
+    signal: 'excellent' | 'good' | 'fair' | 'poor';
+    ipAddress: string;
+  };
+  location: { lat: number; lon: number } | null;
+  relays: PenClimateRelay[];
+  socket: { on: boolean };
+};
+
+/**
+ * One physical measurement station inside a pen. Large houses can host
+ * several PENKEEPs (front / middle / back). Small pens have exactly
+ * one — the UI renders that as a single card without station chrome.
+ */
+export type PenClimateStation = {
+  /** Farmer-facing name for the physical spot. Null on single-device pens. */
+  stationLabel: string | null;
+  /** Render order (0 = leftmost). Null on single-device pens. */
+  stationOrder: number | null;
+  device: PenClimateDeviceInfo;
+  /** null when this station has never sent a reading. */
+  current: PenClimateReading | null;
+};
+
 export type PenClimateDto = {
   pen: { id: string; name: string };
-  /**
-   * null when no PENKEEP is paired with this pen — the page renders
-   * the setup empty state instead of a "0.0°C" wall.
-   */
-  device: {
-    type: 'penkeep';
-    version: string;          // firmware version
-    serialNumber: string | null;
-    status: 'online' | 'offline';
-    lastSeenAt: string;       // ISO
-  } | null;
-  /** null when the device has never sent a reading. */
-  current: {
-    timestamp: string;
-    zones: { left: PenClimateZone; middle: PenClimateZone; right: PenClimateZone };
-    humidity: { value: number; unit: '%RH'; status: 'low' | 'normal' | 'high' };
-    airQuality: {
-      aqi: number;
-      nh3Ppm: number;
-      co2Ppm: number;
-      status: 'good' | 'moderate' | 'poor' | 'error' | 'stabilising';
-    };
-    battery: {
-      level: number;          // 0–100
-      voltage: number;
-      charging: boolean;
-      healthPct: number;      // 0–100
-    };
-    network: {
-      ssid: string;
-      signal: 'excellent' | 'good' | 'fair' | 'poor';
-      ipAddress: string;
-    };
-    location: { lat: number; lon: number } | null;
-    relays: PenClimateRelay[];
-    socket: { on: boolean };
-  } | null;
+  /** One entry per PENKEEP paired with this pen, in station-order. */
+  stations: PenClimateStation[];
   subscription: {
     startDate: string;
     endDate: string;
@@ -1343,4 +1381,13 @@ export type PenClimateDto = {
   } | null;
   /** Flock age in days, when an active flock is in this pen. */
   flockAgeDays: number | null;
+  /**
+   * @deprecated Use `stations[0].device`. Retained during the multi-
+   * station rollout so a cached bundle doesn't break for one deploy.
+   */
+  device?: PenClimateDeviceInfo | null;
+  /**
+   * @deprecated Use `stations[0].current`. See `device` above.
+   */
+  current?: PenClimateReading | null;
 };

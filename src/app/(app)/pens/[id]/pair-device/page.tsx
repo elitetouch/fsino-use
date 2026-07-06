@@ -51,6 +51,10 @@ export default function PairDevicePage({ params }: { params: Promise<{ id: strin
   const [deviceId, setDeviceId] = useState('');
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' });
   const [scannerSupported, setScannerSupported] = useState<boolean | null>(null);
+  // Farmer-visible name for the physical spot inside a large pen —
+  // "Front", "Back", "Aisle A". Optional; leave blank on single-device
+  // pens and it stays single-station.
+  const [stationLabel, setStationLabel] = useState('');
 
   // Detect BarcodeDetector. Done after mount so SSR doesn't crash on
   // window access; we set null first to render a "checking" state.
@@ -61,7 +65,12 @@ export default function PairDevicePage({ params }: { params: Promise<{ id: strin
   }, []);
 
   const pair = useMutation({
-    mutationFn: (id: string) => endpoints.pairPenkeepDevice(penId, id),
+    mutationFn: (id: string) => endpoints.pairPenkeepDevice(
+      penId,
+      id,
+      undefined,
+      stationLabel.trim() || null,
+    ),
     onSuccess: () => {
       toast.success('PENKEEP paired with this pen.');
       qc.invalidateQueries({ queryKey: ['pen-climate'] });
@@ -144,11 +153,13 @@ export default function PairDevicePage({ params }: { params: Promise<{ id: strin
           {/* Lookup feedback */}
           <LookupResult
             state={lookup}
+            stationLabel={stationLabel}
+            onStationLabelChange={setStationLabel}
             onConfirm={() => {
               if (lookup.kind === 'ok') pair.mutate(lookup.device.device_id);
             }}
             pairing={pair.isPending}
-            onTryAnother={() => { setLookup({ kind: 'idle' }); setDeviceId(''); }}
+            onTryAnother={() => { setLookup({ kind: 'idle' }); setDeviceId(''); setStationLabel(''); }}
           />
         </div>
 
@@ -168,9 +179,11 @@ type LookupState =
   | { kind: 'error'; message: string };
 
 function LookupResult({
-  state, onConfirm, pairing, onTryAnother,
+  state, stationLabel, onStationLabelChange, onConfirm, pairing, onTryAnother,
 }: {
   state: LookupState;
+  stationLabel: string;
+  onStationLabelChange: (v: string) => void;
   onConfirm: () => void;
   pairing: boolean;
   onTryAnother: () => void;
@@ -232,6 +245,28 @@ function LookupResult({
           )}
         </div>
       </div>
+
+      {/* Optional station name — only needed on large pens where more
+          than one unit is installed. Leaving it blank keeps the pen in
+          single-station mode and the climate page looks unchanged. */}
+      <div className="mt-3">
+        <label className="block text-[11.5px] font-semibold text-[var(--color-brand-fg-soft)]" htmlFor="pair-station-label">
+          Station name <span className="font-normal text-[var(--color-brand-muted)]">(optional — name this spot in the pen)</span>
+        </label>
+        <input
+          id="pair-station-label"
+          type="text"
+          value={stationLabel}
+          onChange={(e) => onStationLabelChange(e.target.value.slice(0, 40))}
+          placeholder="e.g. Front, Middle, Back, Aisle A"
+          maxLength={40}
+          className="mt-1 block h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 text-[13.5px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+        />
+        <p className="mt-1 text-[11px] leading-snug text-[var(--color-brand-muted)]">
+          Useful when a pen has more than one PENKEEP — you&rsquo;ll see this label on the climate tab so you know which corner each reading came from.
+        </p>
+      </div>
+
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" onClick={onConfirm} disabled={pairing}>
           {pairing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
