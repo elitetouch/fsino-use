@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Bird, Warehouse, Wallet, TrendingUp, Plus, ClipboardList,
-  ArrowRight, Sparkles, CheckCircle2, Pencil,
+  ArrowRight, Sparkles, CheckCircle2, Pencil, Thermometer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
@@ -171,12 +171,26 @@ export default function HomePage() {
             title={`Cycle results · ${cycle.breed}`}
             description={`${(cycle.ageDays ?? 0)} days old · ${cycle.placedBirds.toLocaleString()} birds placed`}
             actions={
-              <Button asChild variant="outline" size="sm" className="h-9">
-                <Link href={`/cycles/${cycle.id}`}>
-                  Open cycle
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Pen climate shortcut — only useful when the cycle has
+                    a pen attached (the climate page reads live PENKEEP
+                    data via pen id). Hidden otherwise so we don't lead
+                    the user to an "isn't attached to a pen" placeholder. */}
+                {cycle.penId && (
+                  <Button asChild variant="outline" size="sm" className="h-9">
+                    <Link href={`/cycles/${cycle.id}?tab=climate`}>
+                      <Thermometer className="h-3.5 w-3.5" />
+                      Pen climate
+                    </Link>
+                  </Button>
+                )}
+                <Button asChild variant="outline" size="sm" className="h-9">
+                  <Link href={`/cycles/${cycle.id}`}>
+                    Open cycle
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
             }
           />
 
