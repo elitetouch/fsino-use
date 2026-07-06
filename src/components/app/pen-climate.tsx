@@ -1,18 +1,19 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Activity, AlertTriangle, BadgeCheck, Battery, BatteryCharging, BatteryFull,
-  Calendar, CloudOff, Flame, Loader2, MapPin, Plug, Power, QrCode, Radio,
+  Calendar, CloudOff, Flame, Loader2, MapPin, Plug, Plus, Power, QrCode, Radio,
   RefreshCw, Signal, Thermometer, ThermometerSnowflake, ThermometerSun, Wifi,
   Wind, Droplet, ArrowRight, BarChart3, Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   apiErrorMessage, endpoints,
-  type PenClimateDto, type PenClimateRelay, type PenClimateZone,
+  type PenClimateDto, type PenClimateRelay, type PenClimateStation, type PenClimateZone,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -61,113 +62,192 @@ export function PenClimate({ penId, penName }: { penId: string; penName?: string
   }
 
   const data = query.data;
-  if (!data || !data.device || !data.current) {
+  // Multi-station rollout: the backend returns `stations: [...]`. Fall
+  // back to synthesising a single station from the deprecated
+  // top-level `device` + `current` aliases so an old cached bundle
+  // keeps working during the deploy window.
+  const stations: PenClimateStation[] = data?.stations && data.stations.length > 0
+    ? data.stations
+    : data?.device && data.current
+      ? [{
+          stationLabel: null,
+          stationOrder: null,
+          device: data.device,
+          current: data.current,
+        }]
+      : [];
+
+  // A station without a reading yet (device paired but never reported)
+  // still counts as "present" — we render the strip so the farmer sees
+  // "offline / no data yet" instead of the setup empty state.
+  if (!data || stations.length === 0) {
     return <SetupEmptyState penId={penId} penName={penName} />;
   }
 
-  return <Live data={data} penName={penName} />;
+  return <Live data={data} stations={stations} penName={penName} />;
 }
 
 /* ─────────────────────────── Live (data present) ─────────────────────────── */
 
-function Live({ data, penName }: { data: PenClimateDto; penName?: string }) {
-  const { device, current, subscription, flockAgeDays } = data;
-  if (!device || !current) return null;
+function Live({
+  data, stations, penName,
+}: {
+  data: PenClimateDto;
+  stations: PenClimateStation[];
+  penName?: string;
+}) {
+  const { subscription, flockAgeDays } = data;
 
-  const overallStatus = computeOverallStatus(current);
-  const lastSeen = relativeTime(device.lastSeenAt);
+  // Station picker — hidden on single-station pens so the layout is
+  // visually identical to today. On multi-station pens the picker is
+  // the first thing under the pen title so the farmer can compare
+  // corners without scrolling.
+  const [activeIdx, setActiveIdx] = useState(0);
+  const safeIdx = Math.min(activeIdx, stations.length - 1);
+  const active = stations[safeIdx];
+  const activeCurrent = active.current;
+
+  const multiStation = stations.length > 1;
 
   return (
     <div className="w-full max-w-full space-y-4 overflow-x-hidden sm:space-y-5">
-      {/* Header strip — at-a-glance device health */}
-      <DeviceStatusStrip
-        deviceStatus={device.status}
-        lastSeenLabel={lastSeen}
-        battery={current.battery}
-        signal={current.network.signal}
-        overallStatus={overallStatus}
+      {/* Pen-level worst-status strip — mirrors what a farmer would
+          check first: is anything actively wrong ANYWHERE in the pen? */}
+      <PenOverviewStrip
         penName={penName}
-        firmwareVersion={device.version}
+        stations={stations}
       />
 
-      {/* Above-the-fold action row — makes Resync reachable without
-          scrolling past all four data sections. */}
-      <div className="flex justify-end">
-        <ResyncButton penId={data.pen.id} />
+      {/* Above-the-fold action row — Resync fans out to every station
+          on the pen so it's a pen-level control, not a station one. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {multiStation && (
+          <StationPicker
+            stations={stations}
+            activeIdx={safeIdx}
+            onChange={setActiveIdx}
+          />
+        )}
+        <div className={cn('flex flex-wrap items-center gap-2', !multiStation && 'ml-auto')}>
+          {/* Add-station link — sends to the existing pair-device wizard
+              which now supports naming the physical spot. Deep-linked
+              here for the "my pen just got bigger" flow. */}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/pens/${data.pen.id}/pair-device`}>
+              <Plus className="h-3.5 w-3.5" />
+              Add station
+            </Link>
+          </Button>
+          <ResyncButton penId={data.pen.id} />
+        </div>
       </div>
 
-      {/* Zone trio — primary content */}
-      <section>
-        <SectionHeader
-          eyebrow="Heater zones"
-          title="Pen temperature"
-          description="Each zone has its own heater. Status reads against the min / max thresholds set on the device."
-        />
-        <div className="mt-3 grid gap-3 sm:gap-4 md:grid-cols-3">
-          <ZoneCard label="Left"   tone="amber" zone={current.zones.left} />
-          <ZoneCard label="Middle" tone="green" zone={current.zones.middle} />
-          <ZoneCard label="Right"  tone="sky"   zone={current.zones.right} />
-        </div>
-      </section>
+      {activeCurrent ? (
+        <>
+          {/* Per-station device status strip (below the picker so the
+              context is obvious — this is THIS station's health). */}
+          <DeviceStatusStrip
+            deviceStatus={active.device.status}
+            lastSeenLabel={relativeTime(active.device.lastSeenAt)}
+            battery={activeCurrent.battery}
+            signal={activeCurrent.network.signal}
+            overallStatus={computeOverallStatus(activeCurrent)}
+            penName={multiStation ? undefined : penName}
+            firmwareVersion={active.device.version}
+            stationLabel={multiStation ? active.stationLabel : null}
+          />
 
-      {/* Environment row */}
-      <section>
-        <SectionHeader
-          eyebrow="Air quality"
-          title="Environment"
-          description="Ammonia, CO2 and humidity. Out-of-range readings get the amber treatment so issues are obvious at a glance."
-        />
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <EnvChip
-            icon={Droplet}
-            label="Humidity"
-            value={`${Math.round(current.humidity.value)}%`}
-            sub={current.humidity.unit}
-            tone={toneForStatus(current.humidity.status)}
-          />
-          <EnvChip
-            icon={Wind}
-            label="Air quality"
-            value={String(current.airQuality.aqi)}
-            sub={aqiLabel(current.airQuality.status)}
-            tone={toneForAQ(current.airQuality.status)}
-          />
-          <EnvChip
-            icon={Wind}
-            label="NH₃"
-            value={`${current.airQuality.nh3Ppm}`}
-            sub="ppm"
-            tone={current.airQuality.nh3Ppm > 25 ? 'rose' : current.airQuality.nh3Ppm > 10 ? 'amber' : 'mint'}
-          />
-          <EnvChip
-            icon={Wind}
-            label="CO₂"
-            value={`${current.airQuality.co2Ppm.toLocaleString()}`}
-            sub="ppm"
-            tone={current.airQuality.co2Ppm > 5000 ? 'rose' : current.airQuality.co2Ppm > 2500 ? 'amber' : 'mint'}
-          />
-        </div>
-      </section>
+          {/* Zone trio — this station's heater zones. */}
+          <section>
+            <SectionHeader
+              eyebrow="Heater zones"
+              title={multiStation ? `${active.stationLabel ?? 'This station'} — temperature` : 'Pen temperature'}
+              description="Each zone has its own heater. Status reads against the min / max thresholds set on the device."
+            />
+            <div className="mt-3 grid gap-3 sm:gap-4 md:grid-cols-3">
+              <ZoneCard label="Left"   tone="amber" zone={activeCurrent.zones.left} />
+              <ZoneCard label="Middle" tone="green" zone={activeCurrent.zones.middle} />
+              <ZoneCard label="Right"  tone="sky"   zone={activeCurrent.zones.right} />
+            </div>
+          </section>
 
-      {/* Controls */}
-      <section>
-        <SectionHeader
-          eyebrow="Manual controls"
-          title="Relays & socket"
-          description="Override the device's automatic decisions. Useful for one-off tasks like draining a drinker or testing a heater coil."
-        />
-        <ControlsPanel
-          penId={data.pen.id}
-          relays={current.relays}
-          socket={current.socket}
-        />
-      </section>
+          {/* Environment row */}
+          <section>
+            <SectionHeader
+              eyebrow="Air quality"
+              title="Environment"
+              description="Ammonia, CO2 and humidity. Out-of-range readings get the amber treatment so issues are obvious at a glance."
+            />
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <EnvChip
+                icon={Droplet}
+                label="Humidity"
+                value={`${Math.round(activeCurrent.humidity.value)}%`}
+                sub={activeCurrent.humidity.unit}
+                tone={toneForStatus(activeCurrent.humidity.status)}
+              />
+              <EnvChip
+                icon={Wind}
+                label="Air quality"
+                value={String(activeCurrent.airQuality.aqi)}
+                sub={aqiLabel(activeCurrent.airQuality.status)}
+                tone={toneForAQ(activeCurrent.airQuality.status)}
+              />
+              <EnvChip
+                icon={Wind}
+                label="NH₃"
+                value={`${activeCurrent.airQuality.nh3Ppm}`}
+                sub="ppm"
+                tone={activeCurrent.airQuality.nh3Ppm > 25 ? 'rose' : activeCurrent.airQuality.nh3Ppm > 10 ? 'amber' : 'mint'}
+              />
+              <EnvChip
+                icon={Wind}
+                label="CO₂"
+                value={`${activeCurrent.airQuality.co2Ppm.toLocaleString()}`}
+                sub="ppm"
+                tone={activeCurrent.airQuality.co2Ppm > 5000 ? 'rose' : activeCurrent.airQuality.co2Ppm > 2500 ? 'amber' : 'mint'}
+              />
+            </div>
+          </section>
 
-      {/* Device info grid */}
+          {/* Controls — scoped to the active station's device_id so the
+              MQTT publish lands on the right unit. */}
+          <section>
+            <SectionHeader
+              eyebrow="Manual controls"
+              title={multiStation ? `${active.stationLabel ?? 'This station'} — relays & socket` : 'Relays & socket'}
+              description="Override the device's automatic decisions. Useful for one-off tasks like draining a drinker or testing a heater coil."
+            />
+            <ControlsPanel
+              penId={data.pen.id}
+              deviceId={active.device.deviceId}
+              relays={activeCurrent.relays}
+              socket={activeCurrent.socket}
+            />
+          </section>
+        </>
+      ) : (
+        /* Station paired but never sent a reading yet — probably a
+           freshly-plugged unit that hasn't finished its first cycle. */
+        <section className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-8 text-center">
+          <span className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+            <CloudOff className="h-4.5 w-4.5" />
+          </span>
+          <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">
+            No readings yet from {active.stationLabel ?? 'this station'}
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+            Waiting for the device to send its first data frame. Check the
+            unit is powered on and connected to Wi-Fi.
+          </p>
+        </section>
+      )}
+
+      {/* Device info grid — pen subscription + this station's device */}
       <section>
         <SectionHeader
           eyebrow="Device"
-          title="PENKEEP info"
+          title={multiStation ? `${active.stationLabel ?? 'Station'} info` : 'PENKEEP info'}
         />
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <InfoCard icon={Calendar} label="Subscription">
@@ -196,58 +276,193 @@ function Live({ data, penName }: { data: PenClimateDto; penName?: string }) {
             </p>
           </InfoCard>
 
-          <InfoCard icon={Wifi} label="Network">
-            <p className="break-all text-[13px] font-semibold text-[var(--color-brand-fg)]">
-              {current.network.ssid}
-            </p>
-            <p className="mt-0.5 break-all text-[11.5px] text-[var(--color-brand-muted)]">
-              {current.network.ipAddress} · {current.network.signal}
-            </p>
-          </InfoCard>
+          {activeCurrent && (
+            <InfoCard icon={Wifi} label="Network">
+              <p className="break-all text-[13px] font-semibold text-[var(--color-brand-fg)]">
+                {activeCurrent.network.ssid}
+              </p>
+              <p className="mt-0.5 break-all text-[11.5px] text-[var(--color-brand-muted)]">
+                {activeCurrent.network.ipAddress} · {activeCurrent.network.signal}
+              </p>
+            </InfoCard>
+          )}
 
-          <InfoCard icon={MapPin} label="Location">
-            {current.location ? (
-              <>
-                <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
-                  {current.location.lat.toFixed(4)}, {current.location.lon.toFixed(4)}
-                </p>
-                <a
-                  href={`https://www.google.com/maps?q=${current.location.lat},${current.location.lon}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-0.5 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
-                >
-                  Open in Maps
-                  <ArrowRight className="h-3 w-3" />
-                </a>
-              </>
-            ) : (
-              <p className="text-[12px] text-[var(--color-brand-muted)]">No GPS fix</p>
-            )}
-          </InfoCard>
+          {activeCurrent?.location && (
+            <InfoCard icon={MapPin} label="Location">
+              <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+                {activeCurrent.location.lat.toFixed(4)}, {activeCurrent.location.lon.toFixed(4)}
+              </p>
+              <a
+                href={`https://www.google.com/maps?q=${activeCurrent.location.lat},${activeCurrent.location.lon}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-0.5 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+              >
+                Open in Maps
+                <ArrowRight className="h-3 w-3" />
+              </a>
+            </InfoCard>
+          )}
 
-          <InfoCard icon={Activity} label="Battery health">
-            <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
-              {current.battery.healthPct.toFixed(1)}%
-            </p>
-            <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
-              {current.battery.voltage.toFixed(2)} V
-            </p>
-          </InfoCard>
+          {activeCurrent && (
+            <InfoCard icon={Activity} label="Battery health">
+              <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+                {activeCurrent.battery.healthPct.toFixed(1)}%
+              </p>
+              <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+                {activeCurrent.battery.voltage.toFixed(2)} V
+              </p>
+            </InfoCard>
+          )}
 
           <InfoCard icon={Radio} label="Firmware">
             <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
-              PENKEEP v{device.version}
+              PENKEEP v{active.device.version}
             </p>
-            {device.serialNumber && (
+            {active.device.serialNumber && (
               <p className="mt-0.5 break-all text-[11.5px] text-[var(--color-brand-muted)]">
-                SN {device.serialNumber}
+                SN {active.device.serialNumber}
               </p>
             )}
           </InfoCard>
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * Segmented station picker — the primary navigation on a multi-station
+ * pen. Mobile keeps it single-row scroll; desktop stretches to fill.
+ * We deliberately don't aggregate across stations: a hot corner is a
+ * per-station problem and averaging hides it.
+ */
+function StationPicker({
+  stations, activeIdx, onChange,
+}: {
+  stations: PenClimateStation[];
+  activeIdx: number;
+  onChange: (idx: number) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Station picker"
+      className="inline-flex max-w-full snap-x flex-nowrap items-center gap-1 overflow-x-auto rounded-xl border border-[var(--color-brand-border)] bg-white p-1"
+    >
+      {stations.map((s, i) => {
+        const on = i === activeIdx;
+        const status = s.current ? computeOverallStatus(s.current) : { tone: 'amber' as const, label: 'No data' };
+        return (
+          <button
+            key={s.device.deviceId}
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(i)}
+            className={cn(
+              'flex snap-start items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors',
+              on
+                ? 'bg-[var(--color-brand-primary)] text-white'
+                : 'bg-transparent text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]',
+            )}
+          >
+            {/* Small status dot borrows the same tone the overall strip
+                would show, so a red corner shouts even from the picker. */}
+            <span
+              aria-hidden
+              className={cn(
+                'h-1.5 w-1.5 rounded-full',
+                status.tone === 'rose' ? 'bg-rose-500'
+                  : status.tone === 'amber' ? 'bg-amber-500'
+                  : 'bg-emerald-500',
+              )}
+            />
+            <span className="whitespace-nowrap">
+              {s.stationLabel ?? `Station ${i + 1}`}
+            </span>
+            {s.device.status === 'offline' && (
+              <span
+                aria-label="offline"
+                className={cn(
+                  'inline-block rounded px-1 text-[9px] font-bold uppercase',
+                  on ? 'bg-white/25' : 'bg-rose-100 text-rose-700',
+                )}
+              >
+                off
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Pen-level overview — one card that tells the farmer, before they've
+ * picked a station, whether ANY corner of the pen needs their attention.
+ * Aggregates the worst status across stations because a hot corner
+ * matters more than a warm average.
+ */
+function PenOverviewStrip({
+  penName, stations,
+}: {
+  penName?: string;
+  stations: PenClimateStation[];
+}) {
+  const withData = stations.filter((s): s is PenClimateStation & { current: NonNullable<PenClimateStation['current']> } => s.current !== null);
+
+  // Worst-status wins so the badge screams when even one station is off.
+  const worst = withData.reduce<'mint' | 'amber' | 'rose' | null>((acc, s) => {
+    const t = computeOverallStatus(s.current).tone;
+    if (acc === 'rose' || t === 'rose') return 'rose';
+    if (acc === 'amber' || t === 'amber') return 'amber';
+    return 'mint';
+  }, null) ?? 'amber';
+
+  const online = stations.filter((s) => s.device.status === 'online').length;
+  const total = stations.length;
+
+  return (
+    <section className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+            Pen climate
+          </p>
+          <h1 className="mt-0.5 truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">
+            {penName ?? 'This pen'}
+            {total > 1 && (
+              <span className="ml-2 rounded-full bg-[var(--color-brand-accent)] px-2 py-0.5 align-middle text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+                {total} stations
+              </span>
+            )}
+          </h1>
+          <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+            {online} of {total} online · pick a station below to inspect its readings.
+          </p>
+        </div>
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 self-start rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider',
+            worst === 'rose' ? 'bg-rose-50 text-rose-700'
+              : worst === 'amber' ? 'bg-amber-50 text-amber-800'
+              : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
+          )}
+        >
+          {worst === 'rose'
+            ? <AlertTriangle className="h-3.5 w-3.5" />
+            : worst === 'amber'
+              ? <AlertTriangle className="h-3.5 w-3.5" />
+              : <BadgeCheck className="h-3.5 w-3.5" />}
+          {worst === 'rose'
+            ? 'Attention needed'
+            : worst === 'amber'
+              ? 'Watch closely'
+              : 'All good'}
+        </span>
+      </div>
+    </section>
   );
 }
 
@@ -282,15 +497,18 @@ function SectionHeader({
  * contact. `mqtt_published: false` = broker unreachable now, so we warn
  * rather than success.
  */
-function ResyncButton({ penId }: { penId: string }) {
+function ResyncButton({ penId, className }: { penId: string; className?: string }) {
   const qc = useQueryClient();
   const resync = useMutation({
     mutationFn: () => endpoints.resyncPenkeep(penId),
     onSuccess: (res) => {
+      // Backend returns { mqtt_published, stations?: [...] } — the boolean
+      // is true only when every station's publish succeeded. Multi-station
+      // pens land in the mixed-success branch when some units are offline.
       if (res.mqtt_published) {
-        toast.success('Resync sent. The device will reboot and refresh.');
+        toast.success('Resync sent — devices will reboot and refresh.');
       } else {
-        toast.warning('Could not reach the device — it will pick up the change on next contact.');
+        toast.warning('Some stations couldn’t be reached — they’ll pick up the change on next contact.');
       }
       qc.invalidateQueries({ queryKey: ['pen-climate', penId] });
     },
@@ -303,7 +521,7 @@ function ResyncButton({ penId }: { penId: string }) {
       variant="outline"
       onClick={() => resync.mutate()}
       disabled={resync.isPending}
-      className="shrink-0"
+      className={cn('shrink-0', className)}
     >
       {resync.isPending
         ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -316,15 +534,17 @@ function ResyncButton({ penId }: { penId: string }) {
 /* ─────────────────────────── Status strip ─────────────────────────── */
 
 function DeviceStatusStrip({
-  deviceStatus, lastSeenLabel, battery, signal, overallStatus, penName, firmwareVersion,
+  deviceStatus, lastSeenLabel, battery, signal, overallStatus, penName, firmwareVersion, stationLabel,
 }: {
   deviceStatus: 'online' | 'offline';
   lastSeenLabel: string;
-  battery: NonNullable<PenClimateDto['current']>['battery'];
+  battery: NonNullable<PenClimateStation['current']>['battery'];
   signal: 'excellent' | 'good' | 'fair' | 'poor';
   overallStatus: { tone: 'mint' | 'amber' | 'rose'; label: string };
   penName?: string;
   firmwareVersion: string;
+  /** Set on multi-station pens to disambiguate which corner this is. */
+  stationLabel?: string | null;
 }) {
   const offline = deviceStatus === 'offline';
 
@@ -334,9 +554,12 @@ function DeviceStatusStrip({
         <div className="min-w-0 flex-1">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             PENKEEP {firmwareVersion}
+            {stationLabel && <span className="ml-2 text-[var(--color-brand-muted)]">· {stationLabel}</span>}
           </p>
           <h1 className="mt-0.5 truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">
-            {penName ? `${penName} climate` : 'Pen climate'}
+            {stationLabel
+              ? `${stationLabel} station`
+              : penName ? `${penName} climate` : 'Pen climate'}
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className={cn(
@@ -549,19 +772,24 @@ function EnvChip({
 /* ─────────────────────────── Controls panel ─────────────────────────── */
 
 function ControlsPanel({
-  penId, relays, socket,
+  penId, deviceId, relays, socket,
 }: {
   penId: string;
+  /** Which station's relays we're toggling. Required now that pens can
+      have multiple devices — the backend needs to know which unit to
+      publish the MQTT command to. */
+  deviceId: string;
   relays: PenClimateRelay[];
   socket: { on: boolean };
 }) {
   return (
     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {relays.map((r) => (
-        <RelayToggle key={r.id} penId={penId} relay={r} />
+        <RelayToggle key={r.id} penId={penId} deviceId={deviceId} relay={r} />
       ))}
       <RelayToggle
         penId={penId}
+        deviceId={deviceId}
         relay={{ id: 'socket', label: 'Master socket', on: socket.on }}
         icon={Plug}
       />
@@ -570,9 +798,10 @@ function ControlsPanel({
 }
 
 function RelayToggle({
-  penId, relay, icon = Power,
+  penId, deviceId, relay, icon = Power,
 }: {
   penId: string;
+  deviceId: string;
   relay: PenClimateRelay;
   icon?: typeof Power;
 }) {
@@ -585,7 +814,7 @@ function RelayToggle({
   const Icon = icon;
 
   const set = useMutation({
-    mutationFn: (on: boolean) => endpoints.setPenClimateRelay(penId, relay.id, on),
+    mutationFn: (on: boolean) => endpoints.setPenClimateRelay(penId, relay.id, on, deviceId),
     onMutate: (on) => setPendingOn(on),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pen-climate', penId] });
