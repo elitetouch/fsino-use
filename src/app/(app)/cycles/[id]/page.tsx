@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
@@ -39,7 +39,15 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const farmId = useCurrentFarmId();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('results');
+  // ?tab=climate|results|finance lets the dashboard link straight to
+  // the Pen climate tab. Falls back to 'results' for any unknown or
+  // missing value.
+  const search = useSearchParams();
+  const initialTab: Tab = (() => {
+    const v = search?.get('tab');
+    return v === 'climate' || v === 'finance' ? v : 'results';
+  })();
+  const [tab, setTab] = useState<Tab>(initialTab);
 
   const flocks = useQuery({
     queryKey: ['flocks', farmId],

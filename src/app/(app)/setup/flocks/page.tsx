@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Loader2, Plus, Bird, AlertTriangle, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Plus, Bird, AlertTriangle, Sparkles, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
@@ -429,6 +429,12 @@ export default function SetupFlocksPage() {
 
           {step === 'tokens' && (
             <>
+              {/* What am I paying for? Marketing-flavoured explainer that
+                  mirrors the admin portal's TokenRulesNote — the farmer
+                  needs the same mental model as support/finance when
+                  they show up with a "why did this get charged" question. */}
+              <TokenRulesNote />
+
               {/* Token-balance status — shown before they hit submit so
                   they don't get an opaque server error mid-payment. */}
               <div
@@ -626,6 +632,66 @@ function SubStepDots({ current }: { current: SubStep }) {
         />
       ))}
     </div>
+  );
+}
+
+/**
+ * "How tokens work" explainer — mirrors the panel super-admins see on
+ * /tokens so the farmer, support and finance all share the same model
+ * (one token = one bird, one tracked cycle window, auto-archives on
+ * expiry / at zero birds, manual archive frees the pen immediately).
+ */
+function TokenRulesNote() {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-gradient-to-br from-[var(--color-brand-accent)] to-white p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-primary)] text-white">
+          <ShieldCheck className="h-4 w-4" strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-[var(--color-brand-fg)]">
+            How tokens work — one token, one bird, one tracked cycle
+          </p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-brand-muted)]">
+            Tokens are how you buy access to flock tracking. Each placed bird debits one token from the matching{' '}
+            <strong className="text-[var(--color-brand-fg)]">token type × tier</strong> bucket, and that single debit keeps the cycle live for the full production window — no daily fees, no recurring charges per record.
+          </p>
+
+          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+            <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Broiler</p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">7 weeks per token</p>
+              <p className="text-[11px] text-[var(--color-brand-muted)]">Full meat-bird cycle window.</p>
+            </li>
+            <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Layer</p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">18 months per token</p>
+              <p className="text-[11px] text-[var(--color-brand-muted)]">Covers brood → onset of lay → peak.</p>
+            </li>
+            <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Dual-purpose</p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">18 months per token</p>
+              <p className="text-[11px] text-[var(--color-brand-muted)]">Priced and timed on the layer policy.</p>
+            </li>
+          </ul>
+
+          <ul className="mt-4 space-y-1.5 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+            <li>
+              <strong className="text-[var(--color-brand-fg)]">Pen exclusivity:</strong> a pen can only hold one active flock at a time — new placements are blocked until the current cycle is archived.
+            </li>
+            <li>
+              <strong className="text-[var(--color-brand-fg)]">Auto-archive on expiry:</strong> when the cycle window passes, the flock is archived automatically and its pen is freed for the next placement.
+            </li>
+            <li>
+              <strong className="text-[var(--color-brand-fg)]">Auto-archive at zero birds:</strong> a flock that drops to zero birds (sold, culled, lost) is auto-archived the same day — the token has done its job.
+            </li>
+            <li>
+              <strong className="text-[var(--color-brand-fg)]">Manual archive:</strong> you can end a cycle early; the pen is freed immediately and the data stays on file for reports.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
   );
 }
 
