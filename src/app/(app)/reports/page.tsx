@@ -225,7 +225,12 @@ function SummaryKpis({
       value: summary.mortalityCount === 0 && summary.birdsPlaced === 0
         ? '—'
         : `${formatCount(summary.mortalityCount)} (${formatPct(summary.mortalityPct)})`,
-      sub: 'total lost during cycle',
+      // Tell the reader HOW mortality was computed — direct mortality
+      // entries vs inferred from the drop between placed birds and the
+      // latest bird_count snapshot. Never leave them guessing.
+      sub: summary.mortalitySource === 'bird_count_delta'
+        ? 'inferred from bird counts'
+        : 'from mortality entries',
       tone: summary.mortalityPct > 8 ? 'rose' : summary.mortalityPct > 4 ? 'amber' : 'mint',
     },
     {
@@ -239,7 +244,13 @@ function SummaryKpis({
       icon: TrendingUp,
       label: 'FCR',
       value: summary.fcr !== null ? formatDecimal(summary.fcr, 2) : '—',
-      sub: summary.fcr !== null ? 'feed ÷ weight gain' : 'need feed + weight logs',
+      // FCR needs at least two weight events (an initial and a later
+      // one) to compute an honest gain. When we can't compute one, the
+      // card explains what's missing so the farmer knows what to log
+      // rather than seeing "76.19" and wondering how it got there.
+      sub: summary.fcr !== null
+        ? 'feed ÷ (weight gain × birds)'
+        : 'need feed + 2+ weight logs',
       tone: 'mint',
     },
     {
@@ -528,7 +539,9 @@ function BreakdownCard({
           <tbody>
             {breakdown.map((r) => (
               <tr key={r.eventType} className="border-t border-[var(--color-brand-border)]">
-                <td className="px-4 py-2 font-semibold capitalize text-[var(--color-brand-fg)] sm:px-5">{r.eventType}</td>
+                <td className="px-4 py-2 font-semibold text-[var(--color-brand-fg)] sm:px-5">
+                  {prettyEventType(r.eventType)}
+                </td>
                 <td className="px-4 py-2 text-right tabular-nums sm:px-5">{formatCount(r.events)}</td>
                 <td className="px-4 py-2 text-right tabular-nums sm:px-5">
                   {r.totalQuantity > 0 ? formatDecimal(r.totalQuantity, 2) : '—'}
@@ -594,13 +607,16 @@ function AccuracyNotes() {
       </summary>
       <ul className="mt-3 space-y-1.5">
         <li>
-          <strong className="text-[var(--color-brand-fg)]">Birds now</strong> = birds placed − mortality entries − sale entries. Restocks are not counted.
+          <strong className="text-[var(--color-brand-fg)]">Birds now</strong> uses the latest &ldquo;bird count&rdquo; snapshot you logged. If none was logged, it falls back to placed − mortality entries − sale entries.
+        </li>
+        <li>
+          <strong className="text-[var(--color-brand-fg)]">Mortality</strong> prefers explicit mortality entries. If none exist, it&rsquo;s inferred from the drop between placed birds and the latest bird-count snapshot. The KPI card tells you which mode was used.
         </li>
         <li>
           <strong className="text-[var(--color-brand-fg)]">Feed (kg)</strong> normalises logged units: bag → 25 kg, sack → 50 kg, tonne → 1,000 kg, gram → 0.001 kg. Unknown units are treated as kg.
         </li>
         <li>
-          <strong className="text-[var(--color-brand-fg)]">FCR</strong> is only calculated when both feed <em>and</em> weight-gain records exist. Otherwise the field says &ldquo;insufficient data&rdquo; — never a misleading zero.
+          <strong className="text-[var(--color-brand-fg)]">FCR</strong> uses (latest average bird weight − earliest average bird weight) × current birds, and only prints when that gain is positive AND the resulting ratio is inside a sane 0.5–10 window. Otherwise the field says &ldquo;insufficient data&rdquo; — never a misleading number driven by a unit-entry mistake.
         </li>
         <li>
           <strong className="text-[var(--color-brand-fg)]">Placement cost</strong> is the flock&rsquo;s original purchase price. It&rsquo;s kept separate from operating expenses so P&amp;L stays honest.
@@ -657,6 +673,30 @@ function ErrorState({ error }: { error: unknown }) {
 }
 
 /* ─────────────────────────── formatting + helpers ─────────────────────────── */
+
+/**
+ * Turn a raw event_type slug into a farmer-facing label — snake_case
+ * looks industrial in a report the reader is expected to trust.
+ */
+function prettyEventType(slug: string): string {
+  const map: Record<string, string> = {
+    feed: 'Feed',
+    water: 'Water',
+    weight: 'Weight',
+    eggs: 'Eggs',
+    mortality: 'Mortality',
+    sale: 'Sale',
+    vaccination: 'Vaccination',
+    treatment: 'Treatment',
+    bird_count: 'Bird count',
+    note: 'Note',
+  };
+  if (map[slug]) return map[slug];
+  // Fallback for unknown slugs — replace underscores with spaces and
+  // uppercase the first letter, so a future event_type doesn't render
+  // as "some_new_thing" in the report.
+  return slug.charAt(0).toUpperCase() + slug.slice(1).replace(/_/g, ' ');
+}
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return '—';
