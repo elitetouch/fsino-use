@@ -6,8 +6,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
 import {
-  ArrowRight, Bird, ClipboardList, Download, FileText, Loader2,
-  Thermometer, TrendingUp, TriangleAlert, Wallet, Wind, Droplet, ChevronDown, Info,
+  AlertTriangle, ArrowRight, Bird, ChevronDown, ClipboardList, Download, Droplet,
+  FileText, Info, Loader2, Thermometer, TrendingUp, Wallet, Wind,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
@@ -220,7 +220,7 @@ function SummaryKpis({
     tone: 'mint' | 'amber' | 'rose' | 'sky';
   }> = [
     {
-      icon: TriangleAlert,
+      icon: AlertTriangle,
       label: 'Mortality',
       value: summary.mortalityCount === 0 && summary.birdsPlaced === 0
         ? '—'
