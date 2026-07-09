@@ -455,6 +455,32 @@ export const endpoints = {
       responseType: 'blob',
     }).then((r) => r.data),
 
+  /**
+   * Cycle-level report — one call returns KPIs, per-day timeline
+   * and per-event-type breakdown. Powers the Reports page.
+   */
+  getFlockReportSummary: (flockId: string) =>
+    unwrap<FlockReportSummary>(api.get(`/flocks/${flockId}/report/summary`)),
+
+  /**
+   * Daily-records CSV for a whole cycle — same bearer/blob dance as
+   * the climate CSV export.
+   */
+  downloadFlockRecordsCsv: (flockId: string) =>
+    api.get<Blob>(`/flocks/${flockId}/report/records.csv`, {
+      responseType: 'blob',
+    }).then((r) => r.data),
+
+  /**
+   * A4 PDF cycle report — same aggregations as getFlockReportSummary,
+   * rendered server-side via dompdf. Farmers hand this to banks / co-ops
+   * as loan or grant evidence.
+   */
+  downloadFlockReportPdf: (flockId: string) =>
+    api.get<Blob>(`/flocks/${flockId}/report/summary.pdf`, {
+      responseType: 'blob',
+    }).then((r) => r.data),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
@@ -1357,6 +1383,96 @@ export type PenClimateRelay = {
   id: string;          // 'T1' | 'T2' | 'T3' (or labelled)
   label?: string;      // e.g. "Brooder", "Curtain motor"
   on: boolean;
+};
+
+export type FlockReportSummary = {
+  flock: {
+    id: string;
+    penId: string | null;
+    productionType: string;
+    breed: string;
+    startDate: string | null;
+    archivedAt: string | null;
+    placedBirds: number;
+    currentBirds: number;
+    placementCost: number;
+    currency: string;
+  };
+  summary: {
+    daysElapsed: number;
+    birdsPlaced: number;
+    birdsNow: number;
+    mortalityCount: number;
+    mortalityPct: number;
+    soldCount: number;
+    feedKg: number;
+    weightGainKg: number;
+    fcr: number | null;
+    eggsCollected: number;
+    revenue: number;
+    expenses: number;
+    placementCost: number;
+    totalCost: number;
+    margin: number;
+  };
+  /**
+   * Discriminated by `available` — a false flag means the pen had no
+   * PENKEEP or no readings during the cycle, and the reason explains
+   * why so the UI can render an honest empty state instead of zeros.
+   */
+  climate:
+    | {
+        available: false;
+        reason: string;
+        window: { from: string; to: string };
+        stations?: number;
+        sampleIntervalSeconds?: number;
+      }
+    | {
+        available: true;
+        window: { from: string; to: string };
+        stations: number;
+        readingCount: number;
+        sampleIntervalSeconds: number;
+        /** 0-100: how full the reading stream was vs the theoretical max. */
+        coveragePct: number;
+        confidence: 'high' | 'medium' | 'low';
+        zoneAverages: {
+          left: number | null;
+          middle: number | null;
+          right: number | null;
+        };
+        zoneBreachHours: {
+          left: { low: number; high: number };
+          middle: { low: number; high: number };
+          right: { low: number; high: number };
+        };
+        airQualityBreachHours: { nh3: number; co2: number };
+        humidityAverage: number | null;
+        humidityBreachHours: { low: number; high: number };
+        thresholds: {
+          nh3PpmMax: number;
+          co2PpmMax: number;
+          humidityPctMin: number;
+          humidityPctMax: number;
+          note: string;
+        };
+      };
+  timeline: Array<{
+    date: string;
+    feedKg: number;
+    mortality: number;
+    eggs: number;
+    expense: number;
+    revenue: number;
+    birdCountSnapshot: number | null;
+  }>;
+  breakdown: Array<{
+    eventType: string;
+    events: number;
+    totalAmount: number;
+    totalQuantity: number;
+  }>;
 };
 
 export type FlockClimateReadingRow = {
