@@ -346,8 +346,14 @@ function FinancialsCard({
 
 /* ─────────────────────────── climate ─────────────────────────── */
 
-function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] }) {
-  if (!climate.available) {
+function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | undefined }) {
+  // Defensive: old backend deploys served the summary without a
+  // `climate` field. Treat missing block as "unavailable" so the
+  // page doesn't crash during a mid-deploy window.
+  if (!climate || !climate.available) {
+    const reason = climate?.available === false
+      ? climate.reason
+      : 'Climate data is loading — if this persists, the backend needs to be redeployed to include the new climate section.';
     return (
       <section className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-5">
         <div className="flex items-start gap-3">
@@ -357,7 +363,7 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] }) {
           <div>
             <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">Climate report unavailable</p>
             <p className="mt-0.5 text-[12px] text-[var(--color-brand-muted)]">
-              {climate.reason}
+              {reason}
             </p>
           </div>
         </div>
