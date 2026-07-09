@@ -1404,6 +1404,13 @@ export type FlockReportSummary = {
     birdsNow: number;
     mortalityCount: number;
     mortalityPct: number;
+    /**
+     * How mortality was derived. `events` = summed mortality entries.
+     * `bird_count_delta` = inferred from the drop between birds placed
+     * and the latest bird_count snapshot. UI should label the KPI so
+     * the reader isn't misled about how the number was computed.
+     */
+    mortalitySource?: 'events' | 'bird_count_delta';
     soldCount: number;
     feedKg: number;
     weightGainKg: number;
