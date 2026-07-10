@@ -322,6 +322,33 @@ export const endpoints = {
       api.patch(`/flocks/${flockId}/daily-records/${recordId}`, payload),
     ),
 
+  /**
+   * Post an append-only correction against a daily record. Nothing on
+   * the original mutates — the backend inserts a new row whose signed
+   * offset lands the sum on the intended value.
+   *
+   * Callers compute the offset:
+   *   birds_delta   = desired − original.birdsDelta   (mortality/sale)
+   *   quantity      = desired − original.quantity     (feed/water/eggs/weight)
+   *   amount        = desired − original.amount       (any monetary event)
+   *
+   * `reason` is required and stored on the correction row + in the CSV
+   * export so a bank/co-op officer can read the audit story.
+   */
+  correctDailyRecord: (
+    flockId: string,
+    recordId: string,
+    payload: {
+      birds_delta?: number;
+      quantity?: number;
+      amount?: number;
+      reason: string;
+    },
+  ) =>
+    unwrap<{ record: DailyRecordDto; original_id: string }>(
+      api.post(`/flocks/${flockId}/daily-records/${recordId}/correction`, payload),
+    ),
+
   // ───────────── Pen dashboard ─────────────
 
   /**
@@ -844,6 +871,15 @@ export type DailyRecordDto = {
   createdByUser: { id: string | number; name: string | null } | null;
   updatedByUser: { id: string | number; name: string | null } | null;
   lastEditedAt: string | null;
+  /**
+   * Set on rows that are append-only corrections of another entry.
+   * The tenant UI uses this to render a "Correction" badge and to
+   * suppress the Correct action on rows that are themselves reversals
+   * (chains of corrections are illegible).
+   */
+  correctionOfId: string | null;
+  /** Farmer-supplied reason for the correction (min 3, max 500 chars). */
+  correctionReason: string | null;
   metadata: Record<string, unknown> | null;
   createdAt?: string;
   updatedAt?: string;
@@ -1421,6 +1457,14 @@ export type FlockReportSummary = {
     placementCost: number;
     totalCost: number;
     margin: number;
+    /**
+     * Total correction entries across all event types on this cycle.
+     * When > 0 the Reports page surfaces a subtle "N corrections
+     * applied" chip so a bank/co-op reader knows to check the CSV for
+     * the reasons. Aggregations in the summary already use the NET
+     * (original + correction).
+     */
+    correctionsCount?: number;
   };
   /**
    * Discriminated by `available` — a false flag means the pen had no
@@ -1477,6 +1521,8 @@ export type FlockReportSummary = {
   breakdown: Array<{
     eventType: string;
     events: number;
+    /** Number of correction (reversal) rows on this event type. */
+    corrections?: number;
     totalAmount: number;
     totalQuantity: number;
   }>;
