@@ -182,6 +182,15 @@ function CycleHead({
             {pen?.name ?? 'No pen'} · Started {fmtDate(flock.startDate)}
             {flock.archivedAt ? <> · <span className="text-amber-700">Archived {fmtDate(flock.archivedAt)}</span></> : null}
           </p>
+          {/* Corrections chip — surfaces the count of append-only
+              reversal entries so a bank/co-op reader knows to skim the
+              records CSV for the reasons. Aggregations on this page
+              already use the NET (original + correction). */}
+          {(summary.correctionsCount ?? 0) > 0 && (
+            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-amber-800">
+              {summary.correctionsCount} correction{summary.correctionsCount === 1 ? '' : 's'} applied
+            </p>
+          )}
         </div>
         <div className="grid shrink-0 grid-cols-3 gap-3 sm:gap-4">
           <MiniStat label="Days" value={formatCount(summary.daysElapsed)} sub="since placement" />
@@ -532,6 +541,7 @@ function BreakdownCard({
             <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
               <th className="px-4 py-2 sm:px-5">Event</th>
               <th className="px-4 py-2 text-right sm:px-5">Events</th>
+              <th className="px-4 py-2 text-right sm:px-5">Corrections</th>
               <th className="px-4 py-2 text-right sm:px-5">Total qty</th>
               <th className="px-4 py-2 text-right sm:px-5">Total spent</th>
             </tr>
@@ -543,6 +553,11 @@ function BreakdownCard({
                   {prettyEventType(r.eventType)}
                 </td>
                 <td className="px-4 py-2 text-right tabular-nums sm:px-5">{formatCount(r.events)}</td>
+                <td className="px-4 py-2 text-right tabular-nums sm:px-5">
+                  {(r.corrections ?? 0) > 0
+                    ? <span className="font-bold text-amber-800">{formatCount(r.corrections!)}</span>
+                    : '0'}
+                </td>
                 <td className="px-4 py-2 text-right tabular-nums sm:px-5">
                   {r.totalQuantity > 0 ? formatDecimal(r.totalQuantity, 2) : '—'}
                 </td>
@@ -626,6 +641,9 @@ function AccuracyNotes() {
         </li>
         <li>
           <strong className="text-[var(--color-brand-fg)]">Coverage %</strong> tells you how full the PENKEEP stream was. Below 90% means the device was offline for stretches — the numbers stay honest but weigh them accordingly.
+        </li>
+        <li>
+          <strong className="text-[var(--color-brand-fg)]">Corrections</strong> are append-only reversal entries — a farmer can post one at any time on an entry they created, with a required reason. The original stays in the ledger next to the offsetting fix, and all aggregations above use the NET (original + correction). The Records CSV export shows every original + correction pair with the reason so the audit story is intact end-to-end.
         </li>
       </ul>
     </details>
