@@ -1,9 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Bird } from 'lucide-react';
-import type { DailyRecordDto, DailyRecordGuidance, MyPreferencesDto } from '@/lib/api';
+import { Bird, Loader2, Pencil } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { apiErrorMessage, endpoints, type DailyRecordDto, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useCreateDailyRecord } from '@/lib/use-daily-record';
+import { usePermissions } from '@/lib/access';
+import { Button } from '@/components/ui/button';
 import {
   StepShell, BeigeAlert, AnomalyWarning,
   YesNoPills, LearnMoreDrawer, LearnMoreHeading,
@@ -260,9 +264,11 @@ function BirdCountForm({
           */}
           {editing && (
             <BirdCountEditView
+              flockId={flockId}
               record={existing!}
               livingBirds={livingBirds}
               onSwitchEntry={onSwitchEntry}
+              onSaved={onContinue}
             />
           )}
 
@@ -430,23 +436,89 @@ function safeInt(s: string): number {
  * (multiple rows on the same date are allowed).
  */
 function BirdCountEditView({
+  flockId,
   record,
   livingBirds,
   onSwitchEntry,
+  onSaved,
 }: {
+  flockId: string;
   record: DailyRecordDto;
   livingBirds: number;
   /** When the day has 2+ bird-count rows, lets the user go back to the picker. */
   onSwitchEntry?: () => void;
+  /** Called after a successful in-place edit so the wizard can continue. */
+  onSaved: () => void;
 }) {
+  const perms = usePermissions();
+  const qc = useQueryClient();
+  const canEditCounts = perms.isOwner || perms.isManager;
+
   const payload = (record.payload ?? {}) as Record<string, unknown>;
-  const counts = {
+  const originalCounts = {
     sold:   readCount(payload, 'sold'),
     dead:   readCount(payload, 'dead'),
     culled: readCount(payload, 'culled'),
     lost:   readCount(payload, 'lost'),
   };
-  const totalOut = counts.sold + counts.dead + counts.culled + counts.lost;
+  const originalTotal = originalCounts.sold + originalCounts.dead + originalCounts.culled + originalCounts.lost;
+
+  // Owner / manager EDIT mode. Staff never gets to flip this true — the
+  // backend enforces the same restriction, so any UI toggle would still
+  // fail. Default false so the read-only summary is always the first
+  // thing the user sees.
+  const [editing, setEditing] = useState(false);
+  const [edited, setEdited] = useState({
+    sold:   String(originalCounts.sold),
+    dead:   String(originalCounts.dead),
+    culled: String(originalCounts.culled),
+    lost:   String(originalCounts.lost),
+  });
+
+  const editedInt = {
+    sold:   parseInt(edited.sold   || '0', 10) || 0,
+    dead:   parseInt(edited.dead   || '0', 10) || 0,
+    culled: parseInt(edited.culled || '0', 10) || 0,
+    lost:   parseInt(edited.lost   || '0', 10) || 0,
+  };
+  const newTotal = editedInt.sold + editedInt.dead + editedInt.culled + editedInt.lost;
+  const totalDelta = newTotal - originalTotal;
+  // New running-birds figure = current − Δ (bird_count REDUCES the flock,
+  // so a positive delta pulls the count DOWN further).
+  const newLivingBirds = livingBirds - totalDelta;
+  const overCap = newLivingBirds < 0;
+  const anyChange = totalDelta !== 0;
+
+  const save = useMutation({
+    mutationFn: () => {
+      // Only send the payload keys the backend expects for a bird_count
+      // row. `anyChange: true` is what the store endpoint sets on a Yes-
+      // branch bird_count; keeping it consistent avoids surprising a
+      // future reducer that reads it.
+      const patchedPayload = {
+        anyChange: true,
+        sold:   { count: editedInt.sold   },
+        dead:   { count: editedInt.dead   },
+        culled: { count: editedInt.culled },
+        lost:   { count: editedInt.lost   },
+      };
+      return endpoints.updateDailyRecord(flockId, record.id, {
+        payload: patchedPayload,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Bird count updated. Running flock count reconciled.');
+      // Reset every surface that reads either the records list or the
+      // derived flock count so the correction shows up everywhere.
+      qc.invalidateQueries({ queryKey: ['flock-report', flockId] });
+      qc.invalidateQueries({ queryKey: ['daily-records', flockId] });
+      qc.invalidateQueries({ queryKey: ['daily-record-calendar', flockId] });
+      qc.invalidateQueries({ queryKey: ['pen-dashboard'] });
+      qc.invalidateQueries({ queryKey: ['flocks'] });
+      onSaved();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not update the bird count.')),
+  });
 
   return (
     <div className="space-y-3">
@@ -455,7 +527,7 @@ function BirdCountEditView({
           <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
             Logged for this day
           </p>
-          {onSwitchEntry && (
+          {onSwitchEntry && !editing && (
             <button
               type="button"
               onClick={onSwitchEntry}
@@ -465,22 +537,101 @@ function BirdCountEditView({
             </button>
           )}
         </div>
-        <dl className="divide-y divide-[var(--color-brand-border)]">
-          <Stat label="Sold"   value={counts.sold} />
-          <Stat label="Dead"   value={counts.dead} />
-          <Stat label="Culled" value={counts.culled} />
-          <Stat label="Lost"   value={counts.lost} />
-          <Stat label="Total out" value={totalOut} bold />
-          <Stat label="Birds remaining" value={livingBirds} bold />
-        </dl>
+
+        {editing ? (
+          <div className="divide-y divide-[var(--color-brand-border)]">
+            <CountInput label="Sold"   value={edited.sold}   onChange={(v) => setEdited((c) => ({ ...c, sold:   v }))} />
+            <CountInput label="Dead"   value={edited.dead}   onChange={(v) => setEdited((c) => ({ ...c, dead:   v }))} />
+            <CountInput label="Culled" value={edited.culled} onChange={(v) => setEdited((c) => ({ ...c, culled: v }))} />
+            <CountInput label="Lost"   value={edited.lost}   onChange={(v) => setEdited((c) => ({ ...c, lost:   v }))} />
+            <Stat label="Total out" value={newTotal} bold />
+            <Stat label="Birds remaining" value={Math.max(0, newLivingBirds)} bold />
+          </div>
+        ) : (
+          <dl className="divide-y divide-[var(--color-brand-border)]">
+            <Stat label="Sold"   value={originalCounts.sold} />
+            <Stat label="Dead"   value={originalCounts.dead} />
+            <Stat label="Culled" value={originalCounts.culled} />
+            <Stat label="Lost"   value={originalCounts.lost} />
+            <Stat label="Total out" value={originalTotal} bold />
+            <Stat label="Birds remaining" value={livingBirds} bold />
+          </dl>
+        )}
       </div>
 
-      <BeigeAlert title="Counts can't be edited">
-        Bird-count totals are frozen once saved — editing them would
-        let the running flock count drift. If today&rsquo;s figures are
-        wrong, tap Cancel and log a <strong>fresh bird-count entry</strong>{' '}
-        on this same date. Multiple rows on one day are allowed.
-      </BeigeAlert>
+      {canEditCounts ? (
+        editing ? (
+          <div className="space-y-2">
+            {overCap && (
+              <BeigeAlert title="Not enough birds">
+                Your edited counts would take the running flock below zero.
+                Reduce one of the numbers before saving.
+              </BeigeAlert>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                onClick={() => save.mutate()}
+                disabled={!anyChange || overCap || save.isPending}
+              >
+                {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                Save corrected counts
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => {
+                setEditing(false);
+                setEdited({
+                  sold:   String(originalCounts.sold),
+                  dead:   String(originalCounts.dead),
+                  culled: String(originalCounts.culled),
+                  lost:   String(originalCounts.lost),
+                });
+              }}>
+                Discard
+              </Button>
+            </div>
+            <p className="text-[11px] leading-relaxed text-[var(--color-brand-muted)]">
+              Your edit is logged in the audit trail (who + when + which fields), and the running flock count is reconciled from the new total. This action is only available to owners and managers.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[12px] text-[var(--color-brand-muted)]">
+              As an owner / manager you can correct these counts if they were entered incorrectly. The edit is captured in the audit trail.
+            </p>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              <Pencil className="h-3.5 w-3.5" />
+              Correct counts
+            </Button>
+          </div>
+        )
+      ) : (
+        <BeigeAlert title="Counts can't be edited">
+          Bird-count totals are frozen once saved — editing them would
+          let the running flock count drift. If today&rsquo;s figures are
+          wrong, tap Cancel and log a <strong>fresh bird-count entry</strong>{' '}
+          on this same date. Multiple rows on one day are allowed. Owners
+          and managers can also correct the entry directly.
+        </BeigeAlert>
+      )}
+    </div>
+  );
+}
+
+function CountInput({
+  label, value, onChange,
+}: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+      <label htmlFor={`bc-${label}`} className="text-[12.5px] text-[var(--color-brand-fg-soft)]">
+        {label}
+      </label>
+      <input
+        id={`bc-${label}`}
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ''))}
+        inputMode="numeric"
+        className="w-24 rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-1.5 text-right text-[13.5px] font-semibold tabular-nums focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+      />
     </div>
   );
 }
