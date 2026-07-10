@@ -150,7 +150,7 @@ function CycleReport({ flockId, pens }: { flockId: string; pens: PenDto[] }) {
     <div className="space-y-5">
       <CycleHead flock={d.flock} pen={pen} summary={d.summary} />
       <SummaryKpis summary={d.summary} currency={currency} />
-      <FinancialsCard summary={d.summary} currency={currency} />
+      <FinancialsCard summary={d.summary} currency={currency} productionType={d.flock.productionType} />
       <ClimateCard climate={d.climate} />
       <BreakdownCard breakdown={d.breakdown} currency={currency} />
       <ExportsRow flockId={flockId} />
@@ -309,8 +309,19 @@ function KpiCard({
 /* ─────────────────────────── financials ─────────────────────────── */
 
 function FinancialsCard({
-  summary, currency,
-}: { summary: FlockReportSummary['summary']; currency: string }) {
+  summary, currency, productionType,
+}: {
+  summary: FlockReportSummary['summary'];
+  currency: string;
+  /** Broiler cycles never lay eggs — the revenue note skips the eggs
+      caveat for them so the disclaimer stays honest about what
+      matters. Layers and dual-purpose keep the caveat. */
+  productionType: string;
+}) {
+  const revenueNote = productionType === 'broiler'
+    ? 'Sale records only.'
+    : 'Sale records only. Eggs not priced until you log a sale.';
+
   const rows: Array<{ label: string; value: string; note: string; strong?: boolean }> = [
     {
       label: 'Placement cost',
@@ -331,7 +342,7 @@ function FinancialsCard({
     {
       label: 'Revenue',
       value: formatMoney(summary.revenue, currency),
-      note: 'Sale records only. Eggs not priced until you log a sale.',
+      note: revenueNote,
     },
     {
       label: 'Margin',
