@@ -349,6 +349,24 @@ export const endpoints = {
       api.post(`/flocks/${flockId}/daily-records/${recordId}/correction`, payload),
     ),
 
+  /**
+   * Void a daily record — soft delete with a mandatory reason. The row
+   * stays in the ledger (visible in the records CSV export) for audit
+   * but is excluded from every aggregation and the wizard.
+   *
+   * Role gate on the backend:
+   *   - Staff can void a row they created within 10 minutes of save.
+   *   - Owner / manager can void any row anytime.
+   *
+   * For mortality / sale / bird_count rows, voiding reconciles
+   * flock.current_birds in the same transaction so the running head-
+   * count stays right.
+   */
+  voidDailyRecord: (flockId: string, recordId: string, payload: { reason: string }) =>
+    unwrap<{ id: string; voided_at: string | null }>(
+      api.delete(`/flocks/${flockId}/daily-records/${recordId}`, { data: payload }),
+    ),
+
   // ───────────── Pen dashboard ─────────────
 
   /**
@@ -880,6 +898,17 @@ export type DailyRecordDto = {
   correctionOfId: string | null;
   /** Farmer-supplied reason for the correction (min 3, max 500 chars). */
   correctionReason: string | null;
+  /**
+   * Soft-delete audit fields. `voidedAt` is null on live rows and set
+   * once a row has been voided (soft deleted). Regular listing
+   * endpoints already exclude trashed rows, so these usually surface
+   * only in the records CSV export and admin views. Tenant UI uses
+   * them to grey a row out and label the reason next to a "Voided"
+   * badge when a withTrashed() consumer shows one.
+   */
+  voidedAt?: string | null;
+  voidedByUserId?: string | number | null;
+  voidReason?: string | null;
   metadata: Record<string, unknown> | null;
   createdAt?: string;
   updatedAt?: string;

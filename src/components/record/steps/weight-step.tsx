@@ -266,6 +266,9 @@ function WeightForm({
         continueLabel={editing && answer === 'yes'
           ? 'Save changes'
           : (isLast ? 'Complete record' : 'Continue')}
+        voidableRecord={existing ?? null}
+        voidFlockId={flockId}
+        onVoided={onCancel}
       >
         <FieldStack>
           {editing && (
