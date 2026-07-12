@@ -1,11 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import {
-  ArrowLeft, X, ChevronRight, Info, Loader2,
+  ArrowLeft, X, ChevronRight, Info, Loader2, Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FOCUS_WRAPPER } from './inputs';
+import { VoidDailyRecordDialog } from '@/components/record/void-daily-record-dialog';
+import type { DailyRecordDto } from '@/lib/api';
 
 /**
  * StepShell — the chrome every step of the Add-record wizard shares.
@@ -47,6 +50,9 @@ export function StepShell({
   continueLabel = 'Continue',
   continueDisabled,
   continuePending,
+  voidableRecord,
+  voidFlockId,
+  onVoided,
   children,
 }: {
   sectionIcon: React.ReactNode;
@@ -71,8 +77,30 @@ export function StepShell({
   continueLabel?: string;
   continueDisabled?: boolean;
   continuePending?: boolean;
+  /**
+   * Opt-in soft-delete affordance. When a DailyRecordDto is supplied,
+   * the shell renders a discreet "Void entry" link below the body (only
+   * in editing mode) and manages the confirm dialog itself. Backend
+   * enforces the role gate; the tenant surface just exposes the entry
+   * point uniformly across every step.
+   */
+  voidableRecord?: DailyRecordDto | null;
+  /** Flock id — required alongside voidableRecord for the void endpoint URL. */
+  voidFlockId?: string;
+  /** Optional callback fired after a successful void; the wizard usually
+      cancels itself so the user leaves the now-empty entry. */
+  onVoided?: () => void;
   children: React.ReactNode;
 }) {
+  const [voidOpen, setVoidOpen] = useState(false);
+  const canVoid =
+    !!editing &&
+    !!voidableRecord &&
+    !!voidFlockId &&
+    voidableRecord.voidedAt == null &&
+    // Correction rows are frozen — voiding them would rewrite history.
+    // Ask the user to void the original instead.
+    voidableRecord.correctionOfId == null;
   const pillTone = {
     green: 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
     amber: 'bg-amber-50 text-amber-800',
@@ -150,7 +178,29 @@ export function StepShell({
             </button>
           </div>
         )}
+        {canVoid && (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setVoidOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12.5px] font-semibold text-rose-700 underline-offset-4 hover:bg-rose-50 hover:underline"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Void this entry
+            </button>
+          </div>
+        )}
       </div>
+
+      {canVoid && (
+        <VoidDailyRecordDialog
+          flockId={voidFlockId!}
+          record={voidableRecord!}
+          open={voidOpen}
+          onClose={() => setVoidOpen(false)}
+          onVoided={onVoided}
+        />
+      )}
 
       {/* Sticky CTA */}
       <div

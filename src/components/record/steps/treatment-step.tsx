@@ -264,6 +264,9 @@ function TreatmentForm({
         continueDisabled={!isValid}
         continuePending={pending}
         continueLabel={editing && answer === 'yes' ? 'Save changes' : 'Continue'}
+        voidableRecord={existing ?? null}
+        voidFlockId={flockId}
+        onVoided={onCancel}
       >
         <FieldStack>
           {editing && (

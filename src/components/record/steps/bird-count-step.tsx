@@ -251,6 +251,12 @@ function BirdCountForm({
         continueDisabled={!editing && !isValid}
         continuePending={!editing && createRecord.isPending}
         continueLabel={editing ? 'Continue' : 'Continue'}
+        // Void support — shell renders a "Void this entry" link in edit
+        // mode. Backend enforces the role gate. Post-void we cancel the
+        // wizard because the row it was showing no longer exists.
+        voidableRecord={existing ?? null}
+        voidFlockId={flockId}
+        onVoided={onCancel}
       >
         <FieldStack>
           {/*

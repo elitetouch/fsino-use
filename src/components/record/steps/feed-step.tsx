@@ -335,6 +335,9 @@ function FeedForm({
         continueDisabled={!isValid}
         continuePending={pending}
         continueLabel={editing ? 'Save changes' : 'Continue'}
+        voidableRecord={existing ?? null}
+        voidFlockId={flockId}
+        onVoided={onCancel}
       >
         <FieldStack>
           {editing && (
