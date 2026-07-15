@@ -11,7 +11,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
-import { apiErrorMessage, endpoints, type FlockDto, type FlockReportSummary, type PenDto } from '@/lib/api';
+import {
+  apiErrorMessage, endpoints,
+  type FlockDto, type FlockReportDetailedEntry, type FlockReportSummary, type PenDto,
+} from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
@@ -152,7 +155,10 @@ function CycleReport({ flockId, pens }: { flockId: string; pens: PenDto[] }) {
       <SummaryKpis summary={d.summary} currency={currency} />
       <FinancialsCard summary={d.summary} currency={currency} productionType={d.flock.productionType} />
       <ClimateCard climate={d.climate} />
+      <VaccinationLog rows={d.vaccinations ?? []} currency={currency} />
+      <TreatmentLog rows={d.treatments ?? []} currency={currency} />
       <BreakdownCard breakdown={d.breakdown} currency={currency} />
+      <RecommendationsBlock recommendations={d.recommendations ?? []} />
       <ExportsRow flockId={flockId} />
       <AccuracyNotes />
     </div>
@@ -477,6 +483,21 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
           tone={climate.humidityBreachHours.low + climate.humidityBreachHours.high > 0 ? 'amber' : 'mint'} />
       </div>
 
+      {/* Temperature vs breed / age comfort curve. Only rendered when
+          the backend attached the advisory block; older backend deploys
+          without the feature just skip this section. */}
+      {climate.temperatureAdvisory?.available === true && (
+        <TemperatureAdvisoryBlock advisory={climate.temperatureAdvisory} />
+      )}
+      {climate.temperatureAdvisory?.available === false && (
+        <div className="border-t border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 p-4 sm:p-5">
+          <p className="text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+            <strong className="text-[var(--color-brand-fg)]">Temperature vs breed target:</strong>{' '}
+            {climate.temperatureAdvisory.reason}
+          </p>
+        </div>
+      )}
+
       {/* Honest note */}
       <div className="border-t border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 p-4 sm:p-5">
         <p className="flex items-start gap-2 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
@@ -489,6 +510,96 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
         </p>
       </div>
     </section>
+  );
+}
+
+/**
+ * Temperature-vs-breed advisory inside the climate section. Reads the
+ * per-day series and a cycle-wide verdict + recommendation the backend
+ * built via TemperatureBenchmarkResolver, so the on-screen report and
+ * the PDF speak with the same voice.
+ */
+function TemperatureAdvisoryBlock({
+  advisory,
+}: {
+  advisory: Extract<
+    NonNullable<
+      Extract<FlockReportSummary['climate'], { available: true }>['temperatureAdvisory']
+    >,
+    { available: true }
+  >;
+}) {
+  const verdictClass =
+    advisory.verdict === 'poor' ? 'bg-rose-50 text-rose-700'
+    : advisory.verdict === 'fair' ? 'bg-amber-50 text-amber-800'
+    : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]';
+
+  const day = (n: number | undefined) => n ?? 0;
+  const totalDays = day(advisory.dayCounts.excellent) + day(advisory.dayCounts.good) + day(advisory.dayCounts.fair) + day(advisory.dayCounts.poor);
+
+  return (
+    <div className="border-t border-[var(--color-brand-border)] p-4 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+            Temperature vs breed / age comfort curve
+          </p>
+          <h3 className="mt-0.5 text-[13px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            {advisory.verdictLabel}
+          </h3>
+          {advisory.cycleAvgC !== null && (
+            <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+              Cycle-average pen temperature: {advisory.cycleAvgC.toFixed(1)} °C over {totalDays} day{totalDays === 1 ? '' : 's'}.
+            </p>
+          )}
+        </div>
+        <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider', verdictClass)}>
+          Verdict: {advisory.verdict}
+        </span>
+      </div>
+
+      {/* Day-count histogram — one row per rating bucket. Only renders
+          rows whose count > 0 so the block stays compact. */}
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <DayCountChip label="Excellent" count={advisory.dayCounts.excellent ?? 0} tone="mint" />
+        <DayCountChip label="Good"      count={advisory.dayCounts.good ?? 0}      tone="mint" />
+        <DayCountChip label="Fair"      count={advisory.dayCounts.fair ?? 0}      tone="amber" />
+        <DayCountChip label="Poor"      count={advisory.dayCounts.poor ?? 0}      tone="rose" />
+      </div>
+
+      {advisory.recommendation && (
+        <div className="mt-3 flex items-start gap-2 rounded-lg border-l-4 border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5 px-3 py-2.5">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" />
+          <p className="text-[12px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+            <strong className="text-[var(--color-brand-fg)]">Recommendation.</strong> {advisory.recommendation}
+          </p>
+        </div>
+      )}
+
+      <p className="mt-3 text-[10.5px] leading-relaxed text-[var(--color-brand-muted)]">
+        Each day is rated against the physiological target for the flock&rsquo;s age <em>on that day</em> — day 3 is graded on the 32–34 °C brooding target; day 30 on the 20–23 °C growing target. The verdict shows the worst-day rating, not the average, because a single bad day of welfare-level stress matters more than an otherwise-green trend.
+      </p>
+    </div>
+  );
+}
+
+function DayCountChip({
+  label, count, tone,
+}: {
+  label: string;
+  count: number;
+  tone: 'mint' | 'amber' | 'rose';
+}) {
+  const bg = tone === 'rose' ? 'bg-rose-50 border-rose-200'
+    : tone === 'amber' ? 'bg-amber-50 border-amber-200'
+    : 'bg-[var(--color-brand-accent)]/40 border-[var(--color-brand-primary)]/30';
+  const dim = count === 0 ? 'opacity-40' : '';
+  return (
+    <div className={cn('rounded-lg border px-3 py-2', bg, dim)}>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
+      <p className="mt-0.5 text-[16px] font-bold tabular-nums text-[var(--color-brand-fg)]">{count}</p>
+      <p className="text-[10px] text-[var(--color-brand-muted)]">day{count === 1 ? '' : 's'}</p>
+    </div>
   );
 }
 
@@ -581,6 +692,204 @@ function BreakdownCard({
         </table>
       </div>
     </section>
+  );
+}
+
+/* ─────────────────────────── vaccination / treatment logs ─────────────────────────── */
+
+/**
+ * Per-vaccine log — one row per administration. Silent when the cycle
+ * has none; when populated it gives a bank / co-op reader the specific
+ * schedule adherence signal they usually ask for verbally.
+ */
+function VaccinationLog({
+  rows, currency,
+}: { rows: FlockReportDetailedEntry[]; currency: string }) {
+  if (rows.length === 0) return null;
+
+  return (
+    <DetailedEntryTable
+      eyebrow="Vaccination log"
+      title="Every vaccine administered"
+      description="Ordered by date. Insurance, banks and hatchery contracts routinely ask for this exact list."
+      rows={rows}
+      currency={currency}
+      showBirdsColumn={false}
+      itemColumnLabel="Vaccine"
+    />
+  );
+}
+
+/**
+ * Per-treatment log — antibiotics, coccidiostats, supplements. Adds a
+ * "birds" column so a treatment given to a subset of the flock reads
+ * honestly.
+ */
+function TreatmentLog({
+  rows, currency,
+}: { rows: FlockReportDetailedEntry[]; currency: string }) {
+  if (rows.length === 0) return null;
+
+  return (
+    <DetailedEntryTable
+      eyebrow="Treatment log"
+      title="Every treatment given"
+      description="Antibiotics, coccidiostats, supplements — evidence of health events and how they were handled."
+      rows={rows}
+      currency={currency}
+      showBirdsColumn={true}
+      itemColumnLabel="Treatment"
+    />
+  );
+}
+
+function DetailedEntryTable({
+  eyebrow, title, description, rows, currency, showBirdsColumn, itemColumnLabel,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  rows: FlockReportDetailedEntry[];
+  currency: string;
+  showBirdsColumn: boolean;
+  itemColumnLabel: string;
+}) {
+  return (
+    <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
+      <header className="border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">{eyebrow}</p>
+        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">{title}</h2>
+        <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">{description}</p>
+      </header>
+      <div className="max-w-full overflow-x-auto">
+        <table className="w-full min-w-[560px] border-collapse text-[12px]">
+          <thead>
+            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+              <th className="px-4 py-2 sm:px-5">Date</th>
+              <th className="px-4 py-2 sm:px-5">{itemColumnLabel}</th>
+              <th className="px-4 py-2 sm:px-5">Brand</th>
+              <th className="px-4 py-2 text-right sm:px-5">Dose</th>
+              {showBirdsColumn && <th className="px-4 py-2 text-right sm:px-5">Birds</th>}
+              <th className="px-4 py-2 text-right sm:px-5">Cost</th>
+              <th className="px-4 py-2 sm:px-5">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-[var(--color-brand-border)]">
+                <td className="px-4 py-2 whitespace-nowrap text-[var(--color-brand-fg-soft)] sm:px-5">
+                  {r.recordDate ?? '—'}
+                </td>
+                <td className="px-4 py-2 font-semibold text-[var(--color-brand-fg)] sm:px-5">
+                  {r.itemType ?? '—'}
+                </td>
+                <td className="px-4 py-2 text-[var(--color-brand-fg-soft)] sm:px-5">
+                  {r.itemBrand ?? '—'}
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums sm:px-5">
+                  {r.quantity != null && r.quantity > 0
+                    ? `${formatDecimal(r.quantity, 2)}${r.unit ? ' ' + r.unit : ''}`
+                    : '—'}
+                </td>
+                {showBirdsColumn && (
+                  <td className="px-4 py-2 text-right tabular-nums sm:px-5">
+                    {r.birdsDelta != null && r.birdsDelta > 0
+                      ? formatCount(r.birdsDelta)
+                      : '—'}
+                  </td>
+                )}
+                <td className="px-4 py-2 text-right tabular-nums sm:px-5">
+                  {r.amount != null && r.amount > 0
+                    ? formatMoney(r.amount, currency)
+                    : '—'}
+                </td>
+                <td className="px-4 py-2 text-[var(--color-brand-fg-soft)] sm:px-5">
+                  {r.note ? <span className="line-clamp-2">{r.note}</span> : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────── recommendations ─────────────────────────── */
+
+/**
+ * Punch list at the bottom of the report. Ranked by severity. Each entry
+ * is a specific "what to do" so the farmer leaves the page with a
+ * concrete next action instead of just a bag of numbers.
+ */
+function RecommendationsBlock({
+  recommendations,
+}: {
+  recommendations: NonNullable<FlockReportSummary['recommendations']>;
+}) {
+  if (recommendations.length === 0) {
+    return (
+      <section className="rounded-2xl border border-[var(--color-brand-border)] bg-[var(--color-brand-accent)]/25 p-4 sm:p-5">
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Recommendations</p>
+        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">Nothing pressing to change</h2>
+        <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+          Every metric we track is inside its healthy band for this cycle&rsquo;s current phase. Keep logging daily records and we&rsquo;ll flag any change here as soon as it shows up.
+        </p>
+      </section>
+    );
+  }
+
+  const sorted = [...recommendations].sort((a, b) => {
+    const rank = { high: 0, medium: 1, low: 2 } as const;
+    return (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3);
+  });
+
+  return (
+    <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
+      <header className="border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Recommendations</p>
+        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          {sorted.length} item{sorted.length === 1 ? '' : 's'} to act on
+        </h2>
+        <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+          Items tagged <em>current cycle</em> are still actionable right now. Items tagged <em>next cycle</em> are lessons for the next placement.
+        </p>
+      </header>
+      <ul className="divide-y divide-[var(--color-brand-border)]">
+        {sorted.map((r, i) => (
+          <li key={`${r.topic}-${i}`} className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:gap-4 sm:px-5">
+            <div className="flex shrink-0 flex-wrap items-start gap-1.5 sm:w-40 sm:flex-col">
+              <SeverityBadge severity={r.severity} />
+              <TimingBadge timing={r.timing} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{r.headline}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-[var(--color-brand-fg-soft)]">{r.action}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
+  const cls = severity === 'high' ? 'bg-rose-50 text-rose-700'
+    : severity === 'medium' ? 'bg-amber-50 text-amber-800'
+    : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]';
+  return (
+    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', cls)}>
+      {severity}
+    </span>
+  );
+}
+
+function TimingBadge({ timing }: { timing: 'current_cycle' | 'next_cycle' }) {
+  const label = timing === 'current_cycle' ? 'Current cycle' : 'Next cycle';
+  return (
+    <span className="inline-flex items-center rounded-full bg-[var(--color-brand-surface-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-brand-muted)]">
+      {label}
+    </span>
   );
 }
 
