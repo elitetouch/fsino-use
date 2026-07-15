@@ -1537,6 +1537,45 @@ export type FlockReportSummary = {
           humidityPctMax: number;
           note: string;
         };
+        /**
+         * Temperature vs the age-based comfort curve. Nested inside
+         * climate because it's still climate data — reader flow is:
+         * "how did the pen do → drill into temperature specifically →
+         * see per-day rating and what to fix". Discriminated by
+         * `available` so a pen without PENKEEP or with no readings
+         * shows an honest empty state.
+         */
+        temperatureAdvisory?:
+          | {
+              available: false;
+              reason: string;
+            }
+          | {
+              available: true;
+              cycleAvgC: number | null;
+              dayCounts: {
+                excellent?: number;
+                good?: number;
+                fair?: number;
+                poor?: number;
+                unavailable?: number;
+              };
+              verdict: 'excellent' | 'good' | 'fair' | 'poor' | 'unavailable';
+              verdictLabel: string;
+              recommendation: string | null;
+              series: Array<{
+                date: string;
+                ageDays: number;
+                avgC: number;
+                minC: number;
+                maxC: number;
+                readings: number;
+                target: { min: number; max: number; mid: number } | null;
+                rating: 'excellent' | 'good' | 'fair' | 'poor' | 'unavailable';
+                ratingLabel: string;
+                deltaC: number | null;
+              }>;
+            };
       };
   timeline: Array<{
     date: string;
@@ -1555,6 +1594,48 @@ export type FlockReportSummary = {
     totalAmount: number;
     totalQuantity: number;
   }>;
+  /**
+   * Per-vaccine log for the vaccination table on the report page.
+   * Empty array when the cycle has no vaccinations. Original rows
+   * only — correction / voided entries are excluded so bank readers
+   * see the actual schedule.
+   */
+  vaccinations?: Array<FlockReportDetailedEntry>;
+  /** Per-treatment log — antibiotics, coccidiostats, supplements. */
+  treatments?: Array<FlockReportDetailedEntry>;
+  /**
+   * Punch list generated from the cycle's actual numbers. Each entry
+   * names a specific problem, what to do about it, and whether the
+   * fix is still actionable in the current cycle or a lesson for the
+   * next placement. Ordered by severity when the backend builds it.
+   */
+  recommendations?: Array<{
+    topic: string;
+    severity: 'high' | 'medium' | 'low';
+    headline: string;
+    action: string;
+    timing: 'current_cycle' | 'next_cycle';
+  }>;
+};
+
+/**
+ * Row in the vaccination / treatment tables. Same shape for both —
+ * item_type carries the vaccine or drug name, item_brand its brand,
+ * birdsDelta records "how many birds received it" for a treatment
+ * given to a subset of the flock.
+ */
+export type FlockReportDetailedEntry = {
+  id: string;
+  recordDate: string | null;
+  occurredAt: string | null;
+  itemType: string | null;
+  itemBrand: string | null;
+  quantity: number | null;
+  unit: string | null;
+  birdsDelta: number | null;
+  amount: number | null;
+  currency: string | null;
+  note: string | null;
 };
 
 export type FlockClimateReadingRow = {
