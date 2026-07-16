@@ -332,7 +332,7 @@ function Live({
               {flockAgeDays != null ? `${flockAgeDays} day${flockAgeDays === 1 ? '' : 's'}` : '—'}
             </p>
             <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
-              Since the active flock was placed
+              Actual bird age today
             </p>
           </InfoCard>
 
