@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
 import { CyclePicker } from '@/components/app/cycle-picker';
 import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
+import { AlertsFeed } from '@/components/app/alerts-feed';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { readUser } from '@/lib/auth';
@@ -150,6 +151,12 @@ export default function HomePage() {
           <TodayRecordCTA cycle={cycle} />
         </Gate>
       )}
+
+      {/* Early-warning alerts — silent when zero, so the dashboard stays
+          calm on days with nothing wrong. Poll runs on a 60s interval
+          server-side while the rule engine ticks hourly, which keeps
+          the badge fresh without hammering the API. */}
+      <AlertsFeed />
 
       {/* Stat row */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

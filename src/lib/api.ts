@@ -526,6 +526,46 @@ export const endpoints = {
       responseType: 'blob',
     }).then((r) => r.data),
 
+  // ───────────── Early-warning alerts ─────────────
+  /**
+   * Alerts fired by the hourly rule engine — feed drops, mortality
+   * spikes, climate stress, ammonia spikes, weight stalls. Server
+   * dedups on (flock_id, rule_key) so the list never carries the same
+   * alert twice; a persistent condition just refreshes the row.
+   *
+   * `status=active` is the default (what the bell should show).
+   * The list is critical → high → medium → info → newest.
+   */
+  listAlerts: (params?: {
+    status?: 'active' | 'resolved' | 'dismissed' | 'all';
+    flock_id?: string;
+    severity?: 'critical' | 'high' | 'medium' | 'info';
+    per_page?: number;
+  }) =>
+    unwrap<{ alerts: FlockAlertDto[]; meta: AlertListMeta }>(
+      api.get('/alerts', { params }),
+    ),
+
+  acknowledgeAlert: (id: string) =>
+    unwrap<{ alert: FlockAlertDto }>(
+      api.patch(`/alerts/${id}/acknowledge`),
+    ),
+
+  dismissAlert: (id: string, reason?: string) =>
+    unwrap<{ alert: FlockAlertDto }>(
+      api.patch(`/alerts/${id}/dismiss`, reason ? { reason } : {}),
+    ),
+
+  /**
+   * ML label pipeline — helpful or false_alarm marks are the training
+   * data for the eventual model upgrade. Every mark carries the actor
+   * id + timestamp server-side.
+   */
+  submitAlertFeedback: (id: string, feedback: 'helpful' | 'false_alarm') =>
+    unwrap<{ alert: FlockAlertDto }>(
+      api.patch(`/alerts/${id}/feedback`, { feedback }),
+    ),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
@@ -1636,6 +1676,47 @@ export type FlockReportDetailedEntry = {
   amount: number | null;
   currency: string | null;
   note: string | null;
+};
+
+/**
+ * One row in the alerts list. Backend dedupes on (flock, rule) so
+ * each visible alert represents a distinct problem; refreshing an
+ * active alert just bumps lastSeenAt.
+ */
+export type FlockAlertDto = {
+  id: string;
+  farmId: string;
+  flockId: string;
+  penId: string | null;
+  ruleKey: string;
+  topic: string;
+  severity: 'critical' | 'high' | 'medium' | 'info';
+  headline: string;
+  detail: string;
+  evidence: Record<string, unknown> | null;
+  status: 'active' | 'resolved' | 'dismissed';
+  firedAt: string | null;
+  lastSeenAt: string | null;
+  resolvedAt: string | null;
+  acknowledgedAt: string | null;
+  dismissedAt: string | null;
+  dismissedReason: string | null;
+  userFeedback: 'helpful' | 'false_alarm' | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** Meta the list endpoint returns alongside the paginated alerts. */
+export type AlertListMeta = {
+  total: number;
+  perPage: number;
+  currentPage: number;
+  lastPage: number;
+  /**
+   * Count of active alerts on the current farm, independent of the
+   * filter — drives the unread badge on the topbar bell.
+   */
+  activeCount: number;
 };
 
 export type FlockClimateReadingRow = {
