@@ -199,7 +199,7 @@ function CycleHead({
           )}
         </div>
         <div className="grid shrink-0 grid-cols-3 gap-3 sm:gap-4">
-          <MiniStat label="Days" value={formatCount(summary.daysElapsed)} sub="since placement" />
+          <MiniStat label="Days" value={formatCount(summary.daysElapsed)} sub="days old today" />
           <MiniStat label="Placed" value={formatCount(summary.birdsPlaced)} sub="birds at start" />
           <MiniStat label="Now" value={formatCount(summary.birdsNow)} sub="active birds" />
         </div>
