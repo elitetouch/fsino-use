@@ -7,6 +7,7 @@ import {
   MortalityCard, BirdsSoldCard, BirdWeightCard,
   EggCollectionCard, EggSizeCard, EggWeightCard, VaccinationCard,
 } from '@/components/app/cycle-cards';
+import { HarvestForecastCard, PeerBenchmarkCard } from '@/components/app/insight-cards';
 import { endpoints, type FlockDto } from '@/lib/api';
 
 /**
@@ -98,6 +99,18 @@ export function CycleCardsGrid({
           Learn-more pattern — no edit slot; vaccinations are managed
           via the wizard step rather than a card-level edit jump. */}
       <VaccinationCard data={cards?.vaccination} />
+      {/* Analytical cards. Each returns null internally when the
+          backend can't compute anything worth showing — HarvestForecast
+          is broiler-only (backend gates with state='not_applicable'
+          for layers), PeerBenchmark hides until the farmer has at
+          least one completed cycle of the same breed to compare
+          against. Both refuse to fabricate numbers. */}
+      {isVisible(cards?.harvestForecast) && (
+        <HarvestForecastCard data={cards?.harvestForecast} />
+      )}
+      {isVisible(cards?.peerBenchmark) && (
+        <PeerBenchmarkCard data={cards?.peerBenchmark} />
+      )}
     </div>
   );
 }

@@ -1070,7 +1070,96 @@ export type PenDashboardCards = {
   eggSize?: EggSizeCardDto;
   eggWeight?: EggWeightCardDto;
   vaccination?: VaccinationCardDto;
+  harvestForecast?: HarvestForecastCardDto;
+  peerBenchmark?: PeerBenchmarkCardDto;
 };
+
+/**
+ * Broiler-only harvest-day projection. The `status` on `summary`
+ * describes what the backend could / couldn't compute so the frontend
+ * chooses copy honestly:
+ *
+ *   projected           — enough weigh-ins to fit a growth rate; projectedMarketAgeDays is set.
+ *   ready               — birds already at/above target; harvest window is now.
+ *   no_growth           — flat or declining weight trend; refuses to project.
+ *   insufficient_history — only one weigh-in (or two same-day); needs more.
+ *   no_weight           — no weight readings yet.
+ *   no_target           — no breed market-weight target on file.
+ *   beyond_horizon      — projection would exceed 90 days; suppress the date but still surface the rate.
+ */
+export interface HarvestForecastCardDto extends Omit<DashboardCardBase, 'window'> {
+  key: 'harvestForecast';
+  summary: {
+    status: 'projected' | 'ready' | 'no_growth' | 'insufficient_history' | 'no_weight' | 'no_target' | 'beyond_horizon' | 'unavailable';
+    projectedMarketAgeDays: number | null;
+    daysRemaining: number | null;
+    growthRateGPerDay: number | null;
+    currentWeightG: number | null;
+    targetWeightG: number | null;
+    breedMarketAgeDays: number | null;
+    /** Days ahead (-) or behind (+) the breed's typical market age. Null when the breed lacks a market-age standard. */
+    deltaVsBreedDays: number | null;
+    note: string;
+  } | null;
+  window?: DashboardCardBase['window'];
+  series?: unknown;
+}
+
+/** One past cycle's snapshot at the same bird age the live flock is at now. Every field except birdAge/asOfDate is nullable so the UI never invents numbers. */
+export interface PeerSnapshotDto {
+  flockId: string;
+  flockName: string;
+  birdAge: number;
+  asOfDate: string;
+  cumulativeFeedKg: number | null;
+  avgWeightG: number | null;
+  latestWeightDate: string | null;
+  birdCount: number;
+  fcr: number | null;
+  mortalityPct: number | null;
+}
+
+/**
+ * Peer-benchmark card: compares this cycle against the farmer's own
+ * past cycles of the same breed at the same bird age. Every peer
+ * number is a real measurement from a real completed cycle. Comparisons
+ * only render for metrics where the current cycle AND at least one
+ * peer both have data.
+ */
+export interface PeerBenchmarkCardDto extends Omit<DashboardCardBase, 'window'> {
+  key: 'peerBenchmark';
+  summary: {
+    birdAge: number;
+    sampleSize: number;
+    peers: PeerSnapshotDto[];
+    current: {
+      fcr: number | null;
+      avgWeightG: number | null;
+      mortalityPct: number | null;
+    } | null;
+    peerMedian: {
+      fcr: number | null;
+      avgWeightG: number | null;
+      mortalityPct: number | null;
+      fcrPeers: number;
+      weightPeers: number;
+      mortalityPeers: number;
+    } | null;
+    comparisons: {
+      fcr: PeerComparisonDto | null;
+      weight: PeerComparisonDto | null;
+      mortality: PeerComparisonDto | null;
+    } | null;
+  } | null;
+  window?: DashboardCardBase['window'];
+  series?: unknown;
+}
+
+export interface PeerComparisonDto {
+  status: 'better' | 'in_line' | 'worse';
+  deltaPct: number;
+  note: string;
+}
 
 /** Common envelope every card extends. */
 export interface DashboardCardBase {
