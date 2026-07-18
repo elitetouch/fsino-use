@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { CyclePicker } from '@/components/app/cycle-picker';
 import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
 import { PenClimateWithHistory } from '@/components/app/pen-climate';
+import { CycleFinanceTab } from '@/components/app/cycle-finance-tab';
 import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
@@ -155,7 +156,7 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
           <PlaceholderTab title="Pen climate" body="This cycle isn't attached to a pen yet." />
         )
       ) : tab === 'finance' ? (
-        <PlaceholderTab title="Finance" body="Track feed cost, vaccine cost and projected margin for this cycle here." />
+        <CycleFinanceTab flockId={cycle.id} />
       ) : (
         <ResultsTab cycle={cycle} pen={pen} ordinal={ordinal} />
       )}

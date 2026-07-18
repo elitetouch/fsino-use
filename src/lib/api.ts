@@ -600,6 +600,15 @@ export const endpoints = {
       api.post(`/support/threads/${id}/read`, {}),
     ),
 
+  // ───────────── Cycle finance / P&L ─────────────
+  /**
+   * Per-cycle P&L summary — placement cost, expenses by category,
+   * revenue and margin. Backs the Finance tab on the cycle detail
+   * page. Read gated by flocks.view (same as viewing the cycle).
+   */
+  getFlockFinance: (flockId: string) =>
+    unwrap<FlockFinanceDto>(api.get(`/flocks/${flockId}/finance`)),
+
   // ───────────── Expenses (money-out ledger) ─────────────
   /**
    * Farm-scoped expense ledger. Read is gated by `expenses.view`,
@@ -1979,6 +1988,60 @@ export interface ExpenseDto {
   voidedByUserId: number | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/**
+ * Per-cycle P&L payload. Every "amount" field is in the flock's
+ * `primaryCurrency` (farm default, currently NGN). Rows logged in a
+ * different currency are surfaced in the `secondaryCurrencies` arrays
+ * so nothing gets silently converted or double-counted.
+ */
+export interface FlockFinanceDto {
+  flock: {
+    id: string;
+    name: string | null;
+    startDate: string | null;
+    placedBirds: number;
+    currentBirds: number;
+    productionType: string;
+  };
+  primaryCurrency: string;
+  placement: {
+    cost: number;
+    currency: string;
+    note: string;
+  };
+  expenses: {
+    primaryCurrency: string;
+    totalPrimary: number;
+    byCategory: Array<{ category: ExpenseCategory; amount: number; count: number }>;
+    secondaryCurrencies: Array<{ currency: string; amount: number }>;
+    entryCount: number;
+  };
+  inlineCosts: {
+    primaryCurrency: string;
+    totalPrimary: number;
+    byEvent: Array<{ eventType: string; currency: string; amount: number; count: number }>;
+    note: string;
+  };
+  revenue: {
+    primaryCurrency: string;
+    totalPrimary: number;
+    salesCount: number;
+    birdsSold: number;
+    secondaryCurrencies: Array<{ currency: string; amount: number }>;
+  };
+  summary: {
+    currency: string;
+    placementCost: number;
+    operatingExpenses: number;
+    inlineDailyRecordCosts: number;
+    totalCost: number;
+    revenue: number;
+    margin: number;
+    note: string;
+  };
+  recentExpenses: ExpenseDto[];
 }
 
 export type ExpenseListMeta = {
