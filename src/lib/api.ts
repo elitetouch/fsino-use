@@ -1143,7 +1143,41 @@ export type PenDashboardCards = {
   vaccination?: VaccinationCardDto;
   harvestForecast?: HarvestForecastCardDto;
   peerBenchmark?: PeerBenchmarkCardDto;
+  costProjection?: CostProjectionCardDto;
 };
+
+/**
+ * Cost projection — the finance twin of the peer/harvest cards.
+ * Backend statuses map 1:1 to display copy so the UI never invents
+ * numbers when the projector refused:
+ *
+ *   projected       — burn-per-day extrapolated to a cycle total.
+ *   burn_only       — layers (no fixed market age); burn rate only.
+ *   cycle_end       — past the breed's target age; show current as final.
+ *   too_early       — < 3 days in; wait for the burn to stabilise.
+ *   mixed_currency  — ledger mixes currencies; totals per-currency, no single sum.
+ *   no_data         — no expenses AND no placement cost.
+ */
+export interface CostProjectionCardDto extends Omit<DashboardCardBase, 'window'> {
+  key: 'costProjection';
+  summary: {
+    status: 'projected' | 'burn_only' | 'cycle_end' | 'too_early' | 'mixed_currency' | 'no_data';
+    totalsByCurrency: Array<{ currency: string; spent: number }>;
+    /** Set only on single-currency flocks. Null when mixed. */
+    primaryCurrency: string | null;
+    totalSpent: number | null;
+    daysElapsed: number;
+    daysRemaining: number | null;
+    burnPerDay: number | null;
+    projectedTotal: number | null;
+    projectedPerBird: number | null;
+    currentPerBird: number | null;
+    expectedCycleDays: number | null;
+    note: string;
+  } | null;
+  window?: DashboardCardBase['window'];
+  series?: unknown;
+}
 
 /**
  * Broiler-only harvest-day projection. The `status` on `summary`

@@ -8,8 +8,9 @@
  * explicitly instead of showing a zero or a plausible-looking guess.
  */
 
-import { CalendarClock, Users, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { CalendarClock, Users, TrendingUp, TrendingDown, Minus, Receipt } from 'lucide-react';
 import type {
+  CostProjectionCardDto,
   HarvestForecastCardDto,
   PeerBenchmarkCardDto,
   PeerComparisonDto,
@@ -220,4 +221,114 @@ function ComparisonRow({
       )}
     </div>
   );
+}
+
+/* ──────────────────────── Cost projection ───────────────────────────── */
+
+/**
+ * Cost projection — sum of ledger + placement cost with a straight-
+ * line burn-per-day projection to end-of-cycle. Every branch here
+ * mirrors a specific `status` from the backend projector; we never
+ * invent a number when the projector said it couldn't compute one.
+ */
+export function CostProjectionCard({ data }: { data?: CostProjectionCardDto | null }) {
+  if (!data || !data.summary) return null;
+  const s = data.summary;
+
+  return (
+    <article className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
+            <Receipt className="h-3.5 w-3.5" strokeWidth={2.2} />
+          </span>
+          <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+            Cost projection
+          </p>
+        </div>
+        <CostStatusPill status={s.status} />
+      </div>
+
+      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+        {s.note || 'No projection available.'}
+      </p>
+
+      {/* Per-currency totals — always honest, always shown when the
+          ledger has anything in it (even if we can't project a total). */}
+      {s.totalsByCurrency.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {s.totalsByCurrency.map((t) => (
+            <span
+              key={t.currency}
+              className="rounded-md bg-[var(--color-brand-accent)] px-2.5 py-1 text-[11.5px] font-bold text-[var(--color-brand-primary-deep)]"
+            >
+              {t.currency} {formatMoney(t.spent)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Stats grid — only render tiles for figures the backend
+          actually produced. `s.projectedTotal === null` means the
+          projector refused, so the tile stays gone rather than
+          showing "—". */}
+      {(s.burnPerDay !== null || s.projectedTotal !== null || s.currentPerBird !== null) && s.primaryCurrency && (
+        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+          <CostStat
+            label="Per day"
+            value={s.burnPerDay !== null ? `${s.primaryCurrency} ${formatMoney(s.burnPerDay)}` : '—'}
+          />
+          <CostStat
+            label="Per bird now"
+            value={s.currentPerBird !== null ? `${s.primaryCurrency} ${formatMoney(s.currentPerBird)}` : '—'}
+          />
+          <CostStat
+            label="Per bird end"
+            value={s.projectedPerBird !== null ? `${s.primaryCurrency} ${formatMoney(s.projectedPerBird)}` : '—'}
+          />
+        </div>
+      )}
+
+      {s.projectedTotal !== null && s.primaryCurrency && s.expectedCycleDays !== null && (
+        <p className="mt-3 text-[11px] text-[var(--color-brand-muted)]">
+          Projected total: <strong className="text-[var(--color-brand-fg)]">
+            {s.primaryCurrency} {formatMoney(s.projectedTotal)}
+          </strong> by day {s.expectedCycleDays}
+        </p>
+      )}
+    </article>
+  );
+}
+
+function CostStatusPill({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    projected: { label: 'On track', cls: 'bg-[var(--color-brand-fg)] text-white' },
+    burn_only: { label: 'Layer — no target', cls: 'bg-[var(--color-brand-fg)] text-white' },
+    cycle_end: { label: 'End of cycle', cls: 'bg-emerald-100 text-emerald-800' },
+    too_early: { label: 'Too early', cls: 'bg-amber-50 text-amber-800' },
+    mixed_currency: { label: 'Mixed currency', cls: 'bg-amber-50 text-amber-800' },
+    no_data: { label: 'No data', cls: 'bg-[var(--color-brand-surface-soft)] text-[var(--color-brand-muted)]' },
+  };
+  const conf = map[status] ?? map.no_data;
+  return (
+    <span className={cn('shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold', conf.cls)}>
+      {conf.label}
+    </span>
+  );
+}
+
+function CostStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-[var(--color-brand-surface-soft)]/60 px-2 py-1.5">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
+      <p className="mt-0.5 text-[12px] font-bold text-[var(--color-brand-fg)]">{value}</p>
+    </div>
+  );
+}
+
+function formatMoney(amount: number): string {
+  return new Intl.NumberFormat('en-NG', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }

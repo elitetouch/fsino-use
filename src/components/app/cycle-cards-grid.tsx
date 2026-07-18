@@ -7,7 +7,7 @@ import {
   MortalityCard, BirdsSoldCard, BirdWeightCard,
   EggCollectionCard, EggSizeCard, EggWeightCard, VaccinationCard,
 } from '@/components/app/cycle-cards';
-import { HarvestForecastCard, PeerBenchmarkCard } from '@/components/app/insight-cards';
+import { CostProjectionCard, HarvestForecastCard, PeerBenchmarkCard } from '@/components/app/insight-cards';
 import { endpoints, type FlockDto } from '@/lib/api';
 
 /**
@@ -110,6 +110,13 @@ export function CycleCardsGrid({
       )}
       {isVisible(cards?.peerBenchmark) && (
         <PeerBenchmarkCard data={cards?.peerBenchmark} />
+      )}
+      {/* Cost projection renders as soon as any expense is logged.
+          Backend returns state='empty' when the ledger is empty for
+          this flock — isVisible() lets that through so the card can
+          render its own "log some costs" empty state. */}
+      {cards?.costProjection && (
+        <CostProjectionCard data={cards?.costProjection} />
       )}
     </div>
   );
