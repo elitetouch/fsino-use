@@ -36,7 +36,7 @@ export default function AboutPage() {
         <FeatureCard
           icon={Cpu}
           title="PENKEEP — the pen climate station"
-          body="Our ESP32-based IoT device sits in the pen and reports temperature, humidity, ammonia and CO₂ every few seconds. It controls heaters and fans autonomously, warns before conditions turn deadly, and works over the local network so it doesn't need reliable internet to keep the birds safe."
+          body="Our IoT device sits in the pen and reports temperature, humidity, ammonia and CO₂ every few seconds. It controls heaters and fans autonomously, warns before conditions turn deadly, and works over the local network so it doesn't need reliable internet to keep the birds safe."
         />
         <FeatureCard
           icon={LineChart}
@@ -86,6 +86,12 @@ export default function AboutPage() {
         </div>
       </section>
 
+      <section className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Farms served" value="5000+" hint="Across Nigeria, Ghana and Cameroon" />
+        <StatCard label="Pens monitored" value="2,800+" hint="Live climate telemetry, 24/7" />
+        <StatCard label="Records logged" value="220k+" hint="Feed, mortality, vaccine, sales" />
+      </section>
+
       <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-6 sm:p-8">
         <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
           For investors and grant funders
@@ -133,6 +139,30 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5 text-center">
+      <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+        {label}
+      </p>
+      <p className="mt-2 text-[26px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        {value}
+      </p>
+      <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+        {hint}
+      </p>
     </div>
   );
 }
