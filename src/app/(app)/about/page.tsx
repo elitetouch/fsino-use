@@ -133,7 +133,7 @@ export default function AboutPage() {
               FS Innovation is registered in Nigeria
             </p>
             <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
-              Built in Lagos and Enugu. Serving farmers from the Sahel to the
+              Built in Ogun and Lagos. Serving farmers from the Sahel to the
               Guinea coast.
             </p>
           </div>
