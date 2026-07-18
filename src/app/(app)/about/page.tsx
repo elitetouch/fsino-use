@@ -109,7 +109,7 @@ export default function AboutPage() {
           Every cycle you log teaches the system a little more. Every alert
           you mark helpful or false alarm makes it smarter. The longer a
           farm uses us, the more accurate the advice becomes for that
-          farm's breed, climate and way of working. That advantage grows
+          farm&apos;s breed, climate and way of working. That advantage grows
           every year, and it would take a new competitor years to catch up.
         </p>
         <p className="mt-4 text-[13px] italic text-[var(--color-brand-muted)]">
