@@ -566,6 +566,43 @@ export const endpoints = {
       api.patch(`/alerts/${id}/feedback`, { feedback }),
     ),
 
+  // ───────────── Expenses (money-out ledger) ─────────────
+  /**
+   * Farm-scoped expense ledger. Read is gated by `expenses.view`,
+   * writes by `expenses.record`. Owner + Manager bypass both.
+   *
+   * A staff member invited with ONLY `expenses.record` (and `.view`)
+   * is effectively the farm's "finance" account — they can log costs
+   * without touching operational data.
+   */
+  listExpenses: (params?: {
+    flock_id?: string;
+    category?: ExpenseCategory;
+    from?: string;
+    to?: string;
+    include_voided?: boolean;
+    per_page?: number;
+  }) =>
+    unwrap<{ expenses: ExpenseDto[]; meta: ExpenseListMeta }>(
+      api.get('/expenses', { params }),
+    ),
+
+  createExpense: (payload: {
+    flock_id: string;
+    category: ExpenseCategory;
+    amount: number;
+    currency: string;
+    expense_date: string;
+    vendor?: string;
+    description?: string;
+  }) =>
+    unwrap<{ expense: ExpenseDto }>(api.post('/expenses', payload)),
+
+  voidExpense: (id: string, reason: string) =>
+    unwrap<{ expense: ExpenseDto }>(
+      api.delete(`/expenses/${id}`, { data: { reason } }),
+    ),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
@@ -1806,6 +1843,50 @@ export type AlertListMeta = {
    * filter — drives the unread badge on the topbar bell.
    */
   activeCount: number;
+};
+
+/**
+ * Expense categories — must match `Expense::categories()` server-side.
+ * Adding a new one requires a paired backend change; the store request
+ * validates against the same list and will 422 otherwise.
+ */
+export type ExpenseCategory =
+  | 'feed' | 'vaccine' | 'treatment' | 'fuel' | 'utilities'
+  | 'repairs' | 'wages' | 'equipment' | 'transport' | 'other';
+
+export interface ExpenseDto {
+  id: string;
+  farmId: string;
+  flockId: string;
+  category: ExpenseCategory;
+  amount: number;
+  currency: string;
+  expenseDate: string | null;
+  vendor: string | null;
+  description: string | null;
+  receiptUrl: string | null;
+  createdByUserId: number | null;
+  createdByName?: string | null;
+  flockName?: string | null;
+  voidedAt: string | null;
+  voidReason: string | null;
+  voidedByUserId: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type ExpenseListMeta = {
+  total: number;
+  perPage: number;
+  currentPage: number;
+  lastPage: number;
+  /**
+   * Sum of the CURRENT PAGE's expenses per currency. A farm mixing
+   * currencies (rare — imported drugs in USD alongside NGN feed) will
+   * see two rows here; the frontend renders them side-by-side rather
+   * than pretending to add them.
+   */
+  pageTotals: Array<{ currency: string; amount: number }>;
 };
 
 export type FlockClimateReadingRow = {

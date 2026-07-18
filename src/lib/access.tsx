@@ -42,6 +42,7 @@ export type PermissionKey =
   | 'pens.view' | 'pens.create' | 'pens.update' | 'pens.archive'
   | 'flocks.view' | 'flocks.create' | 'flocks.renew' | 'flocks.archive'
   | 'flocks.records.create' | 'flocks.records.update'
+  | 'expenses.view' | 'expenses.record'
   | 'settings.view' | 'settings.update' | 'preferences.update'
   | 'staff_manage.view' | 'staff_manage.create' | 'staff_manage.update' | 'staff_manage.delete'
   | 'billing.manage';
@@ -108,6 +109,11 @@ export const ROUTE_ACCESS: Array<{ path: string; rule: AccessRule }> = [
   { path: '/settings/farm/notifications', rule: { perm: 'settings.view' } },
   { path: '/wallet',       rule: { openToMembers: true } },        // anyone can see the balance
   { path: '/subscription', rule: { perm: 'billing.manage' } },     // only billing-managers see purchases
+
+  // Money-out ledger. Read requires expenses.view; the write button
+  // inside the page is separately gated by expenses.record so a
+  // read-only auditor can browse without a stray "Add expense" CTA.
+  { path: '/expenses',     rule: { perm: 'expenses.view' } },
 
   // Storefront / static
   { path: '/shop',         rule: { openToMembers: true } },
