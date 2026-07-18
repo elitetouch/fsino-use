@@ -14,7 +14,7 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="About Farm Support Innovation"
         title="An operating system for African smallholder poultry"
-        description="Real-time pen climate, breed-standard benchmarks, and bank-grade reporting — for the farmers who feed a continent."
+        description="Real-time pen climate, breed-standard benchmarks, and bank-grade reporting for the farmers who feed a continent."
       />
 
       <section className="rounded-2xl border border-[var(--color-brand-border)] bg-gradient-to-br from-[var(--color-brand-accent)] to-white p-6 sm:p-8">
@@ -23,7 +23,7 @@ export default function AboutPage() {
           poultry farmers running flocks of five hundred to twenty thousand
           birds. They compete with commercial operations that use continuous
           climate monitoring, breed-standard benchmarking, structured
-          record-keeping and bank-grade reporting — tools priced for
+          record-keeping and bank-grade reporting. Tools priced for
           multi-million-dollar operations, not the family compound in Enugu
           or the co-op in Kaduna.
         </p>
@@ -35,23 +35,23 @@ export default function AboutPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <FeatureCard
           icon={Cpu}
-          title="PENKEEP — the pen climate station"
+          title="PENKEEP, the pen climate station"
           body="Our IoT device sits in the pen and reports temperature, humidity, ammonia and CO₂ every few seconds. It controls heaters and fans autonomously, warns before conditions turn deadly, and works over the local network so it doesn't need reliable internet to keep the birds safe."
         />
         <FeatureCard
           icon={LineChart}
-          title="FS Manager — the record-keeping brain"
+          title="FS Manager, the record-keeping brain"
           body="This app. Turns years of paper record-keeping into structured data that computes feed conversion, mortality trends, vaccination compliance and profit-per-cycle. Reports export as bank-ready PDFs. Alerts fire when the data drifts from Aviagen, Cobb or Hy-Line standards."
         />
         <FeatureCard
           icon={Thermometer}
-          title="Aviagen-grade benchmarks — for every farm"
-          body="We encode the same performance objectives commercial farms buy from breeders — Ross 308, Cobb 500, Hy-Line Brown, Lohmann, ISA. Every metric on the dashboard is scored against the breed target for the exact age of your birds, so 'good' means good vs the industry standard, not vs guesswork."
+          title="Aviagen-grade benchmarks for every farm"
+          body="We encode the same performance objectives commercial farms buy from breeders: Ross 308, Cobb 500, Hy-Line Brown, Lohmann, ISA. Every metric on the dashboard is scored against the breed target for the exact age of your birds, so 'good' means good vs the industry standard, not vs guesswork."
         />
         <FeatureCard
           icon={ShieldCheck}
           title="Bank-grade reporting"
-          body="Cycle reports include feed used, mortality reconciled to bird counts, climate compliance, vaccine adherence, cost, revenue and margin — the exact shape a bank or co-op loan officer needs. Farmers walk into loan meetings with a PDF instead of a notebook."
+          body="Cycle reports include feed used, mortality reconciled to bird counts, climate compliance, vaccine adherence, cost, revenue and margin. That is the exact shape a bank or co-op loan officer needs. Farmers walk into loan meetings with a PDF instead of a notebook."
         />
       </div>
 
@@ -71,7 +71,7 @@ export default function AboutPage() {
               </li>
               <li>
                 <strong className="text-[var(--color-brand-fg)]">Cost projection.</strong>{' '}
-                Project the total spend and expected margin for the current cycle in real time — so a farmer knows on day 15 whether the batch will break even.
+                Project the total spend and expected margin for the current cycle in real time, so a farmer knows on day 15 whether the batch will break even.
               </li>
               <li>
                 <strong className="text-[var(--color-brand-fg)]">Harvest-day recommendation.</strong>{' '}
@@ -103,16 +103,16 @@ export default function AboutPage() {
           Sub-Saharan Africa raises over 2.4 billion birds a year, the majority
           by farmers with fewer than 20,000 head. Nothing built for that scale
           exists at that price point. We ship both the sensor that sees inside
-          the pen and the software that turns the reading into a decision —
-          a moat neither a pure-hardware nor a pure-software competitor can
-          match without rebuilding both halves.
+          the pen and the software that turns the reading into a decision.
+          That is a moat neither a pure-hardware nor a pure-software competitor
+          can match without rebuilding both halves.
         </p>
         <p className="mt-3 text-[14px] leading-relaxed text-[var(--color-brand-fg-soft)]">
           Every logged cycle becomes labelled training data for the next
           model. Every alert marked helpful or false-alarm sharpens the
           engine. The longer a farm uses us, the more accurate the guidance
-          becomes for their breed, climate and management style — a data
-          compounding effect that would take a new entrant years to replicate.
+          becomes for their breed, climate and management style. That data
+          compounding effect would take a new entrant years to replicate.
         </p>
         <p className="mt-4 text-[13px] italic text-[var(--color-brand-muted)]">
           Talk to us:{' '}
