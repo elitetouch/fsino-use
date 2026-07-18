@@ -27,7 +27,7 @@ export default function AboutPage() {
           multi-million-dollar operations, not the family compound in Nigeria.
         </p>
         <p className="mt-3 text-[15px] leading-relaxed text-[var(--color-brand-fg)]">
-          <strong>We build those tools for the ninety-nine percent.</strong>
+          <strong>We build those tools for the 90%.</strong>
         </p>
       </section>
 
