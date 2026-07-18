@@ -566,6 +566,40 @@ export const endpoints = {
       api.patch(`/alerts/${id}/feedback`, { feedback }),
     ),
 
+  // ───────────── Support threads (tenant ↔ admin) ─────────────
+  /**
+   * Tenant-facing support inbox. Farm users open a thread, admins
+   * reply from the super-admin portal. `is_internal` admin notes are
+   * filtered server-side so tenant users never see them.
+   */
+  listSupportThreads: (params?: { status?: string; per_page?: number }) =>
+    unwrap<{ threads: SupportThreadDto[]; meta: SupportThreadListMeta }>(
+      api.get('/support/threads', { params }),
+    ),
+
+  createSupportThread: (payload: {
+    subject: string;
+    body: string;
+    farm_id?: string | null;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+  }) =>
+    unwrap<{ thread: SupportThreadDto }>(api.post('/support/threads', payload)),
+
+  getSupportThread: (id: string) =>
+    unwrap<{ thread: SupportThreadDto; messages: SupportMessageDto[] }>(
+      api.get(`/support/threads/${id}`),
+    ),
+
+  postSupportMessage: (id: string, body: string) =>
+    unwrap<{ message: SupportMessageDto }>(
+      api.post(`/support/threads/${id}/messages`, { body }),
+    ),
+
+  markSupportThreadRead: (id: string) =>
+    unwrap<{ threadId: string }>(
+      api.post(`/support/threads/${id}/read`, {}),
+    ),
+
   // ───────────── Expenses (money-out ledger) ─────────────
   /**
    * Farm-scoped expense ledger. Read is gated by `expenses.view`,
@@ -1109,7 +1143,41 @@ export type PenDashboardCards = {
   vaccination?: VaccinationCardDto;
   harvestForecast?: HarvestForecastCardDto;
   peerBenchmark?: PeerBenchmarkCardDto;
+  costProjection?: CostProjectionCardDto;
 };
+
+/**
+ * Cost projection — the finance twin of the peer/harvest cards.
+ * Backend statuses map 1:1 to display copy so the UI never invents
+ * numbers when the projector refused:
+ *
+ *   projected       — burn-per-day extrapolated to a cycle total.
+ *   burn_only       — layers (no fixed market age); burn rate only.
+ *   cycle_end       — past the breed's target age; show current as final.
+ *   too_early       — < 3 days in; wait for the burn to stabilise.
+ *   mixed_currency  — ledger mixes currencies; totals per-currency, no single sum.
+ *   no_data         — no expenses AND no placement cost.
+ */
+export interface CostProjectionCardDto extends Omit<DashboardCardBase, 'window'> {
+  key: 'costProjection';
+  summary: {
+    status: 'projected' | 'burn_only' | 'cycle_end' | 'too_early' | 'mixed_currency' | 'no_data';
+    totalsByCurrency: Array<{ currency: string; spent: number }>;
+    /** Set only on single-currency flocks. Null when mixed. */
+    primaryCurrency: string | null;
+    totalSpent: number | null;
+    daysElapsed: number;
+    daysRemaining: number | null;
+    burnPerDay: number | null;
+    projectedTotal: number | null;
+    projectedPerBird: number | null;
+    currentPerBird: number | null;
+    expectedCycleDays: number | null;
+    note: string;
+  } | null;
+  window?: DashboardCardBase['window'];
+  series?: unknown;
+}
 
 /**
  * Broiler-only harvest-day projection. The `status` on `summary`
@@ -1843,6 +1911,44 @@ export type AlertListMeta = {
    * filter — drives the unread badge on the topbar bell.
    */
   activeCount: number;
+};
+
+export type SupportThreadStatus = 'open' | 'pending' | 'resolved' | 'closed';
+
+export interface SupportThreadDto {
+  id: string;
+  subject: string;
+  subjectType: string;
+  subjectId: string | null;
+  openedBy: { type: string; id: string };
+  farmId: string | null;
+  assignedAdminUserId: number | null;
+  status: SupportThreadStatus;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  tags: string[] | null;
+  lastMessageAt: string | null;
+  resolvedAt: string | null;
+  closedAt: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  messagesCount?: number;
+}
+
+export interface SupportMessageDto {
+  id: string;
+  threadId: string;
+  author: { type: string; id: string };
+  body: string;
+  isInternal: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type SupportThreadListMeta = {
+  currentPage: number;
+  perPage: number;
+  total: number;
+  lastPage: number;
 };
 
 /**

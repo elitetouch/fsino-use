@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, ShoppingBag, Info, Phone, MessageCircle, ChevronRight, Wallet,
+  CreditCard, Info, Phone, MessageCircle, ChevronRight, Wallet,
   Receipt,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
@@ -44,17 +44,21 @@ const GROUPS: Group[] = [
       { href: '/subscription',  label: 'Subscription',   icon: CreditCard },
     ],
   },
-  {
-    heading: 'Shop',
-    items: [
-      { href: '/shop',  label: 'Pen accessories', icon: ShoppingBag },
-    ],
-  },
+  // Shop / Pen accessories — temporarily hidden until the storefront
+  // is ready to fulfil orders. Route + page are still live so anyone
+  // deep-linking there gets the same UI; only the sidebar entry is
+  // suppressed so we don't advertise something we can't yet ship.
+  // {
+  //   heading: 'Shop',
+  //   items: [
+  //     { href: '/shop',  label: 'Pen accessories', icon: ShoppingBag },
+  //   ],
+  // },
   {
     heading: 'Customer support',
     items: [
       { href: '/about',     label: 'About this app',    icon: Info },
-      { href: '/contact',   label: 'Call us',           icon: Phone },
+      { href: '/contact',   label: 'Contact us',        icon: Phone },
       { href: '/community', label: 'WhatsApp community', icon: MessageCircle },
     ],
   },

@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, ShoppingBag, Info, Phone, MessageCircle, Receipt,
+  CreditCard, Info, Phone, MessageCircle, Receipt,
 } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 import { MenuList } from '@/components/app/menu-list';
@@ -46,18 +46,14 @@ export default function MenuPage() {
               { href: '/subscription',  label: 'Subscription',    icon: CreditCard, hint: 'Plan and billing' },
             ],
           },
-          {
-            heading: 'Shop',
-            items: [
-              { href: '/shop',  label: 'Pen accessories', icon: ShoppingBag, hint: 'Feeders, drinkers, brooders' },
-            ],
-          },
+          // Shop / Pen accessories — hidden until the storefront can
+          // fulfil orders. Route + page kept live for direct links.
           {
             heading: 'Customer support',
             items: [
-              { href: '/about',     label: 'About this app',    icon: Info,           hint: 'Version, terms and privacy' },
-              { href: '/contact',   label: 'Call us',           icon: Phone,          hint: 'Speak to a real human' },
-              { href: '/community', label: 'WhatsApp community', icon: MessageCircle, hint: 'Join other farmers',         external: true },
+              { href: '/about',     label: 'About this app',    icon: Info,           hint: 'What we\'re building and why' },
+              { href: '/contact',   label: 'Contact us',        icon: Phone,          hint: 'Call, WhatsApp or message support' },
+              { href: '/community', label: 'WhatsApp community', icon: MessageCircle, hint: 'Join other African farmers',    external: true },
             ],
           },
         ]}
