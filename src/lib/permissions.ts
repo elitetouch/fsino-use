@@ -62,6 +62,14 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    heading: 'Expenses (money-out ledger)',
+    description: 'Costs like feed purchases, vaccines, drugs, fuel, repairs and wages. Grant "Record expenses" alone to make this person a finance-only staff.',
+    items: [
+      { key: 'expenses.view',   label: 'See expenses',    hint: 'Read the expense ledger and totals.' },
+      { key: 'expenses.record', label: 'Record expenses', hint: 'Log new expenses and void wrong entries with a reason.' },
+    ],
+  },
+  {
     heading: 'Settings & preferences',
     description: 'Farm-wide configuration and personal preferences.',
     items: [

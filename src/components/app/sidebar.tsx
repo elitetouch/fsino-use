@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
   CreditCard, ShoppingBag, Info, Phone, MessageCircle, ChevronRight, Wallet,
+  Receipt,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
@@ -39,6 +40,7 @@ const GROUPS: Group[] = [
       { href: '/users',         label: 'Users',          icon: Users2 },
       { href: '/settings',      label: 'Settings',       icon: Settings },
       { href: '/wallet',        label: 'Wallet',          icon: Wallet },
+      { href: '/expenses',      label: 'Expenses',        icon: Receipt },
       { href: '/subscription',  label: 'Subscription',   icon: CreditCard },
     ],
   },

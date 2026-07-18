@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, ShoppingBag, Info, Phone, MessageCircle,
+  CreditCard, ShoppingBag, Info, Phone, MessageCircle, Receipt,
 } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 import { MenuList } from '@/components/app/menu-list';
@@ -42,6 +42,7 @@ export default function MenuPage() {
               { href: '/pens-flocks',   label: 'Pens and flocks', icon: Bird,       hint: 'Manage pens and active flocks' },
               { href: '/users',         label: 'Users',           icon: Users2,     hint: 'Invite staff and managers' },
               { href: '/settings',      label: 'Settings',        icon: Settings,   hint: 'Preferences, language and units' },
+              { href: '/expenses',      label: 'Expenses',        icon: Receipt,    hint: 'Log feed, drugs, fuel and other costs' },
               { href: '/subscription',  label: 'Subscription',    icon: CreditCard, hint: 'Plan and billing' },
             ],
           },
