@@ -94,7 +94,7 @@ export default function AboutPage() {
 
       <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-6 sm:p-8">
         <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
-          For investors and grant funders
+          Building for a continent
         </p>
         <h2 className="mt-2 text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)]">
           A hardware + software moat aimed at a continent-scale market
