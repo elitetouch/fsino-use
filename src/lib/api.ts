@@ -566,6 +566,40 @@ export const endpoints = {
       api.patch(`/alerts/${id}/feedback`, { feedback }),
     ),
 
+  // ───────────── Support threads (tenant ↔ admin) ─────────────
+  /**
+   * Tenant-facing support inbox. Farm users open a thread, admins
+   * reply from the super-admin portal. `is_internal` admin notes are
+   * filtered server-side so tenant users never see them.
+   */
+  listSupportThreads: (params?: { status?: string; per_page?: number }) =>
+    unwrap<{ threads: SupportThreadDto[]; meta: SupportThreadListMeta }>(
+      api.get('/support/threads', { params }),
+    ),
+
+  createSupportThread: (payload: {
+    subject: string;
+    body: string;
+    farm_id?: string | null;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+  }) =>
+    unwrap<{ thread: SupportThreadDto }>(api.post('/support/threads', payload)),
+
+  getSupportThread: (id: string) =>
+    unwrap<{ thread: SupportThreadDto; messages: SupportMessageDto[] }>(
+      api.get(`/support/threads/${id}`),
+    ),
+
+  postSupportMessage: (id: string, body: string) =>
+    unwrap<{ message: SupportMessageDto }>(
+      api.post(`/support/threads/${id}/messages`, { body }),
+    ),
+
+  markSupportThreadRead: (id: string) =>
+    unwrap<{ threadId: string }>(
+      api.post(`/support/threads/${id}/read`, {}),
+    ),
+
   // ───────────── Expenses (money-out ledger) ─────────────
   /**
    * Farm-scoped expense ledger. Read is gated by `expenses.view`,
@@ -1843,6 +1877,44 @@ export type AlertListMeta = {
    * filter — drives the unread badge on the topbar bell.
    */
   activeCount: number;
+};
+
+export type SupportThreadStatus = 'open' | 'pending' | 'resolved' | 'closed';
+
+export interface SupportThreadDto {
+  id: string;
+  subject: string;
+  subjectType: string;
+  subjectId: string | null;
+  openedBy: { type: string; id: string };
+  farmId: string | null;
+  assignedAdminUserId: number | null;
+  status: SupportThreadStatus;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  tags: string[] | null;
+  lastMessageAt: string | null;
+  resolvedAt: string | null;
+  closedAt: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  messagesCount?: number;
+}
+
+export interface SupportMessageDto {
+  id: string;
+  threadId: string;
+  author: { type: string; id: string };
+  body: string;
+  isInternal: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type SupportThreadListMeta = {
+  currentPage: number;
+  perPage: number;
+  total: number;
+  lastPage: number;
 };
 
 /**
