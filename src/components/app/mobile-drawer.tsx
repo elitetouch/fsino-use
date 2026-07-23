@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, ShoppingBag, Info, Phone, MessageCircle, ChevronRight, X, Wallet,
+  CreditCard, Info, Phone, MessageCircle, ChevronRight, X, Wallet, Receipt,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
@@ -32,20 +32,17 @@ const GROUPS: Array<{
       { href: '/users',         label: 'Users',           icon: Users2 },
       { href: '/settings',      label: 'Settings',        icon: Settings },
       { href: '/wallet',        label: 'Wallet',           icon: Wallet },
+      { href: '/expenses',      label: 'Expenses',        icon: Receipt },
       { href: '/subscription',  label: 'Subscription',    icon: CreditCard },
     ],
   },
-  {
-    heading: 'Shop',
-    items: [
-      { href: '/shop',  label: 'Pen accessories', icon: ShoppingBag },
-    ],
-  },
+  // Shop / Pen accessories — hidden until the storefront can fulfil
+  // orders. Route + page kept live for direct links.
   {
     heading: 'Customer support',
     items: [
       { href: '/about',     label: 'About this app',     icon: Info },
-      { href: '/contact',   label: 'Call us',            icon: Phone },
+      { href: '/contact',   label: 'Contact us',         icon: Phone },
       { href: '/community', label: 'WhatsApp community', icon: MessageCircle },
     ],
   },
