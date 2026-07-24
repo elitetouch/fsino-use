@@ -1722,6 +1722,27 @@ export type FlockReportSummary = {
     soldCount: number;
     feedKg: number;
     weightGainKg: number;
+    /** Per-bird gain in grams (latest weigh-in minus earliest). Null when
+        only one weigh-in exists or no gain is measurable. */
+    gainPerBirdG?: number | null;
+    /** Latest per-bird weight in grams — used by the growth-verdict rating. */
+    latestAvgBirdWeightG?: number | null;
+    /** Breed-benchmark rating for the latest bird weight vs the target for
+        the flock's actual age. Same shape the dashboard WeightCard uses. */
+    weightBenchmark?: {
+      rating: 'excellent' | 'good' | 'fair' | 'poor' | 'unavailable';
+      ratingLabel: string;
+      deltaPct: number | null;
+      actualWeightG: number | null;
+      targetWeightG: number | null;
+      ageDays: number;
+      breed: { id: string; name: string; slug: string; company: string | null } | null;
+      benchmark: {
+        stageLabel: string | null;
+        ageWindow: { min: number; max: number };
+        source: string | null;
+      } | null;
+    } | null;
     fcr: number | null;
     eggsCollected: number;
     revenue: number;
