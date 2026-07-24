@@ -1803,6 +1803,12 @@ export type FlockReportSummary = {
             }
           | {
               available: true;
+              /** Present when the backend is on the tri-state coverage
+                  gate. Older backends omit these fields. */
+              coveragePct?: number;
+              /** True when 40% ≤ coverage < 60%. Frontend renders a
+                  "may shift" badge but still shows the verdict. */
+              tentative?: boolean;
               cycleAvgC: number | null;
               dayCounts: {
                 excellent?: number;
