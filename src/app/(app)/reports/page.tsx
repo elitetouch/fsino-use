@@ -573,10 +573,23 @@ function TemperatureAdvisoryBlock({
             </p>
           )}
         </div>
-        <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider', verdictClass)}>
-          Verdict: {advisory.verdict}
-        </span>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <span className={cn('rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider', verdictClass)}>
+            Verdict: {advisory.verdict}
+          </span>
+          {advisory.tentative === true && (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-amber-800">
+              Tentative · {Math.round(advisory.coveragePct ?? 0)}% coverage
+            </span>
+          )}
+        </div>
       </div>
+
+      {advisory.tentative === true && (
+        <div className="mt-2 rounded-lg bg-amber-50/60 px-3 py-2 text-[11.5px] leading-relaxed text-amber-900">
+          Coverage was thin this cycle. The verdict may shift as more readings come in — treat this as guidance, not a final grade.
+        </div>
+      )}
 
       {/* Day-count histogram — one row per rating bucket. Only renders
           rows whose count > 0 so the block stays compact. */}
