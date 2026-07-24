@@ -1760,19 +1760,27 @@ export type FlockReportSummary = {
         /** 0-100: how full the reading stream was vs the theoretical max. */
         coveragePct: number;
         confidence: 'high' | 'medium' | 'low';
+        /**
+         * True when coverage is high enough to publish breach counts
+         * honestly. Below the threshold every derived field
+         * (zoneAverages / zoneBreachHours / airQualityBreachHours /
+         * humidityAverage / humidityBreachHours) is null, which the
+         * UI renders as "—" rather than a misleading "0 h".
+         */
+        trustworthy?: boolean;
         zoneAverages: {
           left: number | null;
           middle: number | null;
           right: number | null;
         };
         zoneBreachHours: {
-          left: { low: number; high: number };
-          middle: { low: number; high: number };
-          right: { low: number; high: number };
+          left: { low: number | null; high: number | null };
+          middle: { low: number | null; high: number | null };
+          right: { low: number | null; high: number | null };
         };
-        airQualityBreachHours: { nh3: number; co2: number };
+        airQualityBreachHours: { nh3: number | null; co2: number | null };
         humidityAverage: number | null;
-        humidityBreachHours: { low: number; high: number };
+        humidityBreachHours: { low: number | null; high: number | null };
         thresholds: {
           nh3PpmMax: number;
           co2PpmMax: number;

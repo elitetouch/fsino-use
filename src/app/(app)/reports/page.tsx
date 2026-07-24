@@ -453,14 +453,18 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
                   {climate.zoneAverages[z] !== null ? `${climate.zoneAverages[z]!.toFixed(1)} °C` : '—'}
                 </td>
                 <td className="px-4 py-2 text-right tabular-nums sm:px-5">
-                  {climate.zoneBreachHours[z].low > 0
-                    ? <span className="font-bold text-amber-800">{climate.zoneBreachHours[z].low} h</span>
-                    : '0 h'}
+                  {climate.zoneBreachHours[z].low == null
+                    ? '—'
+                    : climate.zoneBreachHours[z].low > 0
+                      ? <span className="font-bold text-amber-800">{climate.zoneBreachHours[z].low} h</span>
+                      : '0 h'}
                 </td>
                 <td className="px-4 py-2 text-right tabular-nums sm:px-5">
-                  {climate.zoneBreachHours[z].high > 0
-                    ? <span className="font-bold text-rose-700">{climate.zoneBreachHours[z].high} h</span>
-                    : '0 h'}
+                  {climate.zoneBreachHours[z].high == null
+                    ? '—'
+                    : climate.zoneBreachHours[z].high > 0
+                      ? <span className="font-bold text-rose-700">{climate.zoneBreachHours[z].high} h</span>
+                      : '0 h'}
                 </td>
               </tr>
             ))}
@@ -470,17 +474,33 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
 
       {/* Air quality + humidity chips */}
       <div className="grid gap-3 border-t border-[var(--color-brand-border)] p-4 sm:grid-cols-2 lg:grid-cols-4 sm:p-5">
-        <AqChip icon={Wind} label="NH₃ breach" value={`${climate.airQualityBreachHours.nh3} h`}
-          sub={`> ${climate.thresholds.nh3PpmMax} ppm`} tone={climate.airQualityBreachHours.nh3 > 0 ? 'rose' : 'mint'} />
-        <AqChip icon={Wind} label="CO₂ breach" value={`${climate.airQualityBreachHours.co2} h`}
-          sub={`> ${climate.thresholds.co2PpmMax} ppm`} tone={climate.airQualityBreachHours.co2 > 0 ? 'rose' : 'mint'} />
+        <AqChip icon={Wind} label="NH₃ breach"
+          value={climate.airQualityBreachHours.nh3 == null ? '—' : `${climate.airQualityBreachHours.nh3} h`}
+          sub={`> ${climate.thresholds.nh3PpmMax} ppm`}
+          tone={climate.airQualityBreachHours.nh3 == null ? 'mint' : climate.airQualityBreachHours.nh3 > 0 ? 'rose' : 'mint'} />
+        <AqChip icon={Wind} label="CO₂ breach"
+          value={climate.airQualityBreachHours.co2 == null ? '—' : `${climate.airQualityBreachHours.co2} h`}
+          sub={`> ${climate.thresholds.co2PpmMax} ppm`}
+          tone={climate.airQualityBreachHours.co2 == null ? 'mint' : climate.airQualityBreachHours.co2 > 0 ? 'rose' : 'mint'} />
         <AqChip icon={Droplet} label="Humidity (avg)"
           value={climate.humidityAverage !== null ? `${climate.humidityAverage.toFixed(0)}%` : '—'}
           sub={`target ${climate.thresholds.humidityPctMin}–${climate.thresholds.humidityPctMax}%`} tone="sky" />
         <AqChip icon={Droplet} label="Humidity breach"
-          value={`${climate.humidityBreachHours.low + climate.humidityBreachHours.high} h`}
-          sub={`${climate.humidityBreachHours.low}h low · ${climate.humidityBreachHours.high}h high`}
-          tone={climate.humidityBreachHours.low + climate.humidityBreachHours.high > 0 ? 'amber' : 'mint'} />
+          value={
+            climate.humidityBreachHours.low == null || climate.humidityBreachHours.high == null
+              ? '—'
+              : `${climate.humidityBreachHours.low + climate.humidityBreachHours.high} h`
+          }
+          sub={
+            climate.humidityBreachHours.low == null || climate.humidityBreachHours.high == null
+              ? 'Coverage too low to report'
+              : `${climate.humidityBreachHours.low}h low · ${climate.humidityBreachHours.high}h high`
+          }
+          tone={
+            climate.humidityBreachHours.low == null || climate.humidityBreachHours.high == null
+              ? 'mint'
+              : climate.humidityBreachHours.low + climate.humidityBreachHours.high > 0 ? 'amber' : 'mint'
+          } />
       </div>
 
       {/* Temperature vs breed / age comfort curve. Only rendered when
