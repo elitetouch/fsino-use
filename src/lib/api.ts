@@ -1208,6 +1208,16 @@ export interface HarvestForecastCardDto extends Omit<DashboardCardBase, 'window'
     projectedMarketAgeDays: number | null;
     daysRemaining: number | null;
     growthRateGPerDay: number | null;
+    /** Breed-published expected daily gain at the current age. Null when
+        no benchmark curve is available for this breed. Present since the
+        rate-unification pass — older backends omit these three fields. */
+    breedRateGPerDay?: number | null;
+    projectedMarketAgeAtBreedRateDays?: number | null;
+    daysRemainingAtBreedRate?: number | null;
+    /** True when a consecutive pair of weigh-ins shows the birds losing
+        weight. Broilers don't shrink — the frontend renders a
+        "confirm these entries" nudge when this is true. */
+    hasWeightAnomaly?: boolean;
     currentWeightG: number | null;
     targetWeightG: number | null;
     breedMarketAgeDays: number | null;
@@ -1727,6 +1737,11 @@ export type FlockReportSummary = {
     gainPerBirdG?: number | null;
     /** Latest per-bird weight in grams — used by the growth-verdict rating. */
     latestAvgBirdWeightG?: number | null;
+    /** True when the weight-samples series shows a physiologically-impossible
+        drop between consecutive weigh-ins. Frontend can render a
+        "confirm these entries" nudge; the backend already emits a
+        'data_quality' recommendation in the recommendations list. */
+    hasWeightAnomaly?: boolean;
     /** Breed-benchmark rating for the latest bird weight vs the target for
         the flock's actual age. Same shape the dashboard WeightCard uses. */
     weightBenchmark?: {
