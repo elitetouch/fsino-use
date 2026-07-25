@@ -684,6 +684,15 @@ export const endpoints = {
 
   listPrices: () => unwrap<{ prices: TokenPriceDto[] }>(api.get('/billing/prices')),
 
+  /**
+   * One-off hardware prices (PENKEEP station and future accessories).
+   * Public read; super admin owns writes. Rendered on /subscription
+   * next to token pricing so a farmer sees the full cost of Premium
+   * (device + tokens) in one place.
+   */
+  listDevicePrices: () =>
+    unwrap<{ prices: DevicePriceDto[] }>(api.get('/billing/device-prices')),
+
   listPurchases: () =>
     unwrap<{ purchases: TokenPurchaseDto[] }>(api.get('/billing/purchases')),
 
@@ -807,6 +816,15 @@ export type TokenPriceDto = {
   id?: string;
   tokenType: TokenType;
   tier: TokenTier;
+  unitPriceMinor: number;
+  currency: string;
+};
+
+/** One-off hardware price (PENKEEP station and future accessories). */
+export type DevicePriceDto = {
+  id?: string;
+  deviceKey: string;
+  label: string | null;
   unitPriceMinor: number;
   currency: string;
 };
