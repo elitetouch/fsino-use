@@ -1742,6 +1742,17 @@ export type FlockReportSummary = {
         "confirm these entries" nudge; the backend already emits a
         'data_quality' recommendation in the recommendations list. */
     hasWeightAnomaly?: boolean;
+    /** Exact inputs the FCR came from — so a farmer or a bank reader
+        can verify the calc by hand. Null when FCR itself is null (no
+        FCR to explain the inputs of). Present since the "raw FCR"
+        pass; older backends omit it. */
+    fcrInputs?: {
+      feedKg: number;
+      gainKg: number;
+      gainPerBirdG: number | null;
+      birdCount: number;
+      weighInCount: number;
+    } | null;
     /** Breed-benchmark rating for the latest bird weight vs the target for
         the flock's actual age. Same shape the dashboard WeightCard uses. */
     weightBenchmark?: {
