@@ -12,7 +12,7 @@ import { BuyTokensDialog } from '@/components/billing/buy-tokens-dialog';
 import { Gate } from '@/lib/access';
 import {
   endpoints,
-  type DevicePriceDto, type TokenPriceDto, type TokenType, type TokenTier,
+  type DeviceOfferDto, type TokenPriceDto, type TokenType, type TokenTier,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -296,7 +296,7 @@ function PlanCard({
               'w-full',
               highlighted && 'bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-deep)]',
             )}
-            variant={highlighted ? 'default' : 'outline'}
+            variant={highlighted ? 'primary' : 'outline'}
             onClick={onBuy}
           >
             <ShoppingCart className="h-4 w-4" /> Buy {tier === 'premium' ? 'Premium' : 'Basic'} tokens
@@ -333,17 +333,19 @@ function PriceRow({ price }: { price: TokenPriceDto }) {
 /* ─────────────────────────── HARDWARE FEES ─────────────────────────── */
 
 /**
- * Renders one card per active device SKU the super admin has published
- * (typically just PENKEEP today; future accessories join automatically
- * as the admin adds rows). Fetches from GET /billing/device-prices —
- * so support can update the price / add a market without a redeploy.
+ * Renders one card per PENKEEP offer the super admin has published for
+ * the current farm's country. Backend picks the row from
+ * pen_device_pricing keyed on the farm's country_code, and layers on
+ * the state-specific installation fee from pen_device_installation_fees
+ * (falling back to the country-level '*' default when no state match).
  *
- * Empty state (no active rows) is intentionally silent — the user
- * doesn't need to know a section exists if there's nothing to buy.
+ * Empty state (no offer configured for this country) is intentionally
+ * silent — the section disappears rather than showing a hallucinated
+ * price.
  */
 function HardwareFees() {
   const devicePrices = useQuery({
-    queryKey: ['device-prices'],
+    queryKey: ['device-offers'],
     queryFn: () => endpoints.listDevicePrices(),
   });
 
@@ -355,59 +357,91 @@ function HardwareFees() {
     );
   }
 
-  const rows = devicePrices.data?.prices ?? [];
-  if (rows.length === 0) return null;
+  const offers = devicePrices.data?.offers ?? [];
+  if (offers.length === 0) return null;
 
   return (
     <section className="space-y-3">
-      {rows.map((price) => (
-        <DeviceFeeCard key={price.deviceKey} price={price} />
+      {offers.map((offer) => (
+        <DeviceOfferCard key={offer.deviceType} offer={offer} />
       ))}
     </section>
   );
 }
 
-function DeviceFeeCard({ price }: { price: DevicePriceDto }) {
-  const majorUnits = price.unitPriceMinor / 100;
-  const formatted = new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: price.currency,
-    maximumFractionDigits: 0,
-  }).format(majorUnits);
+function DeviceOfferCard({ offer }: { offer: DeviceOfferDto }) {
+  const fmt = (amount: number, currency: string) =>
+    new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
 
-  // Copy is keyed on device_key so a new SKU added by the super admin
-  // shows a sensible default label + description even before we ship
-  // dedicated copy for it. PENKEEP gets the full pitch; anything else
-  // falls back to the label the admin set.
-  const isPenkeep = price.deviceKey === 'penkeep_station';
-  const title = price.label ?? (isPenkeep ? 'PENKEEP pen climate station' : humaniseDeviceKey(price.deviceKey));
-  const body = isPenkeep
-    ? 'One PENKEEP covers a full pen with three heater zones and monitors temperature, humidity, ammonia and CO₂ around the clock. Only needed if you\'re on Premium — Basic runs on record-keeping alone.'
-    : 'One-off hardware. Reach out to support to order.';
+  const sub = offer.subscription;
+  const inst = offer.installation;
+  const isPenkeep = offer.deviceType === 'penkeep';
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white">
-      <div className="grid gap-4 p-6 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-6 sm:p-7">
+      <div className="grid gap-4 p-6 sm:grid-cols-[auto_1fr_auto] sm:items-start sm:gap-6 sm:p-7">
         <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
           <Cpu className="h-5 w-5" strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
-            Hardware, one-off
+            Hardware · pricing for {offer.country}
           </p>
           <h3 className="mt-0.5 text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
-            {title}
+            {offer.label}
           </h3>
           <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
-            {body}
+            {isPenkeep
+              ? 'One PENKEEP covers a full pen with three heater zones and monitors temperature, humidity, ammonia and CO₂ around the clock. Only needed if you\'re on Premium — Basic runs on record-keeping alone.'
+              : 'Reach out to support to order.'}
           </p>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/50 px-3 py-2">
+              <p className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+                Subscription
+              </p>
+              <p className="mt-0.5 text-[15px] font-bold tabular-nums text-[var(--color-brand-fg)]">
+                {fmt(sub.price, sub.currency)}
+              </p>
+              <p className="text-[10.5px] text-[var(--color-brand-muted)]">
+                per {sub.cycleWeeks}-week cycle
+              </p>
+            </div>
+            <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/50 px-3 py-2">
+              <p className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+                Installation
+              </p>
+              {inst ? (
+                <>
+                  <p className="mt-0.5 text-[15px] font-bold tabular-nums text-[var(--color-brand-fg)]">
+                    {fmt(inst.fee, inst.currency)}
+                  </p>
+                  <p className="text-[10.5px] text-[var(--color-brand-muted)]">
+                    one-off · {inst.scope === 'state' && inst.stateName
+                      ? `${inst.stateName} rate`
+                      : `${offer.country} default`}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-0.5 text-[13px] italic text-[var(--color-brand-muted)]">Contact support</p>
+                  <p className="text-[10.5px] text-[var(--color-brand-muted)]">
+                    Fee not yet configured for {offer.country}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="text-left sm:text-right">
-          <p className="text-[20px] font-bold tabular-nums text-[var(--color-brand-fg)]">{formatted}</p>
-          <p className="text-[10.5px] text-[var(--color-brand-muted)]">per device</p>
+        <div className="sm:text-right">
           <a
             href="/contact"
-            className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-surface-soft)]"
           >
             Talk to support to order →
           </a>
@@ -415,13 +449,6 @@ function DeviceFeeCard({ price }: { price: DevicePriceDto }) {
       </div>
     </div>
   );
-}
-
-function humaniseDeviceKey(key: string): string {
-  return key
-    .split('_')
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-    .join(' ');
 }
 
 /* ─────────────────────────── TOKEN RULES ─────────────────────────── */

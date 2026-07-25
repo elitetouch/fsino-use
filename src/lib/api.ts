@@ -685,13 +685,18 @@ export const endpoints = {
   listPrices: () => unwrap<{ prices: TokenPriceDto[] }>(api.get('/billing/prices')),
 
   /**
-   * One-off hardware prices (PENKEEP station and future accessories).
-   * Public read; super admin owns writes. Rendered on /subscription
-   * next to token pricing so a farmer sees the full cost of Premium
-   * (device + tokens) in one place.
+   * PENKEEP subscription price + installation fee for the currently
+   * active farm. Reads the pen_device_pricing / installation-fees
+   * tables the super admin manages, scoped to the farm's country and
+   * (when present) state — one source of truth for the quote the
+   * farmer will be shown.
+   *
+   * Returns `offers: []` when no pricing is configured for the
+   * farm's country — the /subscription page hides the hardware
+   * section rather than showing a bogus number.
    */
   listDevicePrices: () =>
-    unwrap<{ prices: DevicePriceDto[] }>(api.get('/billing/device-prices')),
+    unwrap<{ offers: DeviceOfferDto[] }>(api.get('/billing/device-prices')),
 
   listPurchases: () =>
     unwrap<{ purchases: TokenPurchaseDto[] }>(api.get('/billing/purchases')),
@@ -820,13 +825,30 @@ export type TokenPriceDto = {
   currency: string;
 };
 
-/** One-off hardware price (PENKEEP station and future accessories). */
-export type DevicePriceDto = {
-  id?: string;
-  deviceKey: string;
-  label: string | null;
-  unitPriceMinor: number;
-  currency: string;
+/**
+ * PENKEEP subscription + installation offer for the currently active
+ * farm's country / state. Shape mirrors the super-admin managed
+ * pen_device_pricing + pen_device_installation_fees tables so a
+ * quote change on the admin side lands on the tenant without a
+ * redeploy.
+ */
+export type DeviceOfferDto = {
+  deviceType: string;                // 'penkeep'
+  label: string;                     // 'PENKEEP pen climate station'
+  subscription: {
+    price: number;                   // major units (e.g. NGN 30000)
+    currency: string;                // ISO 4217
+    cycleWeeks: number;              // billing period, e.g. 6
+  };
+  installation: {
+    fee: number;
+    currency: string;
+    /** 'state' when we matched the exact state row; 'country' when
+        we fell back to the country-level '*' default. */
+    scope: 'state' | 'country';
+    stateName: string | null;        // populated only when scope='state'
+  } | null;
+  country: string;                   // ISO 3166-1 alpha-2, e.g. 'NG'
 };
 
 export type TokenPurchaseDto = {
