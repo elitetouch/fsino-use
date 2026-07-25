@@ -120,6 +120,30 @@ export default function HomePage() {
   );
   const freePens = (pens.data?.pens ?? []).filter((p: PenDto) => p.occupancy?.status !== 'occupied').length;
 
+  // Feed the "Avg FCR" and "Cost so far" stat cards with real numbers
+  // for the currently-selected cycle. We reuse the report-summary
+  // endpoint (which already computes FCR, placement cost and expenses
+  // in one place) so those two tiles can never disagree with what the
+  // Reports page shows for the same cycle. Enabled only when a cycle
+  // is picked; the tiles render "—" during load / no-cycle.
+  const cycleSummary = useQuery({
+    queryKey: ['flock-report-summary', cycle?.id],
+    queryFn: () => cycle ? endpoints.getFlockReportSummary(cycle.id) : Promise.resolve(null),
+    enabled: !!cycle?.id,
+  });
+
+  const avgFcr = cycleSummary.data?.summary?.fcr ?? null;
+  const costSoFar = cycleSummary.data?.summary?.totalCost ?? null;
+  const costCurrency = cycleSummary.data?.flock?.currency ?? 'NGN';
+
+  const fmtMoney = (n: number, ccy: string): string => {
+    try {
+      return new Intl.NumberFormat('en-NG', { style: 'currency', currency: ccy, maximumFractionDigits: 0 }).format(n);
+    } catch {
+      return `${ccy} ${Math.round(n).toLocaleString()}`;
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Greeting + cycle picker */}
@@ -164,10 +188,12 @@ export default function HomePage() {
                   sub={`Across ${flocks.data?.flocks.length ?? 0} cycles`} tone="mint" />
         <StatCard icon={Warehouse}  label="Pens"         value={pens.data?.pens.length ?? 0}
                   sub={`${freePens} free for placement`} tone="sky" />
-        <StatCard icon={TrendingUp} label="Avg FCR"      value="—"
-                  sub="Tracks once records flow" tone="amber" />
-        <StatCard icon={Wallet}     label="Cost so far"  value="—"
-                  sub="Updates as you log expenses" tone="rose" />
+        <StatCard icon={TrendingUp} label="Avg FCR"
+                  value={avgFcr !== null ? avgFcr.toFixed(2) : '—'}
+                  sub={avgFcr !== null ? 'Feed ÷ weight gain × birds' : 'Log feed + 2 weigh-ins'} tone="amber" />
+        <StatCard icon={Wallet}     label="Cost so far"
+                  value={costSoFar !== null && costSoFar > 0 ? fmtMoney(costSoFar, costCurrency) : '—'}
+                  sub={costSoFar !== null && costSoFar > 0 ? 'Placement + operating' : 'Updates as you log expenses'} tone="rose" />
       </section>
 
       {/* Cycle results — same cards as /cycles/[id] */}
