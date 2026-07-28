@@ -2067,7 +2067,7 @@ export type SupportThreadListMeta = {
  * validates against the same list and will 422 otherwise.
  */
 export type ExpenseCategory =
-  | 'feed' | 'vaccine' | 'treatment' | 'fuel' | 'utilities'
+  | 'birds' | 'feed' | 'vaccine' | 'treatment' | 'fuel' | 'utilities'
   | 'repairs' | 'wages' | 'equipment' | 'transport' | 'other';
 
 export interface ExpenseDto {
