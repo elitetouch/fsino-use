@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
  */
 
 const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  birds: 'Birds / DOC placement',
   feed: 'Feed',
   vaccine: 'Vaccine',
   treatment: 'Treatment / Drugs',
