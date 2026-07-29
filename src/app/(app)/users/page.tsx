@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Plus, Mail, Loader2, X, Trash2, ShieldCheck, Clock, Users2, AlertTriangle,
+  MoreVertical, Pause, Play, UserX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Label, FieldError } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import {
   type FarmMemberDto, type StaffInviteDto,
 } from '@/lib/api';
 import { Gate } from '@/lib/access';
+import { readUser } from '@/lib/auth';
 import { readCurrentFarmId, useCurrentFarmId } from '@/lib/farm-context';
 import { fmtDate } from '@/lib/format';
 import { STAFF_DEFAULT_PRESET, type FarmRole } from '@/lib/permissions';
@@ -70,13 +72,15 @@ export default function UsersPage() {
         </h2>
         {members.isLoading ? (
           <SkeletonRows />
-        ) : (members.data?.members ?? []).length === 0 ? (
+        ) : (members.data?.members ?? []).filter((m) => m.status !== 'removed').length === 0 ? (
           <EmptyState title="No team members yet" body="Invite your first staff member to get started." />
         ) : (
           <div className="overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white">
-            {members.data!.members.map((m, i, arr) => (
-              <MemberRow key={String(m.userId)} member={m} divider={i < arr.length - 1} />
-            ))}
+            {members.data!.members
+              .filter((m) => m.status !== 'removed')
+              .map((m, i, arr) => (
+                <MemberRow key={String(m.userId)} member={m} divider={i < arr.length - 1} />
+              ))}
           </div>
         )}
       </section>
@@ -110,11 +114,40 @@ export default function UsersPage() {
 }
 
 function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolean }) {
+  const qc = useQueryClient();
+  const farmId = readCurrentFarmId();
+  const me = readUser();
+  const isSelf = me && String(me.id) === String(member.userId);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editingPerms, setEditingPerms] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
+
   const initial = (member.name ?? 'F').trim().charAt(0).toUpperCase();
   const statusTone =
     member.status === 'active' ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
     : member.status === 'invited' ? 'bg-amber-50 text-amber-700'
     : 'bg-rose-50 text-rose-700';
+
+  const setStatus = useMutation({
+    mutationFn: (next: 'active' | 'suspended') =>
+      endpoints.updateFarmMember(farmId as string, member.userId, { status: next }),
+    onSuccess: (_res, next) => {
+      toast.success(next === 'suspended' ? `${member.name} suspended.` : `${member.name} reactivated.`);
+      qc.invalidateQueries({ queryKey: ['farm-members', farmId] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not update member status.')),
+  });
+
+  const remove = useMutation({
+    mutationFn: () => endpoints.removeFarmMember(farmId as string, member.userId),
+    onSuccess: () => {
+      toast.success(`${member.name} removed from farm.`);
+      qc.invalidateQueries({ queryKey: ['farm-members', farmId] });
+      setConfirmingRemove(false);
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not remove member.')),
+  });
 
   return (
     <div className={cn('flex items-center gap-3 px-4 py-3', divider && 'border-b border-[var(--color-brand-border)]')}>
@@ -122,7 +155,10 @@ function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolea
         {initial}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">{member.name}</p>
+        <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+          {member.name}
+          {isSelf && <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">(you)</span>}
+        </p>
         <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">{member.email}</p>
       </div>
       <div className="hidden text-right sm:block">
@@ -136,6 +172,178 @@ function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolea
       <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', statusTone)}>
         {member.status}
       </span>
+
+      {!isSelf && (
+        <Gate perm="staff_manage.update">
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Member actions"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-9 z-50 w-52 overflow-hidden rounded-lg border border-[var(--color-brand-border)] bg-white shadow-lg">
+                  {member.role === 'staff' && (
+                    <button
+                      type="button"
+                      onClick={() => { setEditingPerms(true); setMenuOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-semibold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Edit permissions
+                    </button>
+                  )}
+                  {member.status === 'active' && (
+                    <button
+                      type="button"
+                      disabled={setStatus.isPending}
+                      onClick={() => { setStatus.mutate('suspended'); setMenuOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-60"
+                    >
+                      <Pause className="h-3.5 w-3.5" />
+                      Suspend
+                    </button>
+                  )}
+                  {member.status === 'suspended' && (
+                    <button
+                      type="button"
+                      disabled={setStatus.isPending}
+                      onClick={() => { setStatus.mutate('active'); setMenuOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-surface-soft)] disabled:opacity-60"
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      Reactivate
+                    </button>
+                  )}
+                  <Gate perm="staff_manage.delete">
+                    <button
+                      type="button"
+                      onClick={() => { setConfirmingRemove(true); setMenuOpen(false); }}
+                      className="flex w-full items-center gap-2 border-t border-[var(--color-brand-border)] px-3 py-2 text-left text-[12.5px] font-semibold text-[var(--color-brand-danger)] hover:bg-rose-50"
+                    >
+                      <UserX className="h-3.5 w-3.5" />
+                      Remove from farm
+                    </button>
+                  </Gate>
+                </div>
+              </>
+            )}
+          </div>
+        </Gate>
+      )}
+
+      {editingPerms && (
+        <EditPermissionsDialog
+          member={member}
+          onClose={() => setEditingPerms(false)}
+        />
+      )}
+      {confirmingRemove && (
+        <ConfirmRemoveDialog
+          member={member}
+          submitting={remove.isPending}
+          onClose={() => setConfirmingRemove(false)}
+          onConfirm={() => remove.mutate()}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditPermissionsDialog({ member, onClose }: { member: FarmMemberDto; onClose: () => void }) {
+  const qc = useQueryClient();
+  const farmId = readCurrentFarmId();
+  const initial: Record<string, true> = (member.permissions && typeof member.permissions === 'object'
+    ? Object.fromEntries(Object.entries(member.permissions).filter(([, v]) => v === true))
+    : { ...STAFF_DEFAULT_PRESET }) as Record<string, true>;
+  const [permissions, setPermissions] = useState<Record<string, true>>(initial);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = useMutation({
+    mutationFn: () => endpoints.updateFarmMember(farmId as string, member.userId, { permissions }),
+    onSuccess: () => {
+      toast.success(`Permissions updated for ${member.name}.`);
+      qc.invalidateQueries({ queryKey: ['farm-members', farmId] });
+      onClose();
+    },
+    onError: (err) => setError(apiErrorMessage(err, 'Could not save permissions.')),
+  });
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+      <div aria-hidden className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="animate-fade-up relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[640px] sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
+          <div>
+            <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Edit permissions</p>
+            <p className="text-[11px] text-[var(--color-brand-muted)]">{member.name} · {member.email}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+          <PermissionsPicker value={permissions} onChange={setPermissions} />
+          <FieldError message={error ?? undefined} />
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-brand-border)] bg-white px-5 py-4">
+          <Button variant="outline" size="sm" className="h-10" onClick={onClose} disabled={save.isPending}>
+            Cancel
+          </Button>
+          <Button size="sm" className="h-10" disabled={save.isPending} onClick={() => { setError(null); save.mutate(); }}>
+            {save.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Save permissions
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmRemoveDialog({
+  member, submitting, onClose, onConfirm,
+}: {
+  member: FarmMemberDto;
+  submitting: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+      <div aria-hidden className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="animate-fade-up relative z-10 flex w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(180,30,40,0.20)] sm:max-w-[440px] sm:rounded-2xl">
+        <div className="px-5 py-5">
+          <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Remove {member.name}?</p>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-brand-muted)]">
+            They lose access to this farm immediately. Their record & expense history stays on file
+            under their name. You can re-invite them later.
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-brand-border)] bg-white px-5 py-4">
+          <Button variant="outline" size="sm" className="h-10" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            className="h-10 bg-[var(--color-brand-danger)] hover:bg-[#a72027]"
+            onClick={onConfirm}
+            disabled={submitting}
+          >
+            {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />}
+            Remove
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

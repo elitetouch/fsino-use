@@ -260,8 +260,14 @@ export const endpoints = {
    * the flock is still active (has birds or is in-date) unless `force`
    * is true — pass true once the user confirms.
    */
-  archiveFlock: (id: string, force = false) =>
-    api.delete(`/flocks/${id}`, { params: force ? { force: 'true' } : undefined }),
+  archiveFlock: (id: string, opts: ArchiveFlockOpts = {}) => {
+    const { force = false, ...body } = opts;
+    return api.delete(`/flocks/${id}`, {
+      params: force ? { force: 'true' } : undefined,
+      // axios accepts a request body on DELETE via the `data` option
+      data: Object.keys(body).length > 0 ? body : undefined,
+    });
+  },
 
   // ───────────── Daily records ─────────────
 
@@ -723,6 +729,16 @@ export const endpoints = {
       api.patch(`/farms/${farmId}/members/${userId}`, payload),
     ),
 
+  /**
+   * Soft-removes the member from the farm — pivot row stays with
+   * status='removed' so audit history on records/expenses remains
+   * joinable. A later re-activation is one PATCH to status='active'.
+   */
+  removeFarmMember: (farmId: string, userId: string | number) =>
+    unwrap<{ userId: string | number; status: string }>(
+      api.delete(`/farms/${farmId}/members/${userId}`),
+    ),
+
   /*
    * Farm settings — applies to every member on the farm.
    * Read requires settings.view; write requires settings.update.
@@ -992,6 +1008,25 @@ export type FlockDto = {
   isActive?: boolean;
   archivedAt?: string | null;
 };
+
+/**
+ * DELETE /flocks/{id} — close-out payload.
+ * All fields optional so the legacy "archive with no context" call
+ * still works. Server defaults outcome to 'completed' when unset.
+ * `close_out_reason` is required when outcome === 'terminated' (backend validates).
+ */
+export type FlockOutcome = 'completed' | 'terminated';
+export type FlockCloseOutReason =
+  | 'disease_outbreak' | 'high_mortality' | 'poor_fcr'
+  | 'market_conditions' | 'owner_decision' | 'other';
+export interface ArchiveFlockOpts {
+  force?: boolean;
+  outcome?: FlockOutcome;
+  close_out_reason?: FlockCloseOutReason;
+  close_out_notes?: string;
+  final_birds_sold?: number;
+  final_avg_weight_g?: number;
+}
 
 export type CreateFlockPayload = {
   pen_id?: string;
@@ -1690,7 +1725,7 @@ export type FarmMemberDto = {
   email: string;
   phone?: string | null;
   role: FarmRole;
-  status: 'invited' | 'active' | 'suspended';
+  status: 'invited' | 'active' | 'suspended' | 'removed';
   permissions?: Record<string, true> | null;
   invitedAt?: string | null;
   joinedAt?: string | null;

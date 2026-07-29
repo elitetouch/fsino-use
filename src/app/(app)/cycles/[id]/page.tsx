@@ -7,14 +7,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
 import {
-  ArrowLeft, Calendar, MapPin, Plus, Archive, Loader2,
+  ArrowLeft, Calendar, MapPin, Plus, CheckCircle2, XCircle, Loader2, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input, Label } from '@/components/ui/input';
 import { CyclePicker } from '@/components/app/cycle-picker';
 import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
 import { PenClimateWithHistory } from '@/components/app/pen-climate';
 import { CycleFinanceTab } from '@/components/app/cycle-finance-tab';
-import { apiErrorMessage, endpoints, type FlockDto, type PenDto } from '@/lib/api';
+import {
+  apiErrorMessage, endpoints,
+  type FlockDto, type PenDto,
+  type FlockCloseOutReason, type ArchiveFlockOpts,
+} from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { readUser } from '@/lib/auth';
@@ -175,28 +180,20 @@ function ResultsTab({
 }) {
   const router = useRouter();
   const qc = useQueryClient();
-  const [confirmingArchive, setConfirmingArchive] = useState(false);
+  const [closeOut, setCloseOut] = useState<null | 'complete' | 'terminate'>(null);
 
   const completedDate = cycle.validUntil ?? cycle.startDate;
 
   const archive = useMutation({
-    mutationFn: () => endpoints.archiveFlock(cycle.id, true),
-    onSuccess: () => {
-      toast.success(`Cycle ${ordinal} archived — pen ${pen?.name ?? ''} is now free.`);
+    mutationFn: (opts: ArchiveFlockOpts) => endpoints.archiveFlock(cycle.id, opts),
+    onSuccess: (_res, opts) => {
+      const label = opts.outcome === 'terminated' ? 'ended early' : 'completed';
+      toast.success(`Cycle ${ordinal} ${label} — pen ${pen?.name ?? ''} is now free.`);
       qc.invalidateQueries({ queryKey: ['flocks'] });
       qc.invalidateQueries({ queryKey: ['pens'] });
       router.push('/cycles');
     },
-    onError: (err) => {
-      const ax = err as AxiosError<{ data?: { code?: string } }>;
-      // 409 = warning, expected first time. Open the confirm dialog
-      // so the user can force=true on the next click.
-      if (ax.response?.status === 409) {
-        setConfirmingArchive(true);
-        return;
-      }
-      toast.error(apiErrorMessage(err, 'Could not archive this cycle.'));
-    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not close this cycle.')),
   });
 
   return (
@@ -221,47 +218,40 @@ function ResultsTab({
           </div>
         </div>
         <Gate perm="flocks.archive">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 self-start text-[var(--color-brand-danger)] sm:self-auto"
-            onClick={() => archive.mutate()}
-            disabled={archive.isPending}
-          >
-            {archive.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
-            Archive cycle
-          </Button>
-        </Gate>
-      </article>
-
-      {confirmingArchive && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-[13px] font-bold text-amber-900">This cycle is still active</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-amber-800">
-            Archiving will end tracking, free pen <strong>{pen?.name ?? '—'}</strong>, and stop
-            future records from being attached to this cycle. The data stays on file.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
             <Button
               variant="outline"
               size="sm"
-              className="h-9"
-              onClick={() => setConfirmingArchive(false)}
+              className="h-9 border-[var(--color-brand-primary)] text-[var(--color-brand-primary-deep)]"
+              onClick={() => setCloseOut('complete')}
               disabled={archive.isPending}
             >
-              Cancel
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Complete cycle
             </Button>
             <Button
+              variant="outline"
               size="sm"
-              className="h-9 bg-[var(--color-brand-danger)] hover:bg-[#a72027]"
-              onClick={() => archive.mutate()}
+              className="h-9 text-[var(--color-brand-danger)]"
+              onClick={() => setCloseOut('terminate')}
               disabled={archive.isPending}
             >
-              {archive.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
-              Yes, archive cycle
+              <XCircle className="h-3.5 w-3.5" />
+              End early
             </Button>
           </div>
-        </div>
+        </Gate>
+      </article>
+
+      {closeOut !== null && (
+        <CloseOutSheet
+          mode={closeOut}
+          cycle={cycle}
+          penName={pen?.name}
+          submitting={archive.isPending}
+          onClose={() => setCloseOut(null)}
+          onSubmit={(opts) => archive.mutate({ force: true, ...opts })}
+        />
       )}
 
       <CycleCardsGrid cycle={cycle} penId={pen?.id} />
@@ -304,6 +294,188 @@ function CardSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="h-40 animate-pulse rounded-xl bg-white" />
       ))}
+    </div>
+  );
+}
+
+const CLOSE_OUT_REASONS: { value: FlockCloseOutReason; label: string }[] = [
+  { value: 'disease_outbreak', label: 'Disease outbreak' },
+  { value: 'high_mortality', label: 'High mortality' },
+  { value: 'poor_fcr', label: 'Poor FCR / feed conversion' },
+  { value: 'market_conditions', label: 'Market conditions' },
+  { value: 'owner_decision', label: 'Owner decision' },
+  { value: 'other', label: 'Other (explain in notes)' },
+];
+
+/**
+ * Close-out bottom sheet — two modes:
+ *   - complete   → captures final bird count + avg weight so the P&L
+ *                  reflects the true sale-day snapshot even if the last
+ *                  weigh-in was earlier.
+ *   - terminate  → reason picker + freeform notes. Reason categories
+ *                  become filterable analytics later.
+ * Both modes archive the flock and free the pen server-side.
+ */
+function CloseOutSheet({
+  mode, cycle, penName, submitting, onClose, onSubmit,
+}: {
+  mode: 'complete' | 'terminate';
+  cycle: FlockDto;
+  penName?: string;
+  submitting: boolean;
+  onClose: () => void;
+  onSubmit: (opts: ArchiveFlockOpts) => void;
+}) {
+  const [finalBirds, setFinalBirds] = useState<string>(String(cycle.currentBirds ?? cycle.placedBirds ?? ''));
+  const [avgWeight, setAvgWeight] = useState<string>('');
+  const [reason, setReason] = useState<FlockCloseOutReason>('disease_outbreak');
+  const [notes, setNotes] = useState<string>('');
+
+  const isComplete = mode === 'complete';
+  const canSubmit = !submitting && (isComplete
+    ? true
+    : (reason !== 'other' || notes.trim().length > 0));
+
+  const submit = () => {
+    if (isComplete) {
+      const birds = finalBirds.trim() === '' ? undefined : Number(finalBirds);
+      const weight = avgWeight.trim() === '' ? undefined : Number(avgWeight);
+      onSubmit({
+        outcome: 'completed',
+        close_out_notes: notes.trim() || undefined,
+        final_birds_sold: Number.isFinite(birds as number) ? (birds as number) : undefined,
+        final_avg_weight_g: Number.isFinite(weight as number) ? (weight as number) : undefined,
+      });
+      return;
+    }
+    onSubmit({
+      outcome: 'terminated',
+      close_out_reason: reason,
+      close_out_notes: notes.trim() || undefined,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+      <div aria-hidden className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="animate-fade-up relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[560px] sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              'inline-flex h-8 w-8 items-center justify-center rounded-md',
+              isComplete
+                ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
+                : 'bg-rose-50 text-[var(--color-brand-danger)]',
+            )}>
+              {isComplete ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+            </span>
+            <div>
+              <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">
+                {isComplete ? 'Complete cycle' : 'End cycle early'}
+              </p>
+              <p className="text-[11px] text-[var(--color-brand-muted)]">
+                {isComplete
+                  ? `Confirm final numbers, then archive. Pen ${penName ?? ''} becomes free.`
+                  : `Tell us why so future reports stay honest. Pen ${penName ?? ''} becomes free.`}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+          {isComplete ? (
+            <>
+              <div>
+                <Label htmlFor="finalBirds">Final bird count (sold or in pen at close)</Label>
+                <Input
+                  id="finalBirds"
+                  inputMode="numeric"
+                  value={finalBirds}
+                  onChange={(e) => setFinalBirds(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder={String(cycle.currentBirds ?? cycle.placedBirds ?? 0)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="avgWeight">Final average bird weight (grams, optional)</Label>
+                <Input
+                  id="avgWeight"
+                  inputMode="numeric"
+                  value={avgWeight}
+                  onChange={(e) => setAvgWeight(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="e.g. 2400"
+                />
+              </div>
+            </>
+          ) : (
+            <div>
+              <Label>Why is this cycle ending early?</Label>
+              <div className="mt-1 grid gap-2">
+                {CLOSE_OUT_REASONS.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setReason(r.value)}
+                    className={cn(
+                      'rounded-xl border-2 px-3 py-2.5 text-left text-[12.5px] font-semibold transition-all',
+                      reason === r.value
+                        ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-accent)]/40 text-[var(--color-brand-primary-deep)]'
+                        : 'border-[var(--color-brand-input-border)] bg-white text-[var(--color-brand-fg)] hover:border-[var(--color-brand-primary)]/40',
+                    )}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="closeNotes">
+              Notes {isComplete ? '(optional)' : reason === 'other' ? '(required)' : '(optional)'}
+            </Label>
+            <textarea
+              id="closeNotes"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={isComplete
+                ? 'Anything worth remembering about this cycle?'
+                : 'Add the specifics — dates, symptoms, decisions.'}
+              className="w-full rounded-xl border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[13px] text-[var(--color-brand-fg)] outline-none placeholder:text-[var(--color-brand-muted-soft)] focus:border-[var(--color-brand-primary)]"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-brand-border)] bg-white px-5 py-4">
+          <Button variant="outline" size="sm" className="h-10" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            className={cn(
+              'h-10',
+              !isComplete && 'bg-[var(--color-brand-danger)] hover:bg-[#a72027]',
+            )}
+            disabled={!canSubmit}
+            onClick={submit}
+          >
+            {submitting
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : isComplete
+                ? <CheckCircle2 className="h-3.5 w-3.5" />
+                : <XCircle className="h-3.5 w-3.5" />}
+            {isComplete ? 'Confirm & archive' : 'End cycle & archive'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
