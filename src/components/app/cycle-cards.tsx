@@ -117,22 +117,37 @@ export function FeedConsumptionCard({
   // app", so this card grows its own drawer with FCR explainer copy.
   const [learnOpen, setLearnOpen] = useState(false);
 
-  // FCR gauge — centered scale so the figma's 1.45 example lands
-  // near the middle (green zone). Range [0.4, 2.4] gives:
-  //   broiler optimal 1.4–1.8  → 50–70%  (emerald → sky transition)
-  //   layer pre-lay   0.5–1.0  → 5–30%   (rose / amber zone — caveat
-  //                                       below makes sense)
-  //   layer in-prod   2.0–2.5  → 80–100% (sky)
+  // FCR gauge — REVERSED axis so the "good direction" reads left→right
+  // like every other progress bar on the internet:
+  //   LEFT  = high FCR (bad — birds eating a lot per kg of output)
+  //   RIGHT = low FCR (potentially error, but low is where you want to be)
+  // MIDDLE = on-target green
   //
-  // Clamp the pill's centerline to [12%, 88%] so it stays clear of
-  // the Low / High labels even at extreme FCRs (broiler 0.6 →
-  // clamps to 12%, layer 4.0 → clamps to 88%). The previous [7, 93]
-  // was tight enough that the right-edge case (the user's 9.59
-  // example, which clamps in) put the pill literally touching the
-  // "High" text. A 12 % buffer keeps the pill comfortably inside
-  // the gradient bar.
-  const rawPct = fcr == null ? null : Math.max(0, Math.min(1, (fcr - 0.4) / 2.0)) * 100;
+  // Previously the axis was numerical (low FCR on left, high on right)
+  // which put a POOR reading of 2.30 in the blue "above target" zone
+  // on the right — visually indistinguishable from a good reading
+  // because the pill was always coloured brand-green. Farmers read
+  // right-hand-side as "on target" and the numeric-high position was
+  // misleading.
+  //
+  // New formula: (2.4 - fcr) / 2.0 → fcr=2.4 lands at 0% (leftmost,
+  // red zone), fcr=0.4 lands at 100% (rightmost, blue zone).
+  // Clamped to [12, 88] so the pill stays clear of the edge labels.
+  const rawPct = fcr == null ? null : Math.max(0, Math.min(1, (2.4 - fcr) / 2.0)) * 100;
   const pct = rawPct == null ? null : Math.max(12, Math.min(88, rawPct));
+
+  // Colour the pill by rating so a "poor" reading actually LOOKS
+  // poor (red), not green. Falls back to brand-green when the rating
+  // slug is missing so nothing regresses to grey unexpectedly.
+  const pillBg = (() => {
+    switch (ratingWord) {
+      case 'poor': return '#be123c';    // rose-700 — matches red zone
+      case 'fair': return '#f97316';    // orange-500 — matches orange zone
+      case 'good':
+      case 'excellent':
+      default: return 'var(--color-brand-primary)';
+    }
+  })();
 
   return (
     <Card>
@@ -175,11 +190,15 @@ export function FeedConsumptionCard({
                9.59 (clamped) no longer bumps into "High".
           */}
           <div className="relative h-7">
+            {/* Labels swapped with the axis: HIGH (bad — birds eating a
+                lot per kg out) sits on the LEFT next to the red zone,
+                LOW (either sweet-spot or logging-error-suspicious) sits
+                on the RIGHT next to the blue zone. */}
             <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-[var(--color-brand-muted)]">
-              Low
+              High
             </span>
             <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-[var(--color-brand-muted)]">
-              High
+              Low
             </span>
             <div className="absolute inset-x-9 top-1/2 -translate-y-1/2">
               <div
@@ -192,8 +211,8 @@ export function FeedConsumptionCard({
               />
               {fcr != null && pct != null && (
                 <div
-                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-brand-primary)] px-2.5 py-0.5 text-[11.5px] font-bold leading-tight text-white shadow-md ring-2 ring-white"
-                  style={{ left: `${pct}%` }}
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2.5 py-0.5 text-[11.5px] font-bold leading-tight text-white shadow-md ring-2 ring-white"
+                  style={{ left: `${pct}%`, backgroundColor: pillBg }}
                 >
                   {fcr.toFixed(2)}
                 </div>
