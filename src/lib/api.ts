@@ -1847,6 +1847,8 @@ export type FlockReportSummary = {
     fcr: number | null;
     eggsCollected: number;
     revenue: number;
+    /** See RevenueCompleteness — caveats the margin below. */
+    revenueCompleteness?: RevenueCompleteness;
     expenses: number;
     placementCost: number;
     totalCost: number;
@@ -2166,6 +2168,13 @@ export interface FlockFinanceDto {
     salesCount: number;
     birdsSold: number;
     secondaryCurrencies: Array<{ currency: string; amount: number }>;
+    /**
+     * Whether the revenue figure is complete. Birds can be recorded as
+     * sold through the daily bird-count step, which captures the count
+     * but not necessarily a price — when that happens the margin is a
+     * floor, not a final result, and the UI must say so.
+     */
+    completeness?: RevenueCompleteness;
   };
   summary: {
     currency: string;
@@ -2178,6 +2187,21 @@ export interface FlockFinanceDto {
     note: string;
   };
   recentExpenses: ExpenseDto[];
+}
+
+/**
+ * Emitted by the backend alongside every revenue figure. Drives the
+ * "this margin is incomplete" caveat so an unlogged-revenue loss is
+ * never presented as a real one — including in the PDF a farmer hands
+ * to a loan officer.
+ */
+export interface RevenueCompleteness {
+  birdsSoldTotal: number;
+  birdsSoldPriced: number;
+  birdsSoldUnpriced: number;
+  hasUnpricedSales: boolean;
+  /** Human-readable explanation; null when revenue is complete. */
+  note: string | null;
 }
 
 export type ExpenseListMeta = {

@@ -185,6 +185,18 @@ function BirdCountForm({
     sold: '', dead: '', culled: '', lost: '',
   });
 
+  // What the sold birds went for. Optional — a farmer who hasn't been
+  // paid yet, or who doesn't know the figure at logging time, must still
+  // be able to record that the birds left the pen.
+  //
+  // Capturing it HERE is the fix for a real production bug: this step
+  // was the only way most farmers recorded sales, it had no money field
+  // at all, and so a flock that sold 588 birds reported NGN 0 revenue
+  // and a -NGN 16.2M margin on its cycle P&L. Leaving it blank is still
+  // supported and now shows up honestly as an incomplete margin rather
+  // than a fake loss.
+  const [soldAmount, setSoldAmount] = useState('');
+
   const livingBirds = guidance.flock.current_birds;
   const enabledFields = useMemo(
     () => FIELDS.filter((f) => prefs.effectiveDailyRecord.bird_count?.[f.prefKey]),
@@ -221,7 +233,17 @@ function BirdCountForm({
         record_date: recordDate,
         payload: {
           anyChange: true,
-          sold:   { count: safeInt(counts.sold)   },
+          // `amount` is only attached when the farmer actually entered
+          // one. Omitting the key entirely (rather than writing 0) is
+          // what lets the backend tell "sold for nothing" apart from
+          // "price not captured yet" — the latter is what drives the
+          // incomplete-margin disclosure on the P&L.
+          sold: {
+            count: safeInt(counts.sold),
+            ...(safeInt(counts.sold) > 0 && parseFloat(soldAmount) > 0
+              ? { amount: parseFloat(soldAmount) }
+              : {}),
+          },
           dead:   { count: safeInt(counts.dead)   },
           culled: { count: safeInt(counts.culled) },
           lost:   { count: safeInt(counts.lost)   },
@@ -318,6 +340,18 @@ function BirdCountForm({
                 />
               ))}
 
+              {/* Sale amount — only asked once birds are actually marked
+                  sold, so a farmer logging pure mortality never sees a
+                  money question. Optional by design: birds leaving the pen
+                  is a fact, the price may not be known yet. */}
+              {safeInt(counts.sold) > 0 && (
+                <SoldAmountField
+                  value={soldAmount}
+                  onChange={setSoldAmount}
+                  birds={safeInt(counts.sold)}
+                />
+              )}
+
               {mortalitySpike && (
                 <AnomalyWarning>
                   You&rsquo;ve entered far more cases of mortality than usual. We
@@ -389,6 +423,65 @@ function BirdCountForm({
 /* ================================================================== */
 /*  Helpers + sub-components                                           */
 /* ================================================================== */
+
+/**
+ * Optional "what did they sell for?" input, shown only when the Sold
+ * count is above zero.
+ *
+ * Deliberately NOT required. A farmer who sold on credit, or who is
+ * logging the day's movement before settling up, must still be able to
+ * record that the birds left the pen. When it's left blank the cycle
+ * P&L reports the margin as incomplete rather than inventing a figure
+ * or silently reporting the sale as zero revenue.
+ */
+function SoldAmountField({
+  value, onChange, birds,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  birds: number;
+}) {
+  const amount = parseFloat(value || '0') || 0;
+  const perBird = birds > 0 && amount > 0 ? amount / birds : null;
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <label className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          Total sale amount <span className="font-normal text-[var(--color-brand-muted)]">(optional)</span>
+        </label>
+        <span className="text-[11px] text-[var(--color-brand-muted)]">
+          What you were paid for {birds.toLocaleString()} {birds === 1 ? 'bird' : 'birds'}
+        </span>
+      </div>
+      <div className={cn(
+        'flex h-11 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3',
+        FOCUS_WRAPPER,
+      )}>
+        <span className="shrink-0 text-[13px] font-semibold text-[var(--color-brand-muted)]">₦</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={value}
+          // Digits and a single decimal point only — keeps the value
+          // parseable server-side without a validation round-trip.
+          onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))}
+          placeholder="0"
+          className="min-w-0 flex-1 bg-transparent text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+        />
+      </div>
+      <p className="mt-1 text-[11px] leading-snug text-[var(--color-brand-muted)]">
+        {perBird !== null ? (
+          <>
+            About <strong>₦{perBird.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> per bird.
+          </>
+        ) : (
+          'Leave blank if you don’t know yet — your cycle profit will show as incomplete until you add it.'
+        )}
+      </p>
+    </div>
+  );
+}
 
 function CountField({
   label, desc, value, onChange,
