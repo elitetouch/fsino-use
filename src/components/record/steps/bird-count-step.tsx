@@ -574,12 +574,25 @@ function BirdCountEditView({
     lost:   String(originalCounts.lost),
   });
 
+  // Sale amount is edited separately from the counts because it is
+  // optional and may be absent on every record written before the field
+  // existed. Empty string means "no amount on file" — distinct from 0.
+  //
+  // This is also the ONLY way to price a sale that was already logged
+  // without one, which is the path finance uses to complete a cycle's
+  // P&L retroactively.
+  const originalAmount = readAmount(payload, 'sold');
+  const [editedAmount, setEditedAmount] = useState(
+    originalAmount === null ? '' : String(originalAmount),
+  );
+
   const editedInt = {
     sold:   parseInt(edited.sold   || '0', 10) || 0,
     dead:   parseInt(edited.dead   || '0', 10) || 0,
     culled: parseInt(edited.culled || '0', 10) || 0,
     lost:   parseInt(edited.lost   || '0', 10) || 0,
   };
+  const editedAmountNum = parseFloat(editedAmount || '') || 0;
   const newTotal = editedInt.sold + editedInt.dead + editedInt.culled + editedInt.lost;
   const totalDelta = newTotal - originalTotal;
   // New running-birds figure = current − Δ (bird_count REDUCES the flock,
@@ -594,9 +607,18 @@ function BirdCountEditView({
       // row. `anyChange: true` is what the store endpoint sets on a Yes-
       // branch bird_count; keeping it consistent avoids surprising a
       // future reducer that reads it.
+      // The amount key is only written when there IS one. Rebuilding
+      // `sold` as `{ count }` unconditionally would silently wipe the
+      // sale amount off any record that had one — a correction to the
+      // bird count would quietly delete that cycle's revenue.
       const patchedPayload = {
         anyChange: true,
-        sold:   { count: editedInt.sold   },
+        sold: {
+          count: editedInt.sold,
+          ...(editedInt.sold > 0 && editedAmountNum > 0
+            ? { amount: editedAmountNum }
+            : {}),
+        },
         dead:   { count: editedInt.dead   },
         culled: { count: editedInt.culled },
         lost:   { count: editedInt.lost   },
@@ -640,6 +662,14 @@ function BirdCountEditView({
         {editing ? (
           <div className="divide-y divide-[var(--color-brand-border)]">
             <CountInput label="Sold"   value={edited.sold}   onChange={(v) => setEdited((c) => ({ ...c, sold:   v }))} />
+            {editedInt.sold > 0 && (
+              <AmountInput
+                label="Sale amount"
+                value={editedAmount}
+                onChange={setEditedAmount}
+                birds={editedInt.sold}
+              />
+            )}
             <CountInput label="Dead"   value={edited.dead}   onChange={(v) => setEdited((c) => ({ ...c, dead:   v }))} />
             <CountInput label="Culled" value={edited.culled} onChange={(v) => setEdited((c) => ({ ...c, culled: v }))} />
             <CountInput label="Lost"   value={edited.lost}   onChange={(v) => setEdited((c) => ({ ...c, lost:   v }))} />
@@ -649,6 +679,24 @@ function BirdCountEditView({
         ) : (
           <dl className="divide-y divide-[var(--color-brand-border)]">
             <Stat label="Sold"   value={originalCounts.sold} />
+            {/* Surfaced read-only so it's obvious at a glance whether a
+                sale still needs pricing — that's the whole trigger for
+                someone to hit Edit. */}
+            {originalCounts.sold > 0 && (
+              <div className="flex items-center justify-between py-2.5">
+                <dt className="text-[12.5px] text-[var(--color-brand-muted)]">Sale amount</dt>
+                <dd className={cn(
+                  'text-[13px] font-bold tracking-tight',
+                  originalAmount === null
+                    ? 'text-amber-700'
+                    : 'text-[var(--color-brand-fg)]',
+                )}>
+                  {originalAmount === null
+                    ? 'Not recorded'
+                    : `₦${originalAmount.toLocaleString()}`}
+                </dd>
+              </div>
+            )}
             <Stat label="Dead"   value={originalCounts.dead} />
             <Stat label="Culled" value={originalCounts.culled} />
             <Stat label="Lost"   value={originalCounts.lost} />
@@ -754,6 +802,60 @@ function Stat({
       </dd>
     </div>
   );
+}
+
+/**
+ * Money row inside the edit form. Mirrors CountInput's layout so the
+ * amount sits in the same column as the counts, with a naira prefix and
+ * a per-bird readout underneath for sanity-checking a large figure.
+ */
+function AmountInput({
+  label, value, onChange, birds,
+}: { label: string; value: string; onChange: (v: string) => void; birds: number }) {
+  const amount = parseFloat(value || '') || 0;
+  const perBird = birds > 0 && amount > 0 ? amount / birds : null;
+
+  return (
+    <div className="px-4 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={`bc-${label}`} className="text-[12.5px] text-[var(--color-brand-fg-soft)]">
+          {label} <span className="text-[var(--color-brand-muted)]">(₦)</span>
+        </label>
+        <input
+          id={`bc-${label}`}
+          value={value}
+          // Digits plus a single decimal point.
+          onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))}
+          inputMode="decimal"
+          placeholder="0"
+          className="w-32 rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-1.5 text-right text-[13.5px] font-semibold tabular-nums focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+        />
+      </div>
+      {perBird !== null && (
+        <p className="mt-1 text-right text-[11px] text-[var(--color-brand-muted)]">
+          ≈ ₦{perBird.toLocaleString(undefined, { maximumFractionDigits: 0 })} per bird
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Reads payload.<key>.amount. Returns null (not 0) when absent, because
+ * "no amount on file" and "sold for zero" are different facts and only
+ * the former should drive the incomplete-margin warning.
+ */
+function readAmount(payload: Record<string, unknown>, key: string): number | null {
+  const section = payload[key];
+  if (section && typeof section === 'object') {
+    const a = (section as Record<string, unknown>).amount;
+    if (typeof a === 'number' && Number.isFinite(a)) return a;
+    if (typeof a === 'string') {
+      const n = parseFloat(a);
+      return Number.isFinite(n) ? n : null;
+    }
+  }
+  return null;
 }
 
 function readCount(payload: Record<string, unknown>, key: string): number {
