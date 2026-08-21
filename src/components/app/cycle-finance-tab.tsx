@@ -73,6 +73,8 @@ export function CycleFinanceTab({ flockId }: { flockId: string }) {
 function PnlHeadline({ finance }: { finance: FlockFinanceDto }) {
   const s = finance.summary;
   const positive = s.margin >= 0;
+  const completeness = finance.revenue.completeness;
+  const incomplete = completeness?.hasUnpricedSales === true;
 
   return (
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5 sm:p-6">
@@ -114,7 +116,7 @@ function PnlHeadline({ finance }: { finance: FlockFinanceDto }) {
         </div>
         <div className="mt-1 flex items-baseline justify-between">
           <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
-            Margin
+            Margin{incomplete && <span className="ml-1 normal-case italic">(incomplete)</span>}
           </span>
           <span className={cn(
             'text-[18px] font-bold',
@@ -124,6 +126,24 @@ function PnlHeadline({ finance }: { finance: FlockFinanceDto }) {
           </span>
         </div>
       </div>
+
+      {/* Unpriced-sale caveat. Without this, a farm that sold most of its
+          flock through the daily bird-count step (which captured the
+          count but no price) reads as a catastrophic loss rather than an
+          incomplete record — and this screen is one export away from a
+          loan officer. */}
+      {incomplete && (
+        <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+          <div className="text-[12px] leading-relaxed text-amber-900">
+            <p className="font-bold">This margin is not final.</p>
+            <p className="mt-0.5">
+              {completeness?.note
+                ?? `${completeness?.birdsSoldUnpriced ?? 0} birds sold have no sale amount recorded.`}
+            </p>
+          </div>
+        </div>
+      )}
 
       <p className="mt-3 text-[11px] italic text-[var(--color-brand-muted)]">{s.note}</p>
     </section>

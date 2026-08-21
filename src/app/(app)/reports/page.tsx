@@ -272,8 +272,16 @@ function SummaryKpis({
       icon: Wallet,
       label: 'Margin',
       value: formatMoney(summary.margin, currency),
-      sub: 'revenue − total cost',
-      tone: summary.margin >= 0 ? 'mint' : 'rose',
+      // When birds were sold without a price captured, the sub-label has
+      // to say so. A farm that sold most of its flock through the daily
+      // bird-count step otherwise reads as a total loss on the headline
+      // KPI a farmer screenshots for a lender.
+      sub: summary.revenueCompleteness?.hasUnpricedSales
+        ? `incomplete · ${summary.revenueCompleteness.birdsSoldUnpriced} sold birds unpriced`
+        : 'revenue − total cost',
+      tone: summary.revenueCompleteness?.hasUnpricedSales
+        ? 'amber'
+        : summary.margin >= 0 ? 'mint' : 'rose',
     },
   ];
 
