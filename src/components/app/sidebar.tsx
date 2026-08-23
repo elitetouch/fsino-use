@@ -6,6 +6,7 @@ import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
   CreditCard, Info, Phone, MessageCircle, ChevronRight, Wallet,
   Receipt,
+  TrendingUp,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
@@ -41,6 +42,7 @@ const GROUPS: Group[] = [
       { href: '/settings',      label: 'Settings',       icon: Settings },
       { href: '/wallet',        label: 'Wallet',          icon: Wallet },
       { href: '/expenses',      label: 'Expenses',        icon: Receipt },
+      { href: '/sales',         label: 'Sales',           icon: TrendingUp },
       { href: '/subscription',  label: 'Subscription',   icon: CreditCard },
     ],
   },
