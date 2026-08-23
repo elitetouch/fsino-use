@@ -43,6 +43,7 @@ export type PermissionKey =
   | 'flocks.view' | 'flocks.create' | 'flocks.renew' | 'flocks.archive'
   | 'flocks.records.create' | 'flocks.records.update'
   | 'expenses.view' | 'expenses.record'
+  | 'sales.view' | 'sales.record'
   | 'settings.view' | 'settings.update' | 'preferences.update'
   | 'staff_manage.view' | 'staff_manage.create' | 'staff_manage.update' | 'staff_manage.delete'
   | 'billing.manage';
@@ -114,6 +115,12 @@ export const ROUTE_ACCESS: Array<{ path: string; rule: AccessRule }> = [
   // inside the page is separately gated by expenses.record so a
   // read-only auditor can browse without a stray "Add expense" CTA.
   { path: '/expenses',     rule: { perm: 'expenses.view' } },
+
+  // Money-in ledger. Same shape as /expenses above: the page is gated on
+  // sales.view so a read-only finance auditor can browse, while logging
+  // a sale and pricing an unpriced one are separately gated on
+  // sales.record inside the page.
+  { path: '/sales',        rule: { perm: 'sales.view' } },
 
   // Storefront / static
   { path: '/shop',         rule: { openToMembers: true } },

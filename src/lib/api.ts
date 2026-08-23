@@ -652,6 +652,40 @@ export const endpoints = {
       api.delete(`/expenses/${id}`, { data: { reason } }),
     ),
 
+  // ───────────── Sales (money-in ledger) ─────────────
+  /**
+   * Counterpart to the expenses endpoints above, gated on sales.view /
+   * sales.record so a finance-only member can record revenue without
+   * holding flocks.records.* (which would also let them rewrite feed,
+   * mortality and weight data).
+   */
+  listSales: (params?: {
+    flock_id?: string;
+    /** Only sales with birds but no amount — the finance work queue. */
+    needs_pricing?: boolean;
+    per_page?: number;
+  }) =>
+    unwrap<{ sales: SaleRow[]; meta: SaleListMeta }>(
+      api.get('/sales', { params }),
+    ),
+
+  createSale: (flockId: string, payload: {
+    birds_delta: number;
+    amount: number;
+    currency: string;
+    record_date: string;
+    note?: string;
+  }) =>
+    unwrap<{ record: DailyRecordDto }>(
+      api.post(`/flocks/${flockId}/sales`, payload),
+    ),
+
+  /** Attach an amount to a sale that was logged without one. */
+  priceSale: (flockId: string, recordId: string, amount: number) =>
+    unwrap<{ sale: SaleRow }>(
+      api.patch(`/flocks/${flockId}/sales/${recordId}/price`, { amount }),
+    ),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
@@ -2203,6 +2237,41 @@ export interface RevenueCompleteness {
   /** Human-readable explanation; null when revenue is complete. */
   note: string | null;
 }
+
+/**
+ * One row in the money-in ledger.
+ *
+ * Two record shapes surface here, which is why `source` exists:
+ *   'sale'       — a proper sale record: birds AND money together
+ *   'bird_count' — written by the daily-record wizard's Sold field,
+ *                  which captures the count and only optionally a price
+ *
+ * `amount` is null (not 0) when no price is on file. That distinction —
+ * "not priced yet" vs "sold for nothing" — is what drives `needsPricing`
+ * and the incomplete-margin warnings across Finance and Reports.
+ */
+export interface SaleRow {
+  id: string;
+  source: 'sale' | 'bird_count';
+  flockId: string;
+  flockName: string | null;
+  recordDate: string | null;
+  birds: number;
+  amount: number | null;
+  currency: string | null;
+  pricePerBird: number | null;
+  needsPricing: boolean;
+  note: string | null;
+  createdByName: string | null;
+  createdAt: string | null;
+}
+
+export type SaleListMeta = {
+  total: number;
+  perPage: number;
+  currentPage: number;
+  lastPage: number;
+};
 
 export type ExpenseListMeta = {
   total: number;
