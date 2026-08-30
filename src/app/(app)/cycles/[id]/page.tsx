@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
 import {
-  ArrowLeft, Calendar, MapPin, Plus, CheckCircle2, XCircle, Loader2, X,
+  ArrowLeft, Calendar, MapPin, Plus, CheckCircle2, XCircle, Loader2, X, FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
@@ -26,6 +26,7 @@ import { readUser } from '@/lib/auth';
 import { writeLastCycle } from '@/lib/last-cycle';
 import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
 
 type Tab = 'results' | 'climate' | 'finance';
 
@@ -56,8 +57,14 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
   const [tab, setTab] = useState<Tab>(initialTab);
 
   const flocks = useQuery({
-    queryKey: ['flocks', farmId],
-    queryFn: () => endpoints.listFlocks(),
+    // Archived cycles are included deliberately: this page has to be
+    // able to open a COMPLETED cycle, and an active-only list would
+    // make it 404 on a cold load. Previously this shared a cache key
+    // with /reports (which does include archived), so whether an
+    // archived cycle rendered depended on which page you'd visited
+    // first — the same URL worked or 404'd by navigation history.
+    queryKey: flocksKey(farmId, { includeArchived: true }),
+    queryFn: () => endpoints.listFlocks({ includeArchived: true }),
     enabled: !!farmId,
   });
 
@@ -184,6 +191,10 @@ function ResultsTab({
 
   const completedDate = cycle.validUntil ?? cycle.startDate;
 
+  // A cycle is closed once the backend stamps archived_at — via
+  // Complete cycle, End early, or the nightly auto-archive.
+  const isArchived = cycle.archivedAt != null;
+
   const archive = useMutation({
     mutationFn: (opts: ArchiveFlockOpts) => endpoints.archiveFlock(cycle.id, opts),
     onSuccess: (_res, opts) => {
@@ -217,30 +228,49 @@ function ResultsTab({
             </p>
           </div>
         </div>
-        <Gate perm="flocks.archive">
-          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 border-[var(--color-brand-primary)] text-[var(--color-brand-primary-deep)]"
-              onClick={() => setCloseOut('complete')}
-              disabled={archive.isPending}
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Complete cycle
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 text-[var(--color-brand-danger)]"
-              onClick={() => setCloseOut('terminate')}
-              disabled={archive.isPending}
-            >
-              <XCircle className="h-3.5 w-3.5" />
-              End early
+        {/* A closed cycle is a finished record, not a live one. Offering
+            "Complete cycle" on something already complete is nonsense,
+            and "End early" would 404 against an archived flock — so the
+            only action left is reading the report. */}
+        {isArchived ? (
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-brand-muted)]">
+              <CheckCircle2 className="h-3 w-3" />
+              {cycle.outcome === 'terminated' ? 'Ended early' : 'Completed'}
+            </span>
+            <Button asChild size="sm" className="h-9">
+              <Link href={`/reports?flock=${cycle.id}`}>
+                <FileText className="h-3.5 w-3.5" />
+                View full report
+              </Link>
             </Button>
           </div>
-        </Gate>
+        ) : (
+          <Gate perm="flocks.archive">
+            <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 border-[var(--color-brand-primary)] text-[var(--color-brand-primary-deep)]"
+                onClick={() => setCloseOut('complete')}
+                disabled={archive.isPending}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Complete cycle
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-[var(--color-brand-danger)]"
+                onClick={() => setCloseOut('terminate')}
+                disabled={archive.isPending}
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                End early
+              </Button>
+            </div>
+          </Gate>
+        )}
       </article>
 
       {closeOut !== null && (
@@ -256,7 +286,10 @@ function ResultsTab({
 
       <CycleCardsGrid cycle={cycle} penId={pen?.id} />
 
-      {/* Quick-add row */}
+      {/* Quick-add row — hidden on a closed cycle. The backend rejects
+          writes to an archived flock, so showing the button would only
+          lead the farmer into an error. */}
+      {!isArchived && (
       <section className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-4">
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <div>
@@ -275,6 +308,7 @@ function ResultsTab({
           </Gate>
         </div>
       </section>
+      )}
     </>
   );
 }

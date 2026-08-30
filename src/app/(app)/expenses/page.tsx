@@ -12,6 +12,8 @@ import {
   type ExpenseCategory, type ExpenseDto, type FlockDto,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
+import { useCurrentFarmId } from '@/lib/farm-context';
 
 /**
  * Expenses ledger — the finance-only surface.
@@ -44,13 +46,16 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS) as ExpenseCategory[];
 
 export default function ExpensesPage() {
+  // Scopes the flocks cache to this farm — without it, switching
+  // farms reused the previous farm's cached list.
+  const farmId = useCurrentFarmId();
   const [filterFlockId, setFilterFlockId] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<ExpenseCategory | ''>('');
   const [addOpen, setAddOpen] = useState(false);
   const [voiding, setVoiding] = useState<ExpenseDto | null>(null);
 
   const flocks = useQuery({
-    queryKey: ['flocks', { includeArchived: true }],
+    queryKey: flocksKey(farmId, { includeArchived: true }),
     queryFn: () => endpoints.listFlocks({ includeArchived: true }),
   });
 

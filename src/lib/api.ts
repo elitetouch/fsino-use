@@ -386,10 +386,21 @@ export const endpoints = {
    * logged vaccination + medication records, so a record logged as
    * "Lasota" satisfies the "Newcastle" schedule row, etc.
    */
-  getPenDashboard: (penId: string, days?: number) =>
+  /**
+   * Pen dashboard cards.
+   *
+   * `flockId` renders a SPECIFIC cycle rather than whichever flock is
+   * active in the pen — required to open a completed cycle, which would
+   * otherwise match the active-flock lookup server-side and come back
+   * with every card in its empty state.
+   */
+  getPenDashboard: (penId: string, days?: number, flockId?: string) =>
     unwrap<PenDashboardDto>(
       api.get(`/pens/${penId}/dashboard`, {
-        params: days != null ? { days } : undefined,
+        params: {
+          ...(days != null ? { days } : {}),
+          ...(flockId ? { flock_id: flockId } : {}),
+        },
       }),
     ),
 
@@ -1041,6 +1052,13 @@ export type FlockDto = {
   validUntil?: string | null;
   isActive?: boolean;
   archivedAt?: string | null;
+  /**
+   * Close-out detail on an archived cycle, so it can be labelled
+   * "Ended early" vs "Completed" without a second request. Undefined on
+   * live cycles and on rows archived before close-out was captured.
+   */
+  outcome?: FlockOutcome;
+  closeOutReason?: FlockCloseOutReason | null;
 };
 
 /**

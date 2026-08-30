@@ -9,11 +9,12 @@ import { FlockCard } from '@/components/app/flock-card';
 import { endpoints, type FlockDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
+import { flocksKey } from '@/lib/query-keys';
 
 export default function FlocksPage() {
   const farmId = useCurrentFarmId();
   const flocks = useQuery({
-    queryKey: ['flocks', farmId],
+    queryKey: flocksKey(farmId),
     queryFn: () => endpoints.listFlocks(),
     enabled: !!farmId,
   });

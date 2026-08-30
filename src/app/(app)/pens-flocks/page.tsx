@@ -11,6 +11,7 @@ import { endpoints, type PenDto, type FlockDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
 
 type Tab = 'pens' | 'flocks';
 
@@ -32,7 +33,7 @@ export default function PensFlocksPage() {
   });
 
   const flocks = useQuery({
-    queryKey: ['flocks', farmId],
+    queryKey: flocksKey(farmId),
     queryFn: () => endpoints.listFlocks(),
     enabled: !!farmId,
   });

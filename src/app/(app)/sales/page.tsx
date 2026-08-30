@@ -12,6 +12,8 @@ import { Gate } from '@/lib/access';
 import { apiErrorMessage, endpoints, type SaleRow } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
+import { useCurrentFarmId } from '@/lib/farm-context';
 
 /**
  * Sales — the money-IN ledger, counterpart to /expenses.
@@ -28,6 +30,9 @@ import { cn } from '@/lib/utils';
  * ₦0 revenue line and a fake loss on the cycle P&L.
  */
 export default function SalesPage() {
+  // Scopes the flocks cache to this farm — without it, switching
+  // farms reused the previous farm's cached list.
+  const farmId = useCurrentFarmId();
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [logOpen, setLogOpen] = useState(false);
@@ -267,6 +272,7 @@ function PricedRow({ row }: { row: SaleRow }) {
 /** Log a brand-new sale against a cycle. */
 function LogSaleDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
+  const farmId = useCurrentFarmId();
   const [flockId, setFlockId] = useState('');
   const [birds, setBirds] = useState('');
   const [amount, setAmount] = useState('');
@@ -274,7 +280,7 @@ function LogSaleDialog({ open, onClose }: { open: boolean; onClose: () => void }
   const [note, setNote] = useState('');
 
   const flocks = useQuery({
-    queryKey: ['flocks'],
+    queryKey: flocksKey(farmId),
     queryFn: () => endpoints.listFlocks({}),
     enabled: open,
   });
