@@ -3,17 +3,28 @@
 import {
   SubPageHeader, Section, ToggleRow, ComingSoonRow, SectionSkeleton,
 } from '@/components/settings/primitives';
+import { PushDeviceCard } from '@/components/settings/push-device-card';
 import { useMyPreferences, useUpdateMyPreferences } from '@/lib/use-preferences';
 
 /**
  * Push notifications — sub-page reached from /settings.
  *
- * Mirrors the figma "Push notifications / Preferences for your
- * notifications" frame. The first block is the three live toggles the
- * backend supports today (daily-record, vaccination, bird-weighing
- * reminders). The second block is the roadmap rows the figma showed
- * in red — PenKeep alerts, finance reminders, daily / weekly reports
- * — marked here as "Soon" so the user knows we're aware.
+ * TWO LAYERS, deliberately separated:
+ *
+ *   1. PushDeviceCard — does THIS handset ring at all? Permission is
+ *      granted per browser, per device, and cannot follow the user
+ *      anywhere.
+ *   2. The category toggles — which things are worth ringing about.
+ *      These are stored server-side and DO follow the user everywhere.
+ *
+ * Collapsing the two is why push settings confuse people: a farmer who
+ * switched every category on and still hears nothing, because they never
+ * granted permission on their phone, has no way to discover that from a
+ * screen of category switches alone.
+ *
+ * PenKeep alerts and cycle reminders were "coming soon" rows until push
+ * delivery existed. They are now the two most valuable notifications the
+ * product sends, so they lead.
  *
  * These override the farm-wide notification defaults for THIS user
  * on this device. The farm defaults seed new members; you can turn
@@ -51,6 +62,26 @@ export default function NotificationsPage() {
       />
 
       <div className="space-y-4">
+        <PushDeviceCard />
+
+        <Section
+          title="Farm alerts"
+          hint="Problems worth knowing about before they cost you birds."
+        >
+          <ToggleRow
+            label="Pen alerts"
+            desc="Sudden mortality, feed drop, heat stress, ammonia spike, stalled growth."
+            checked={!!n.penkeep_alerts}
+            onChange={(v) => flip('penkeep_alerts', v)}
+          />
+          <ToggleRow
+            label="Cycle reminders"
+            desc="A heads-up 7, 3 and 1 day before a cycle's tracking window closes."
+            checked={!!n.cycle_reminders}
+            onChange={(v) => flip('cycle_reminders', v)}
+          />
+        </Section>
+
         <Section title="Reminders" hint="Nudges to keep your daily records up to date.">
           <ToggleRow
             label="Add daily record reminders"
@@ -74,12 +105,8 @@ export default function NotificationsPage() {
 
         <Section
           title="More alerts"
-          hint="On the roadmap — we'll switch these on once the underlying signal is wired up."
+          hint="Everything below is on the roadmap — we'll switch it on once the underlying signal is wired up."
         >
-          <ComingSoonRow
-            label="PenKeep alerts"
-            hint="Pen-by-pen anomaly detection: water cut-out, sudden mortality spike, feeder empty."
-          />
           <ComingSoonRow
             label="Finance reminders"
             hint="Margin warnings: cycle cost outpacing revenue, token balance low."

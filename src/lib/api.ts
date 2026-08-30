@@ -124,6 +124,22 @@ export function normalisePhone(input: string): string {
   return input.replace(/\D/g, '');
 }
 
+/**
+ * A device registered for push.
+ *
+ * Note there is no endpoint/token field: the API deliberately never
+ * returns the addressing material, since anyone holding a web push
+ * endpoint can post to it.
+ */
+export type PushDeviceDto = {
+  id: string;
+  transport: 'webpush' | 'fcm';
+  platform: 'web' | 'android' | 'ios' | null;
+  device_label: string | null;
+  last_used_at: string | null;
+  created_at: string;
+};
+
 export const endpoints = {
   register: (payload: RegisterPayload) =>
     unwrap<AuthSession>(
@@ -134,6 +150,35 @@ export const endpoints = {
     unwrap<AuthSession>(api.post('/login', { email, password })),
 
   logout: () => api.post('/logout'),
+
+  /* ---------------------------------------------------------------- */
+  /*  Push notifications                                              */
+  /*                                                                  */
+  /*  Same contract the React Native app uses; `transport` is what     */
+  /*  distinguishes a web-push endpoint from an FCM token. These sit   */
+  /*  outside farm context on purpose — a device belongs to a person,  */
+  /*  not to a farm, so a farmer with three farms registers one phone. */
+  /* ---------------------------------------------------------------- */
+
+  getVapidKey: () =>
+    unwrap<{ publicKey: string; enabled: boolean }>(api.get('/push/vapid-key')),
+
+  listPushDevices: () =>
+    unwrap<{ subscriptions: PushDeviceDto[] }>(api.get('/push/subscriptions')),
+
+  registerPushDevice: (payload: {
+    transport: 'webpush' | 'fcm';
+    identifier: string;
+    keys?: { p256dh: string; auth: string };
+    platform?: 'web' | 'android' | 'ios';
+    device_label?: string;
+  }) => unwrap<{ subscription: PushDeviceDto }>(api.post('/push/subscriptions', payload)),
+
+  unregisterPushDevice: (identifier: string) =>
+    api.delete('/push/subscriptions', { data: { identifier } }),
+
+  sendTestPush: () =>
+    unwrap<{ delivered: number }>(api.post('/push/test')),
 
   profile: () => unwrap<AppUserDto>(api.get('/profile')),
 

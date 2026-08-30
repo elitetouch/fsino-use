@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { startSync, requestPersistentStorage } from '@/lib/offline';
+import { syncPushSubscription } from '@/lib/push';
 
 /**
  * Service-worker registration + offline-engine boot.
@@ -91,8 +92,34 @@ export function SwRegistration() {
     };
     navigator.serviceWorker.addEventListener('controllerchange', onCtrlChange);
 
+    // Re-register the push subscription on every launch.
+    //
+    // Browsers rotate push endpoints on their own schedule and never
+    // tell the user. The old endpoint starts returning 410, the backend
+    // revokes it, and the farmer simply stops receiving alerts weeks
+    // after setting them up — with nothing broken-looking anywhere. This
+    // is the single most common way push dies in production.
+    //
+    // The API is an upsert keyed on the endpoint, so re-registering an
+    // unchanged subscription costs one request and changes nothing. It
+    // is a no-op unless permission was already granted.
+    void syncPushSubscription().catch(() => {
+      /* Not fatal — the user can still re-enable from settings. */
+    });
+
+    // The service worker fires `pushsubscriptionchange` when it notices
+    // a rotation while the app is open. It has no auth token of its own,
+    // so it asks us to do the re-registration.
+    const onSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'FSM_PUSH_RESUBSCRIBE') {
+        void syncPushSubscription().catch(() => undefined);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onSwMessage);
+
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', onCtrlChange);
+      navigator.serviceWorker.removeEventListener('message', onSwMessage);
     };
   }, []);
 
