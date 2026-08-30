@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Bird, Warehouse, Wallet, TrendingUp, Plus, ClipboardList,
-  ArrowRight, Sparkles, CheckCircle2, Pencil, Thermometer,
+  ArrowRight, Sparkles, CheckCircle2, Pencil, Thermometer, History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
@@ -65,6 +65,23 @@ export default function HomePage() {
     queryFn: () => endpoints.listFlocks(),
     enabled: !!currentFarmId,
   });
+
+  // Does this farm have CLOSED cycles?
+  //
+  // Deliberately a separate query rather than adding includeArchived to
+  // the one above: `flocks` feeds the cycle switcher, total active birds
+  // and the "Across N cycles" tile, all of which mean ACTIVE cycles.
+  // Folding archived rows into it would inflate every one of them.
+  //
+  // Only fires once we know there is no active cycle, so a farm that is
+  // mid-cycle — the normal case — never pays for the extra request.
+  const hasNoActiveCycle = flocks.isSuccess && (flocks.data?.flocks ?? []).length === 0;
+  const history = useQuery({
+    queryKey: flocksKey(currentFarmId, { includeArchived: true }),
+    queryFn: () => endpoints.listFlocks({ includeArchived: true }),
+    enabled: !!currentFarmId && hasNoActiveCycle,
+  });
+  const completedCount = (history.data?.flocks ?? []).filter((f) => f.archivedAt != null).length;
 
   // Hydration-safe read of the per-staff, per-farm last-visited cycle.
   // Starts null on the server, syncs once on mount when localStorage
@@ -232,7 +249,7 @@ export default function HomePage() {
 
         </>
       ) : (
-        <EmptyCycleNudge />
+        <EmptyCycleNudge completedCount={completedCount} />
       )}
 
       {/* Quick add */}
@@ -390,24 +407,50 @@ function todayFullLabel(): string {
   });
 }
 
-function EmptyCycleNudge() {
+/**
+ * Shown when no cycle is running.
+ *
+ * `completedCount` distinguishes two situations the old copy collapsed
+ * into one. A brand-new farm is being onboarded ("your first flock"). A
+ * farm BETWEEN cycles has just finished one — telling it to place a
+ * "first" flock while offering no route to the cycle it just closed
+ * reads as if its records were wiped, which is exactly how the dashboard
+ * looked the morning after a close-out.
+ */
+function EmptyCycleNudge({ completedCount = 0 }: { completedCount?: number }) {
+  const hasHistory = completedCount > 0;
+
   return (
     <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
       <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
         <Bird className="h-5 w-5" />
       </span>
-      <p className="mt-4 text-[14px] font-bold text-[var(--color-brand-fg)]">No active cycle yet</p>
-      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
-        Place your first flock to start tracking feed, vaccines and margin.
+      <p className="mt-4 text-[14px] font-bold text-[var(--color-brand-fg)]">
+        {hasHistory ? 'No cycle running right now' : 'No active cycle yet'}
       </p>
-      <Gate perm="flocks.create">
-        <Button asChild size="sm" className="mt-4">
-          <Link href="/setup/flocks">
-            <Plus className="h-3.5 w-3.5" />
-            Place a flock
-          </Link>
-        </Button>
-      </Gate>
+      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+        {hasHistory
+          ? `Your ${completedCount === 1 ? 'completed cycle is' : `${completedCount} completed cycles are`} still here — place a new flock when you're ready.`
+          : 'Place your first flock to start tracking feed, vaccines and margin.'}
+      </p>
+      <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
+        <Gate perm="flocks.create">
+          <Button asChild size="sm">
+            <Link href="/setup/flocks">
+              <Plus className="h-3.5 w-3.5" />
+              Place a flock
+            </Link>
+          </Button>
+        </Gate>
+        {hasHistory && (
+          <Button asChild size="sm" variant="outline">
+            <Link href="/cycles">
+              <History className="h-3.5 w-3.5" />
+              View cycle history
+            </Link>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
