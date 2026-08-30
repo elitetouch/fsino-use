@@ -17,6 +17,7 @@ import {
 } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
 
 /**
  * Reports page — accuracy-first cycle report a bank / co-op officer
@@ -41,7 +42,7 @@ export default function ReportsPage() {
   const farmId = useCurrentFarmId();
 
   const flocks = useQuery({
-    queryKey: ['flocks', farmId],
+    queryKey: flocksKey(farmId, { includeArchived: true }),
     queryFn: () => endpoints.listFlocks({ includeArchived: true }),
     enabled: !!farmId,
   });

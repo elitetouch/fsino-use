@@ -25,6 +25,7 @@ import {
 } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
 
 /**
  * Step 3 — Add at least one flock.
@@ -102,7 +103,7 @@ export default function SetupFlocksPage() {
   });
 
   const flocks = useQuery({
-    queryKey: ['flocks', farmId],
+    queryKey: flocksKey(farmId),
     queryFn: () => endpoints.listFlocks(),
     enabled: !!farmId,
   });

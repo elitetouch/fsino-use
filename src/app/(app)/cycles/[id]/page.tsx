@@ -26,6 +26,7 @@ import { readUser } from '@/lib/auth';
 import { writeLastCycle } from '@/lib/last-cycle';
 import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
 
 type Tab = 'results' | 'climate' | 'finance';
 
@@ -56,8 +57,14 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
   const [tab, setTab] = useState<Tab>(initialTab);
 
   const flocks = useQuery({
-    queryKey: ['flocks', farmId],
-    queryFn: () => endpoints.listFlocks(),
+    // Archived cycles are included deliberately: this page has to be
+    // able to open a COMPLETED cycle, and an active-only list would
+    // make it 404 on a cold load. Previously this shared a cache key
+    // with /reports (which does include archived), so whether an
+    // archived cycle rendered depended on which page you'd visited
+    // first — the same URL worked or 404'd by navigation history.
+    queryKey: flocksKey(farmId, { includeArchived: true }),
+    queryFn: () => endpoints.listFlocks({ includeArchived: true }),
     enabled: !!farmId,
   });
 

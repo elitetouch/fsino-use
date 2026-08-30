@@ -11,6 +11,7 @@ import { endpoints, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
+import { flocksKey } from '@/lib/query-keys';
 
 /**
  * Select cycle — the web equivalent of the mobile "Select pen → Select
@@ -29,7 +30,7 @@ export default function CyclesPage() {
   });
 
   const flocks = useQuery({
-    queryKey: ['flocks', farmId],
+    queryKey: flocksKey(farmId),
     queryFn: () => endpoints.listFlocks(),
     enabled: !!farmId,
   });

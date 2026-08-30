@@ -19,6 +19,7 @@ import { Gate } from '@/lib/access';
 import { readUser } from '@/lib/auth';
 import { readCurrentFarmId, useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 import { readLastCycle, writeLastCycle } from '@/lib/last-cycle';
+import { flocksKey } from '@/lib/query-keys';
 
 /**
  * Dashboard — cycle-aware.
@@ -60,7 +61,7 @@ export default function HomePage() {
   });
 
   const flocks = useQuery({
-    queryKey: ['flocks', currentFarmId],
+    queryKey: flocksKey(currentFarmId),
     queryFn: () => endpoints.listFlocks(),
     enabled: !!currentFarmId,
   });
