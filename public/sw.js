@@ -254,3 +254,113 @@ self.addEventListener('message', (event) => {
     );
   }
 });
+
+// -------------------- PUSH NOTIFICATIONS --------------------
+//
+// The backend sends PushMessage::toArray() as the encrypted payload:
+//   { title, body, url, tag, severity, requireInteraction, data }
+//
+// `tag` is what stops an alert stacking. A recurring problem reuses its
+// (flock, rule) tag, so a second notification REPLACES the first in the
+// tray rather than adding to it. Without this a farmer whose pen is
+// genuinely too hot wakes up to a screen of identical warnings.
+
+self.addEventListener('push', (event) => {
+  event.waitUntil(showPush(event));
+});
+
+async function showPush(event) {
+  let payload = {};
+
+  // A push with no data, or with a body we can't parse, must still
+  // surface SOMETHING. A silent failure here is indistinguishable from
+  // push being broken, and this is the one code path nobody is watching
+  // when it runs.
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = {};
+  }
+
+  const title = payload.title || 'Farm Support Innovation';
+  const url = payload.url || '/';
+
+  await self.registration.showNotification(title, {
+    body: payload.body || 'Open the app to see what changed.',
+    icon: '/logo.png',
+    badge: '/logo.png',
+    tag: payload.tag || 'fsi-general',
+
+    // Replace a same-tag notification silently. Re-alerting the device
+    // (vibrate + sound) for what is the SAME ongoing problem is how a
+    // useful alert becomes one the farmer swipes away on reflex.
+    renotify: false,
+
+    // High/critical stay until acknowledged — a farmer asleep when birds
+    // start dying should still find it in the morning.
+    requireInteraction: payload.requireInteraction === true,
+
+    // Carried through to notificationclick, which is a separate event
+    // with no access to this scope.
+    data: { url, ...(payload.data || {}) },
+  });
+}
+
+// -------------------- NOTIFICATION CLICK --------------------
+//
+// Focus an already-open tab rather than opening another one. A farmer
+// who taps four alerts should not end up with four copies of the app,
+// each with its own React Query cache and its own idea of the truth.
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(openApp(event.notification.data?.url || '/'));
+});
+
+async function openApp(url) {
+  const target = new URL(url, self.location.origin);
+
+  const clientList = await self.clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true,
+  });
+
+  for (const client of clientList) {
+    // Same origin — reuse this window. `navigate` needs the client to be
+    // focusable; it throws on some platforms, so fall back to a plain
+    // focus rather than losing the tap entirely.
+    if (new URL(client.url).origin === target.origin && 'focus' in client) {
+      try {
+        await client.navigate(target.href);
+      } catch {
+        // Navigation refused — at least bring the app forward.
+      }
+      return client.focus();
+    }
+  }
+
+  return self.clients.openWindow(target.href);
+}
+
+// -------------------- SUBSCRIPTION CHANGE --------------------
+//
+// Browsers rotate push endpoints on their own schedule, without telling
+// the user. When that happens the old endpoint dies and the farmer
+// silently stops receiving alerts — the single most common way push
+// "just stops working" in production.
+//
+// The service worker gets one chance to notice. We can't call the API
+// from here (no auth token in SW scope), so we tell every open client to
+// re-register; the app also re-registers on every launch, which covers
+// the case where no tab is open when this fires.
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({ includeUncontrolled: true });
+      for (const client of clients) {
+        client.postMessage({ type: 'FSM_PUSH_RESUBSCRIBE' });
+      }
+    })(),
+  );
+});
