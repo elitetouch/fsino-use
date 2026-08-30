@@ -3,9 +3,12 @@
 import { use, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
 import { endpoints, type DailyRecordDto, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
+import { useCurrentFarmId } from '@/lib/farm-context';
+import { flocksKey } from '@/lib/query-keys';
+import { fmtDate } from '@/lib/format';
 import { useDailyRecordsForDate, pickRecord, pickAllRecords } from '@/lib/use-daily-record';
 import { DatePickerStep } from '@/components/record/date-picker-step';
 import { FeedStep } from '@/components/record/steps/feed-step';
@@ -40,6 +43,7 @@ import { EggSizeWeightStep } from '@/components/record/steps/egg-size-weight-ste
 export default function RecordWizardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: flockId } = use(params);
   const router = useRouter();
+  const farmId = useCurrentFarmId();
 
   // Selected date — defaults to today, drives both the calendar
   // selection and every step's POST payload (record_date).
@@ -67,6 +71,21 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
     queryFn: () => endpoints.getDailyRecordGuidance(flockId),
     staleTime: 60_000,
   });
+
+  // The flock itself — needed to tell a CLOSED cycle apart from a failed
+  // request. The backend rejects records on an archived flock with a 422,
+  // which otherwise lands in the generic error branch below and tells the
+  // farmer to "try refreshing" something that will never load.
+  //
+  // includeArchived is required here: without it an archived cycle simply
+  // isn't in the response and we can't distinguish it from a bad id.
+  const flocks = useQuery({
+    queryKey: flocksKey(farmId, { includeArchived: true }),
+    queryFn: () => endpoints.listFlocks({ includeArchived: true }),
+    enabled: !!farmId,
+  });
+  const flock = flocks.data?.flocks.find((f) => f.id === flockId) ?? null;
+  const isArchived = flock?.archivedAt != null;
 
   // User prefs — `effectiveDailyRecord` is the AND of farm ceiling +
   // user choice that we want, already computed server-side.
@@ -136,6 +155,24 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
 
   // Loading state — keep the chrome simple, the actual steps render
   // inside StepShell so a centred spinner here is fine.
+  if (flocks.isLoading) {
+    return <FullPageSpinner />;
+  }
+
+  // Closed cycle reached by direct URL (bookmark, shared link, browser
+  // history). The backend already refuses the write — this just says so
+  // honestly and points at the thing the farmer can still do.
+  if (isArchived) {
+    return (
+      <ClosedCycleNotice
+        flockId={flockId}
+        closedAt={flock?.archivedAt ?? null}
+        onViewReport={() => router.push(`/reports?flock_id=${flockId}`)}
+        onBack={() => router.push(`/cycles/${flockId}`)}
+      />
+    );
+  }
+
   if (guidance.isLoading || prefs.isLoading || !stepList) {
     return <FullPageSpinner />;
   }
@@ -443,6 +480,57 @@ function FullPageSpinner() {
   return (
     <div className="flex min-h-svh items-center justify-center bg-white">
       <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand-primary)]" />
+    </div>
+  );
+}
+
+/**
+ * Terminal state for a cycle that has already been closed out.
+ *
+ * Deliberately not phrased as an error: nothing failed, and the previous
+ * copy ("Try refreshing") invited a retry that can never succeed.
+ */
+function ClosedCycleNotice({
+  flockId, closedAt, onViewReport, onBack,
+}: {
+  flockId: string;
+  closedAt: string | null;
+  onViewReport: () => void;
+  onBack: () => void;
+}) {
+  void flockId;
+  return (
+    <div className="flex min-h-svh items-center justify-center bg-white p-6">
+      <div className="max-w-[420px] rounded-2xl border border-[var(--color-brand-border)] bg-white p-6 text-center">
+        <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
+          <Lock className="h-4 w-4" strokeWidth={2.2} />
+        </span>
+        <h1 className="mt-4 text-[16px] font-extrabold text-[var(--color-brand-fg)]">
+          This cycle is closed
+        </h1>
+        <p className="mt-1.5 text-[12.5px] text-[var(--color-brand-muted)]">
+          {closedAt
+            ? `It was completed on ${fmtDate(closedAt)}, so no new records can be added.`
+            : 'It has been completed, so no new records can be added.'}{' '}
+          Its results are still available in full.
+        </p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <button
+            type="button"
+            onClick={onViewReport}
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-brand-primary)] px-4 text-[12.5px] font-bold text-white hover:bg-[var(--color-brand-primary-deep)]"
+          >
+            View full report
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-[var(--color-brand-border)] px-4 text-[12.5px] font-bold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
+          >
+            Back to cycle
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
