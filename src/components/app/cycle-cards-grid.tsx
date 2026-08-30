@@ -37,9 +37,14 @@ export function CycleCardsGrid({
   penId: string | undefined;
 }) {
   const router = useRouter();
+  // Always scope to THIS cycle. Without the flock id the server
+  // resolves the pen's active flock, so opening a completed cycle
+  // returned "no active flock" and drew every card empty. The id is
+  // part of the query key too, so two cycles in the same pen can't
+  // share a cache entry.
   const dashboard = useQuery({
-    queryKey: ['pen-dashboard', penId],
-    queryFn: () => endpoints.getPenDashboard(penId!),
+    queryKey: ['pen-dashboard', penId, cycle.id],
+    queryFn: () => endpoints.getPenDashboard(penId!, undefined, cycle.id),
     enabled: !!penId,
     staleTime: 30_000,
   });
