@@ -20,7 +20,7 @@
  * precached asset list changes. Old caches are cleaned on activate.
  */
 
-const CACHE_VERSION = 'fsm-v2';
+const CACHE_VERSION = 'fsm-v3';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const API_CACHE = `${CACHE_VERSION}-api`;
@@ -40,6 +40,10 @@ const PRECACHE_URLS = [
   '/logo.svg',
   '/notification-icon.png',
   '/badge.png',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-maskable-192.png',
+  '/icon-maskable-512.png',
 ];
 
 // Maximum number of entries to keep in each runtime cache. LRU eviction
