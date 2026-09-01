@@ -20,7 +20,7 @@
  * precached asset list changes. Old caches are cleaned on activate.
  */
 
-const CACHE_VERSION = 'fsm-v1';
+const CACHE_VERSION = 'fsm-v2';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const API_CACHE = `${CACHE_VERSION}-api`;
@@ -38,6 +38,8 @@ const PRECACHE_URLS = [
   '/manifest.webmanifest',
   '/logo.png',
   '/logo.svg',
+  '/notification-icon.png',
+  '/badge.png',
 ];
 
 // Maximum number of entries to keep in each runtime cache. LRU eviction
@@ -287,8 +289,19 @@ async function showPush(event) {
 
   await self.registration.showNotification(title, {
     body: payload.body || 'Open the app to see what changed.',
-    icon: '/logo.png',
-    badge: '/logo.png',
+    // Full-colour mark on a white circle. The raw logo is transparent,
+    // so on a dark notification shade the dark-green strokes vanished
+    // into the background — the circle is what guarantees contrast in
+    // both light and dark mode. Text lockup removed: at this size it is
+    // sub-pixel noise, and dropping it lets the mark render far larger.
+    icon: '/notification-icon.png',
+
+    // MUST be a bold monochrome silhouette, not the logo. Android
+    // discards colour and masks the badge using only the alpha channel,
+    // so the detailed logo (cloud + animals + wifi + two lines of text)
+    // flattened into one white blob at 24dp. This is the signal mark
+    // alone, which is the one element that survives that treatment.
+    badge: '/badge.png',
     tag: payload.tag || 'fsi-general',
 
     // Replace a same-tag notification silently. Re-alerting the device
