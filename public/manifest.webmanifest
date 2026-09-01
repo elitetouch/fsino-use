@@ -1,40 +1,48 @@
 {
   "$schema": "https://json.schemastore.org/web-manifest-combined.json",
   "name": "Farm Support Innovation",
-  "short_name": "FarmSpeak",
-  "description": "Run a tighter poultry farm. Track every flock, every feed bag, every vaccine — works online and off.",
+  "short_name": "Farm Support",
+  "description": "Run a tighter poultry farm. Track every flock, every feed bag, every vaccine \u2014 works online and off.",
   "id": "/",
   "scope": "/",
   "start_url": "/?utm_source=pwa",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#fafdf8",
   "theme_color": "#15a34a",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["productivity", "business", "agriculture"],
+  "categories": [
+    "productivity",
+    "business",
+    "agriculture"
+  ],
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/icon-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
