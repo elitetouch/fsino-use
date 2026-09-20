@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
 import { CyclePicker } from '@/components/app/cycle-picker';
 import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
+import { CycleWindowBanner } from '@/components/app/cycle-window-banner';
 import { AlertsFeed } from '@/components/app/alerts-feed';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
@@ -244,6 +245,13 @@ export default function HomePage() {
               </div>
             }
           />
+
+          {/* The dashboard is the first screen most farmers open, so the
+              deadline belongs here rather than only on the cycle page —
+              ahead of the two quick-add buttons below that would
+              otherwise walk them into a refusal. Renders nothing while
+              the cycle is inside its window. */}
+          <CycleWindowBanner flockId={cycle.id} window={cycle.writeWindow} />
 
           <CycleCardsGrid cycle={cycle} penId={cycle.penId ?? undefined} />
 

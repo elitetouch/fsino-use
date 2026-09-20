@@ -8,6 +8,8 @@ import { endpoints, type DailyRecordDto, type DailyRecordGuidance, type MyPrefer
 import { useMyPreferences } from '@/lib/use-preferences';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { flocksKey } from '@/lib/query-keys';
+import { CycleWindowBanner } from '@/components/app/cycle-window-banner';
+import type { CycleWriteWindow } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 import { useDailyRecordsForDate, pickRecord, pickAllRecords } from '@/lib/use-daily-record';
 import { DatePickerStep } from '@/components/record/date-picker-step';
@@ -86,6 +88,10 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   });
   const flock = flocks.data?.flocks.find((f) => f.id === flockId) ?? null;
   const isArchived = flock?.archivedAt != null;
+
+  // Paid-window state. A missing writeWindow means an older API build —
+  // treat as writable rather than blocking on deploy skew.
+  const isLocked = flock?.writeWindow?.state === 'locked';
 
   // User prefs — `effectiveDailyRecord` is the AND of farm ceiling +
   // user choice that we want, already computed server-side.
@@ -168,6 +174,23 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
         flockId={flockId}
         closedAt={flock?.archivedAt ?? null}
         onViewReport={() => router.push(`/reports?flock_id=${flockId}`)}
+        onBack={() => router.push(`/cycles/${flockId}`)}
+      />
+    );
+  }
+
+  // Expired cycle reached by direct URL, or from a stale tab opened
+  // before the window lapsed. The backend refuses the write; without this
+  // that refusal arrives as a generic "couldn't load" error AFTER the
+  // farmer has filled in the form, with no mention of renewal.
+  //
+  // Checked after isArchived so a deliberately closed-out cycle is never
+  // told to renew.
+  if (isLocked) {
+    return (
+      <ExpiredCycleNotice
+        flockId={flockId}
+        window={flock?.writeWindow}
         onBack={() => router.push(`/cycles/${flockId}`)}
       />
     );
@@ -490,6 +513,44 @@ function FullPageSpinner() {
  * Deliberately not phrased as an error: nothing failed, and the previous
  * copy ("Try refreshing") invited a retry that can never succeed.
  */
+/**
+ * Full-page stop for a cycle whose paid window has lapsed.
+ *
+ * Wraps the same CycleWindowBanner the cycle page uses rather than
+ * restating the copy — two hand-written versions of "your cycle expired"
+ * drift, and the one nobody looks at is the one that ends up wrong.
+ */
+function ExpiredCycleNotice({
+  flockId, window, onBack,
+}: {
+  flockId: string;
+  window?: CycleWriteWindow;
+  onBack: () => void;
+}) {
+  const router = useRouter();
+
+  return (
+    <div className="flex min-h-svh items-center justify-center bg-white p-6">
+      <div className="w-full max-w-[460px]">
+        <CycleWindowBanner
+          flockId={flockId}
+          window={window}
+          // Renewing from here should drop the farmer straight into the
+          // record they came to write, not leave them on a dead screen.
+          onRenewed={() => router.refresh()}
+        />
+        <button
+          type="button"
+          onClick={onBack}
+          className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-lg border border-[var(--color-brand-border)] px-4 text-[12.5px] font-bold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
+        >
+          Back to cycle
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ClosedCycleNotice({
   flockId, closedAt, onViewReport, onBack,
 }: {
