@@ -287,6 +287,16 @@ export const endpoints = {
    * Pass `pen_id` to scope to a single pen and `includeArchived` to get
    * the full history (used by the pen-detail page).
    */
+  /**
+   * POST /flocks/{id}/renew — extends the paid window.
+   *
+   * Takes no body: the server derives the extension from production type
+   * (7 weeks broiler, 78 layer/dual) and debits one token per live bird.
+   * Requires the `flocks.renew` permission.
+   */
+  renewFlock: (flockId: string) =>
+    unwrap<{ flock: FlockDto }>(api.post(`/flocks/${flockId}/renew`)),
+
   listFlocks: (params?: { pen_id?: string; includeArchived?: boolean }) =>
     unwrap<{ flocks: FlockDto[] }>(
       api.get('/flocks', {
@@ -1104,6 +1114,32 @@ export type FlockDto = {
    */
   outcome?: FlockOutcome;
   closeOutReason?: FlockCloseOutReason | null;
+
+  /**
+   * Paid-window state, from the backend's CycleWriteWindow.
+   *
+   * The server is the authority — it refuses the write regardless of what
+   * the client thinks. This exists so the UI can warn during grace and
+   * prompt to renew once locked, rather than letting someone fill in a
+   * whole daily record and only discover the lock when the POST fails.
+   *
+   * Optional because older API builds don't send it; treat a missing
+   * value as "writable" rather than locking someone out on a deploy skew.
+   */
+  writeWindow?: CycleWriteWindow;
+};
+
+export type CycleWriteWindowState = 'active' | 'grace' | 'locked' | 'closed';
+
+export type CycleWriteWindow = {
+  state: CycleWriteWindowState;
+  allowsWrites: boolean;
+  /** End of the paid period. Null on legacy flocks with no window. */
+  validUntil: string | null;
+  /** End of the 3-day grace that follows validUntil. */
+  graceEndsAt: string | null;
+  /** Whole days left in grace; null unless state is 'grace'. */
+  graceDaysLeft: number | null;
 };
 
 /**

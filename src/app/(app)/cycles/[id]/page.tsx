@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 import { CyclePicker } from '@/components/app/cycle-picker';
 import { CycleCardsGrid } from '@/components/app/cycle-cards-grid';
+import { CycleWindowBanner } from '@/components/app/cycle-window-banner';
 import { PenClimateWithHistory } from '@/components/app/pen-climate';
 import { CycleFinanceTab } from '@/components/app/cycle-finance-tab';
 import {
@@ -195,6 +196,11 @@ function ResultsTab({
   // Complete cycle, End early, or the nightly auto-archive.
   const isArchived = cycle.archivedAt != null;
 
+  // Paid-window state. A missing writeWindow means an older API build —
+  // treat that as writable rather than locking someone out on deploy skew.
+  const writeWindow = cycle.writeWindow;
+  const isLocked = writeWindow?.state === 'locked';
+
   const archive = useMutation({
     mutationFn: (opts: ArchiveFlockOpts) => endpoints.archiveFlock(cycle.id, opts),
     onSuccess: (_res, opts) => {
@@ -273,6 +279,11 @@ function ResultsTab({
         )}
       </article>
 
+      {/* Directly under the header, above every card: a farmer must meet
+          the deadline before they start working, not after. Renders
+          nothing while the cycle is inside its window. */}
+      <CycleWindowBanner flockId={cycle.id} window={writeWindow} />
+
       {closeOut !== null && (
         <CloseOutSheet
           mode={closeOut}
@@ -286,10 +297,13 @@ function ResultsTab({
 
       <CycleCardsGrid cycle={cycle} penId={pen?.id} />
 
-      {/* Quick-add row — hidden on a closed cycle. The backend rejects
-          writes to an archived flock, so showing the button would only
-          lead the farmer into an error. */}
-      {!isArchived && (
+      {/* Quick-add row — hidden on a closed OR expired cycle. The backend
+          rejects writes in both cases, so showing the button would only
+          walk the farmer into an error. For the expired case the banner
+          above carries the reason and the renew button, which is the
+          whole point: a refusal with no way out just stops the farm
+          logging instead of paying. */}
+      {!isArchived && !isLocked && (
       <section className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-4">
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <div>
