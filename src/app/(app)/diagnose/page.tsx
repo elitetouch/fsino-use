@@ -138,6 +138,22 @@ function Diagnose() {
         onChange={(e) => choose(e.target.files?.[0])}
       />
 
+      {/*
+        * ABOVE THE CAMERA, not on the confirm step.
+        *
+        * It used to sit after the photo, on the reasoning that asking
+        * which cycle before the shutter puts a question between the
+        * farmer and the camera. That held while the link was optional.
+        * Now it is required, and a farm with no running cycle cannot
+        * run a check at all — finding that out AFTER walking to the pen
+        * and taking a photo is the worse interruption by far.
+        *
+        * It is not much of a question in practice: with one running
+        * cycle it auto-selects and just states which birds are being
+        * checked, and with none it explains why the camera is off.
+        */}
+      {!result && <CyclePicker value={flockId} onChange={setFlockId} />}
+
       {busy && preview ? (
         // Narrow on purpose: one photograph and a progress line. There
         // is nothing to put beside it.
@@ -168,11 +184,6 @@ function Diagnose() {
           />
 
           <div className="space-y-4">
-            {/* On the confirm step, not the start screen: asking which
-                cycle before they have even taken a photo is a question
-                standing between the farmer and the camera. */}
-            <CyclePicker value={flockId} onChange={setFlockId} />
-
             <p className="text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
               Can you see the droppings clearly? If not, take it again.
             </p>
@@ -187,14 +198,33 @@ function Diagnose() {
               <Button variant="outline" size="sm" className="flex-1" onClick={reset}>
                 Retake
               </Button>
-              <Button size="sm" className="flex-1" onClick={() => file && diagnose.mutate(file)}>
+              {/* Gated on a cycle. The server rejects an unlinked check,
+                  so letting the tap through would spend a ten-second
+                  upload to earn a validation error. */}
+              <Button
+                size="sm"
+                className="flex-1"
+                disabled={!flockId}
+                onClick={() => file && flockId && diagnose.mutate(file)}
+              >
                 Check this photo
               </Button>
             </div>
+
+            {!flockId && (
+              // Only once a photo exists. Saying "pick a cycle" before
+              // they have taken one would put a question between the
+              // farmer and the camera, which is the thing this screen
+              // exists to avoid.
+              <p className="text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
+                Choose a cycle above to run the check.
+              </p>
+            )}
           </div>
         </div>
       ) : (
         <Start
+          ready={flockId !== null}
           onCamera={() => cameraRef.current?.click()}
           onGallery={() => galleryRef.current?.click()}
         />
@@ -237,7 +267,25 @@ function BetaNotice() {
 }
 
 /** Opening state: one obvious action, and how to make it work. */
-function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () => void }) {
+function Start({
+  ready,
+  onCamera,
+  onGallery,
+}: {
+  /**
+   * False when no cycle is selected — either the farm has none running,
+   * or several exist and none is chosen yet.
+   *
+   * The camera is closed rather than left open to fail later. A check
+   * without a cycle is rejected by the server, so opening the camera
+   * would walk someone to the pen, have them photograph droppings, and
+   * only then tell them it cannot be used. The picker directly above
+   * already explains why.
+   */
+  ready: boolean;
+  onCamera: () => void;
+  onGallery: () => void;
+}) {
   return (
     /*
      * CAMERA LEFT, GUIDANCE RIGHT on wide screens.
@@ -262,7 +310,8 @@ function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () =>
       <button
         type="button"
         onClick={onCamera}
-        className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-accent)]/30 px-6 py-9 transition-colors hover:bg-[var(--color-brand-accent)]/50 lg:py-14"
+        disabled={!ready}
+        className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-accent)]/30 px-6 py-9 transition-colors hover:bg-[var(--color-brand-accent)]/50 disabled:cursor-not-allowed disabled:border-[var(--color-brand-border)] disabled:bg-[var(--color-brand-surface-soft)]/50 disabled:opacity-60 disabled:hover:bg-[var(--color-brand-surface-soft)]/50 lg:py-14"
       >
         <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)] text-white">
           <Camera className="h-6 w-6" />
@@ -276,7 +325,8 @@ function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () =>
       <button
         type="button"
         onClick={onGallery}
-        className="flex w-full items-center justify-center gap-2 text-[0.78125rem] font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
+        disabled={!ready}
+        className="flex w-full items-center justify-center gap-2 text-[0.78125rem] font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2 disabled:no-underline disabled:opacity-45"
       >
         <ImageUp className="h-3.5 w-3.5" />
         Choose a photo you already took
