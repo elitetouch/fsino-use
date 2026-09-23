@@ -241,6 +241,30 @@ export const endpoints = {
 
   logout: () => api.post('/logout'),
 
+  /**
+   * Ask for a reset code.
+   *
+   * Always resolves, whether or not the email is registered — the
+   * server answers identically either way so the endpoint cannot be
+   * used to find out who has an account here. Don't add client-side
+   * "no such user" handling; there is nothing to handle.
+   */
+  forgotPassword: (email: string) =>
+    unwrap<null>(api.post('/auth/forgot-password', { email })),
+
+  /**
+   * Exchange the code for a new password.
+   *
+   * Every failure — wrong code, expired, too many tries — comes back as
+   * one 422 with the same message, deliberately. Show it as given.
+   */
+  resetPassword: (payload: {
+    email: string;
+    code: string;
+    password: string;
+    password_confirmation: string;
+  }) => unwrap<null>(api.post('/auth/reset-password', payload)),
+
   /* ---------------------------------------------------------------- */
   /*  Disease diagnosis                                               */
   /* ---------------------------------------------------------------- */
