@@ -278,7 +278,7 @@ function TreatmentForm({
           )}
 
           <div>
-            <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Did you treat any birds today?
             </p>
             <YesNoPills value={answer} onChange={setAnswer} primary="yes" />
@@ -288,10 +288,10 @@ function TreatmentForm({
             <>
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <label htmlFor="treat-count" className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+                  <label htmlFor="treat-count" className="text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
                     How many?
                   </label>
-                  <span className="text-[11px] text-[var(--color-brand-muted)]">
+                  <span className="text-[0.6875rem] text-[var(--color-brand-muted)]">
                     Enter how many or select all birds
                   </span>
                 </div>
@@ -311,9 +311,9 @@ function TreatmentForm({
                         value={birds}
                         onChange={(e) => onBirdsChange(e.target.value)}
                         placeholder="0"
-                        className="min-w-0 flex-1 bg-transparent text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+                        className="min-w-0 flex-1 bg-transparent text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
                       />
-                      <span className="shrink-0 text-[12.5px] font-semibold text-[var(--color-brand-muted)]">
+                      <span className="shrink-0 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)]">
                         birds
                       </span>
                     </div>
@@ -322,7 +322,7 @@ function TreatmentForm({
                     type="button"
                     onClick={pickAllBirds}
                     className={cn(
-                      'h-11 shrink-0 rounded-lg border px-4 text-[12.5px] font-bold tracking-tight transition-colors',
+                      'h-11 shrink-0 rounded-lg border px-4 text-[0.78125rem] font-bold tracking-tight transition-colors',
                       allBirds
                         ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white'
                         : 'border-[var(--color-brand-input-border)] bg-white text-[var(--color-brand-fg)] hover:border-[var(--color-brand-primary)]/40',
@@ -332,7 +332,7 @@ function TreatmentForm({
                   </button>
                 </div>
                 {tooMany && (
-                  <p className="mt-1.5 text-[11.5px] leading-snug text-[var(--color-brand-danger)]">
+                  <p className="mt-1.5 text-[0.71875rem] leading-snug text-[var(--color-brand-danger)]">
                     Too many birds. You have only {livingBirds.toLocaleString()} living birds
                     in this pen. Select <strong>All birds</strong> if you want to select all of them.
                   </p>
@@ -353,7 +353,7 @@ function TreatmentForm({
                   value={otherType}
                   onChange={(e) => setOtherType(e.target.value)}
                   placeholder="Type the treatment"
-                  className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
+                  className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.8125rem] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                 />
               )}
 
@@ -371,7 +371,7 @@ function TreatmentForm({
                   value={otherReason}
                   onChange={(e) => setOtherReason(e.target.value)}
                   placeholder="Type the reason"
-                  className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
+                  className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.8125rem] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                 />
               )}
             </>

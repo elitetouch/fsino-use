@@ -30,21 +30,21 @@ export function SubPageHeader({
     <div className="mb-5">
       <Link
         href={backTo}
-        className="mb-3 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-brand-muted)] hover:text-[var(--color-brand-fg)]"
+        className="mb-3 inline-flex items-center gap-1.5 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)] hover:text-[var(--color-brand-fg)]"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to settings
       </Link>
-      <h1 className="text-[20px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+      <h1 className="text-[1.25rem] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
         {title}
       </h1>
       {description && (
-        <p className="mt-1 text-[13px] leading-snug text-[var(--color-brand-muted)]">
+        <p className="mt-1 text-[0.8125rem] leading-snug text-[var(--color-brand-muted)]">
           {description}
         </p>
       )}
       {lockedNote && (
-        <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-2.5 text-[12px] leading-snug text-amber-900">
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-2.5 text-[0.75rem] leading-snug text-amber-900">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <p>{lockedNote}</p>
         </div>
@@ -71,9 +71,9 @@ export function Section({
   return (
     <section className="overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="border-b border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-4 py-3">
-        <h2 className="text-[13px] font-bold tracking-tight text-[var(--color-brand-fg)]">{title}</h2>
+        <h2 className="text-[0.8125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">{title}</h2>
         {hint && (
-          <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--color-brand-muted)]">{hint}</p>
+          <p className="mt-0.5 text-[0.71875rem] leading-snug text-[var(--color-brand-muted)]">{hint}</p>
         )}
       </header>
       <div className="divide-y divide-[var(--color-brand-border)]">{children}</div>
@@ -108,9 +108,9 @@ export function ToggleRow({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-semibold text-[var(--color-brand-fg)]">{label}</p>
+        <p className="text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">{label}</p>
         {effectiveDesc && (
-          <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.71875rem] leading-snug text-[var(--color-brand-muted)]">
             {effectiveDesc}
           </p>
         )}
@@ -135,12 +135,12 @@ export function ComingSoonRow({
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3.5 opacity-70">
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-semibold text-[var(--color-brand-danger)]">{label}</p>
+        <p className="text-[0.84375rem] font-semibold text-[var(--color-brand-danger)]">{label}</p>
         {hint && (
-          <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--color-brand-muted)]">{hint}</p>
+          <p className="mt-0.5 text-[0.71875rem] leading-snug text-[var(--color-brand-muted)]">{hint}</p>
         )}
       </div>
-      <span className="rounded-full bg-[var(--color-brand-surface-soft)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+      <span className="rounded-full bg-[var(--color-brand-surface-soft)] px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
         Soon
       </span>
     </div>
@@ -223,8 +223,8 @@ export function PresetTiles({
             )}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{t.label}</p>
-              <p className="mt-0.5 text-[11px] text-[var(--color-brand-muted)]">{t.sub}</p>
+              <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{t.label}</p>
+              <p className="mt-0.5 text-[0.6875rem] text-[var(--color-brand-muted)]">{t.sub}</p>
             </div>
             {active && (
               <Check
@@ -260,9 +260,9 @@ export function MenuRow({
   const inner = (
     <>
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-semibold text-[var(--color-brand-fg)]">{label}</p>
+        <p className="text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">{label}</p>
         {hint && (
-          <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--color-brand-muted)]">{hint}</p>
+          <p className="mt-0.5 text-[0.71875rem] leading-snug text-[var(--color-brand-muted)]">{hint}</p>
         )}
       </div>
       <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-brand-muted-soft)]" />

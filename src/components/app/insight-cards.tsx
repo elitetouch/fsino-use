@@ -63,21 +63,21 @@ export function HarvestForecastCard({ data }: { data?: HarvestForecastCardDto | 
           <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
             <CalendarClock className="h-3.5 w-3.5" strokeWidth={2.2} />
           </span>
-          <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+          <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
             Harvest forecast
           </p>
         </div>
-        <span className={cn('shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold', toneClass)}>
+        <span className={cn('shrink-0 rounded-md px-2 py-0.5 text-[0.6875rem] font-bold', toneClass)}>
           {when.headline}
         </span>
       </div>
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {s.note || 'Not enough data to project a harvest day yet.'}
       </p>
 
       {(s.growthRateGPerDay !== null || s.currentWeightG !== null || s.targetWeightG !== null) && (
-        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+        <div className="mt-3 grid grid-cols-3 gap-2 text-[0.6875rem]">
           <ForecastStat
             label="Now"
             value={s.currentWeightG !== null ? `${(s.currentWeightG / 1000).toFixed(2)} kg` : '—'}
@@ -94,7 +94,7 @@ export function HarvestForecastCard({ data }: { data?: HarvestForecastCardDto | 
       )}
 
       {s.projectedMarketAgeDays !== null && s.breedMarketAgeDays !== null && (
-        <p className="mt-3 text-[11px] text-[var(--color-brand-muted)]">
+        <p className="mt-3 text-[0.6875rem] text-[var(--color-brand-muted)]">
           Projected day {s.projectedMarketAgeDays} · breed standard day {s.breedMarketAgeDays}
         </p>
       )}
@@ -105,8 +105,8 @@ export function HarvestForecastCard({ data }: { data?: HarvestForecastCardDto | 
 function ForecastStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md bg-[var(--color-brand-surface-soft)]/60 px-2 py-1.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
-      <p className="mt-0.5 text-[12px] font-bold text-[var(--color-brand-fg)]">{value}</p>
+      <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
+      <p className="mt-0.5 text-[0.75rem] font-bold text-[var(--color-brand-fg)]">{value}</p>
     </div>
   );
 }
@@ -124,16 +124,16 @@ export function PeerBenchmarkCard({ data }: { data?: PeerBenchmarkCardDto | null
           <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
             <Users className="h-3.5 w-3.5" strokeWidth={2.2} />
           </span>
-          <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+          <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
             Vs your past cycles
           </p>
         </div>
-        <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+        <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
           {s.sampleSize} peer{s.sampleSize === 1 ? '' : 's'}
         </span>
       </div>
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         Comparing at bird age <strong className="font-bold text-[var(--color-brand-fg)]">day {s.birdAge}</strong> against the median of your last {s.sampleSize} completed cycle{s.sampleSize === 1 ? '' : 's'} of the same breed on this farm.
       </p>
 
@@ -165,7 +165,7 @@ export function PeerBenchmarkCard({ data }: { data?: PeerBenchmarkCardDto | null
       </div>
 
       {data.insights.length > 0 && (
-        <p className="mt-3 text-[11px] leading-snug text-[var(--color-brand-muted)]">
+        <p className="mt-3 text-[0.6875rem] leading-snug text-[var(--color-brand-muted)]">
           {data.insights[0]}
         </p>
       )}
@@ -200,21 +200,21 @@ function ComparisonRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-md bg-[var(--color-brand-surface-soft)]/60 px-3 py-2">
       <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+        <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
           {label}
         </p>
         {empty ? (
-          <p className="mt-0.5 text-[11px] text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.6875rem] text-[var(--color-brand-muted)]">
             {current == null ? 'Not enough current data' : `No peer readings at day ${peerCount ?? 0}`}
           </p>
         ) : (
-          <p className="mt-0.5 text-[12px] text-[var(--color-brand-fg)]">
+          <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-fg)]">
             You <strong className="font-bold">{format(current!)}</strong> · median {format(median!)} <span className="text-[var(--color-brand-muted)]">({peerCount ?? 0} peer{peerCount === 1 ? '' : 's'})</span>
           </p>
         )}
       </div>
       {!empty && comparison && (
-        <span className={cn('inline-flex shrink-0 items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold', iconClass)}>
+        <span className={cn('inline-flex shrink-0 items-center gap-1 rounded-md bg-white px-2 py-1 text-[0.6875rem] font-bold', iconClass)}>
           <Icon className="h-3 w-3" strokeWidth={2.5} />
           {comparison.deltaPct > 0 ? '+' : ''}{comparison.deltaPct.toFixed(1)}%
         </span>
@@ -242,14 +242,14 @@ export function CostProjectionCard({ data }: { data?: CostProjectionCardDto | nu
           <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
             <Receipt className="h-3.5 w-3.5" strokeWidth={2.2} />
           </span>
-          <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+          <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
             Cost projection
           </p>
         </div>
         <CostStatusPill status={s.status} />
       </div>
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {s.note || 'No projection available.'}
       </p>
 
@@ -260,7 +260,7 @@ export function CostProjectionCard({ data }: { data?: CostProjectionCardDto | nu
           {s.totalsByCurrency.map((t) => (
             <span
               key={t.currency}
-              className="rounded-md bg-[var(--color-brand-accent)] px-2.5 py-1 text-[11.5px] font-bold text-[var(--color-brand-primary-deep)]"
+              className="rounded-md bg-[var(--color-brand-accent)] px-2.5 py-1 text-[0.71875rem] font-bold text-[var(--color-brand-primary-deep)]"
             >
               {t.currency} {formatMoney(t.spent)}
             </span>
@@ -273,7 +273,7 @@ export function CostProjectionCard({ data }: { data?: CostProjectionCardDto | nu
           projector refused, so the tile stays gone rather than
           showing "—". */}
       {(s.burnPerDay !== null || s.projectedTotal !== null || s.currentPerBird !== null) && s.primaryCurrency && (
-        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+        <div className="mt-3 grid grid-cols-3 gap-2 text-[0.6875rem]">
           <CostStat
             label="Per day"
             value={s.burnPerDay !== null ? `${s.primaryCurrency} ${formatMoney(s.burnPerDay)}` : '—'}
@@ -290,7 +290,7 @@ export function CostProjectionCard({ data }: { data?: CostProjectionCardDto | nu
       )}
 
       {s.projectedTotal !== null && s.primaryCurrency && s.expectedCycleDays !== null && (
-        <p className="mt-3 text-[11px] text-[var(--color-brand-muted)]">
+        <p className="mt-3 text-[0.6875rem] text-[var(--color-brand-muted)]">
           Projected total: <strong className="text-[var(--color-brand-fg)]">
             {s.primaryCurrency} {formatMoney(s.projectedTotal)}
           </strong> by day {s.expectedCycleDays}
@@ -311,7 +311,7 @@ function CostStatusPill({ status }: { status: string }) {
   };
   const conf = map[status] ?? map.no_data;
   return (
-    <span className={cn('shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold', conf.cls)}>
+    <span className={cn('shrink-0 rounded-md px-2 py-0.5 text-[0.6875rem] font-bold', conf.cls)}>
       {conf.label}
     </span>
   );
@@ -320,8 +320,8 @@ function CostStatusPill({ status }: { status: string }) {
 function CostStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md bg-[var(--color-brand-surface-soft)]/60 px-2 py-1.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
-      <p className="mt-0.5 text-[12px] font-bold text-[var(--color-brand-fg)]">{value}</p>
+      <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
+      <p className="mt-0.5 text-[0.75rem] font-bold text-[var(--color-brand-fg)]">{value}</p>
     </div>
   );
 }

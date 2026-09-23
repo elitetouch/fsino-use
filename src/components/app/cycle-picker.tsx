@@ -110,7 +110,7 @@ export function CyclePicker({
         aria-expanded={open}
       >
         <Bird className="h-4 w-4 text-[var(--color-brand-accent-strong)]" strokeWidth={2.2} />
-        <span className="text-[13px] font-semibold tracking-tight">
+        <span className="text-[0.8125rem] font-semibold tracking-tight">
           {current ? cycleLabel(current, cycles) : 'Select cycle'}
         </span>
         <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
@@ -128,7 +128,7 @@ export function CyclePicker({
         >
           <div className="max-h-[420px] overflow-y-auto p-1.5">
             {cycles.length === 0 ? (
-              <div className="px-3 py-6 text-center text-[12px] text-[var(--color-brand-muted)]">
+              <div className="px-3 py-6 text-center text-[0.75rem] text-[var(--color-brand-muted)]">
                 No cycles yet —{' '}
                 <Link href="/setup/flocks" className="font-semibold text-[var(--color-brand-primary)] hover:underline">
                   place a flock
@@ -139,7 +139,7 @@ export function CyclePicker({
                 const pen = pens.find((p) => p.id === penId);
                 return (
                   <div key={penId ?? 'unassigned'} className="mb-1">
-                    <p className="px-2.5 pb-0.5 pt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
+                    <p className="px-2.5 pb-0.5 pt-2 text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
                       {pen ? pen.name : 'Unassigned'}
                     </p>
                     {items.map((c, i) => {
@@ -150,7 +150,7 @@ export function CyclePicker({
                           href={`/cycles/${c.id}`}
                           onClick={() => setOpen(false)}
                           className={cn(
-                            'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[12.5px] transition-colors',
+                            'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[0.78125rem] transition-colors',
                             active ? 'bg-[var(--color-brand-accent)]' : 'hover:bg-[var(--color-brand-surface-soft)]',
                           )}
                         >
@@ -161,7 +161,7 @@ export function CyclePicker({
                             <p className="truncate font-semibold text-[var(--color-brand-fg)]">
                               Cycle {cycleOrdinal(c, items, i)} · {c.breed}
                             </p>
-                            <p className="truncate text-[11px] text-[var(--color-brand-muted)]">
+                            <p className="truncate text-[0.6875rem] text-[var(--color-brand-muted)]">
                               {labelForProduction(c.productionType)} · {c.placedBirds.toLocaleString()} birds · placed {fmtDate(c.startDate)}
                             </p>
                           </div>
@@ -180,7 +180,7 @@ export function CyclePicker({
             <Link
               href="/cycles"
               onClick={() => setOpen(false)}
-              className="text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+              className="text-[0.75rem] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
             >
               View all cycles →
             </Link>

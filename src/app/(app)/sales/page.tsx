@@ -96,10 +96,10 @@ export default function SalesPage() {
           <div className="flex items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
             <div>
-              <p className="text-[13px] font-bold text-amber-900">
+              <p className="text-[0.8125rem] font-bold text-amber-900">
                 {num(unpriced.length)} {unpriced.length === 1 ? 'sale needs' : 'sales need'} a price
               </p>
-              <p className="mt-0.5 text-[12px] leading-relaxed text-amber-900">
+              <p className="mt-0.5 text-[0.75rem] leading-relaxed text-amber-900">
                 These birds left the pen but no sale amount was recorded, so they count as
                 ₦0 revenue and make the cycle look like a loss. Add what they sold for to
                 complete the profit figure.
@@ -116,7 +116,7 @@ export default function SalesPage() {
 
       <div className="overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white">
         <div className="border-b border-[var(--color-brand-border)] p-4">
-          <label htmlFor="q" className="mb-1 block text-[12px] font-semibold text-[var(--color-brand-fg)]">
+          <label htmlFor="q" className="mb-1 block text-[0.75rem] font-semibold text-[var(--color-brand-fg)]">
             Search cycle / note / who logged it
           </label>
           <div className="relative">
@@ -126,7 +126,7 @@ export default function SalesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="e.g. BR-5779L"
-              className="h-10 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white pl-9 pr-3 text-[13.5px] outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+              className="h-10 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white pl-9 pr-3 text-[0.84375rem] outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
             />
           </div>
         </div>
@@ -138,10 +138,10 @@ export default function SalesPage() {
             <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
               <TrendingUp className="h-4 w-4" />
             </span>
-            <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">
+            <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
               {priced.length === 0 ? 'No sales recorded yet' : 'No sales match that search'}
             </p>
-            <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+            <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
               {priced.length === 0
                 ? 'Log a sale when birds leave the farm. Revenue here feeds straight into each cycle’s profit figure.'
                 : 'Try a different cycle name or note.'}
@@ -177,7 +177,7 @@ function StatTile({ icon: Icon, label, value, tone }: {
         <Icon className="h-5 w-5" />
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
         <p className="truncate text-lg font-bold text-[var(--color-brand-fg)]">{value}</p>
       </div>
     </div>
@@ -202,13 +202,13 @@ function UnpricedRow({ row, onPriced }: { row: SaleRow; onPriced: () => void }) 
   return (
     <li className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+        <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
           {num(row.birds)} {row.birds === 1 ? 'bird' : 'birds'}
           <span className="ml-2 font-normal text-[var(--color-brand-muted)]">
             {row.flockName ?? 'Unknown cycle'}
           </span>
         </p>
-        <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
           {row.recordDate ? fmtDate(row.recordDate) : '—'}
           {row.createdByName ? ` · logged by ${row.createdByName}` : ''}
           {row.source === 'bird_count' ? ' · from daily record' : ''}
@@ -218,14 +218,14 @@ function UnpricedRow({ row, onPriced }: { row: SaleRow; onPriced: () => void }) 
 
       <div className="flex shrink-0 items-center gap-2">
         <div className="flex h-10 items-center gap-1.5 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 focus-within:border-[var(--color-brand-primary)] focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/20">
-          <span className="text-[13px] font-semibold text-[var(--color-brand-muted)]">₦</span>
+          <span className="text-[0.8125rem] font-semibold text-[var(--color-brand-muted)]">₦</span>
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))}
             inputMode="decimal"
             placeholder="Sale amount"
             aria-label={`Sale amount for ${row.birds} birds`}
-            className="w-32 bg-transparent text-[13.5px] font-bold tabular-nums outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+            className="w-32 bg-transparent text-[0.84375rem] font-bold tabular-nums outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
           />
         </div>
         <Gate perm="sales.record">
@@ -243,13 +243,13 @@ function PricedRow({ row }: { row: SaleRow }) {
   return (
     <li className="flex items-center justify-between gap-3 px-4 py-3">
       <div className="min-w-0">
-        <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+        <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
           {num(row.birds)} {row.birds === 1 ? 'bird' : 'birds'}
           <span className="ml-2 font-normal text-[var(--color-brand-muted)]">
             {row.flockName ?? 'Unknown cycle'}
           </span>
         </p>
-        <p className="mt-0.5 truncate text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="mt-0.5 truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
           {row.recordDate ? fmtDate(row.recordDate) : '—'}
           {row.pricePerBird ? ` · ${money(row.pricePerBird)} per bird` : ''}
           {row.createdByName ? ` · ${row.createdByName}` : ''}
@@ -257,11 +257,11 @@ function PricedRow({ row }: { row: SaleRow }) {
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {row.source === 'bird_count' && (
-          <span className="rounded-full bg-[var(--color-brand-bg)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
+          <span className="rounded-full bg-[var(--color-brand-bg)] px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
             daily record
           </span>
         )}
-        <span className="text-[14px] font-bold tabular-nums text-emerald-800">
+        <span className="text-[0.875rem] font-bold tabular-nums text-emerald-800">
           {money(row.amount ?? 0)}
         </span>
       </div>
@@ -320,8 +320,8 @@ function LogSaleDialog({ open, onClose }: { open: boolean; onClose: () => void }
       <div className="animate-fade-up relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[520px] sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
           <div>
-            <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Log a sale</p>
-            <p className="text-[11px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Log a sale</p>
+            <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">
               Records the birds leaving the cycle and the money they brought in.
             </p>
           </div>
@@ -342,7 +342,7 @@ function LogSaleDialog({ open, onClose }: { open: boolean; onClose: () => void }
               value={flockId}
               onChange={(e) => setFlockId(e.target.value)}
               disabled={flocks.isLoading}
-              className="h-10 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 text-[13.5px]"
+              className="h-10 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 text-[0.84375rem]"
             >
               <option value="">— pick a cycle —</option>
               {(flocks.data?.flocks ?? []).map((f) => (
@@ -371,7 +371,7 @@ function LogSaleDialog({ open, onClose }: { open: boolean; onClose: () => void }
           </div>
 
           {birdsNum > 0 && amountNum > 0 && (
-            <p className="text-[12px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.75rem] text-[var(--color-brand-muted)]">
               That&rsquo;s <strong>{money(amountNum / birdsNum)}</strong> per bird.
             </p>
           )}
@@ -408,7 +408,7 @@ function Field({ label, htmlFor, children }: {
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1 block text-[12px] font-semibold text-[var(--color-brand-fg)]">
+      <label htmlFor={htmlFor} className="mb-1 block text-[0.75rem] font-semibold text-[var(--color-brand-fg)]">
         {label}
       </label>
       {children}
@@ -436,7 +436,7 @@ function TextInput({
       placeholder={placeholder}
       maxLength={maxLength}
       onChange={(e) => onChange(e.target.value)}
-      className="h-10 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 text-[13.5px] outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+      className="h-10 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 text-[0.84375rem] outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
     />
   );
 }

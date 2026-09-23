@@ -474,7 +474,7 @@ function StepPlaceholder({
   const { StepShell } = require('@/components/record/wizard-shell') as typeof import('@/components/record/wizard-shell');
   return (
     <StepShell
-      sectionIcon={<span className="text-[14px]">🌱</span>}
+      sectionIcon={<span className="text-[0.875rem]">🌱</span>}
       sectionLabel={label}
       stepIndex={stepIndex}
       stepCount={stepCount}
@@ -484,10 +484,10 @@ function StepPlaceholder({
       onContinue={onContinue}
     >
       <div className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-8 text-center">
-        <h2 className="text-[15px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+        <h2 className="text-[0.9375rem] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
           {label}
         </h2>
-        <p className="mt-1.5 text-[12px] leading-snug text-[var(--color-brand-muted)]">
+        <p className="mt-1.5 text-[0.75rem] leading-snug text-[var(--color-brand-muted)]">
           This step has no form yet. Tap Continue or Skip to move on.
         </p>
       </div>
@@ -542,7 +542,7 @@ function ExpiredCycleNotice({
         <button
           type="button"
           onClick={onBack}
-          className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-lg border border-[var(--color-brand-border)] px-4 text-[12.5px] font-bold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
+          className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-lg border border-[var(--color-brand-border)] px-4 text-[0.78125rem] font-bold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
         >
           Back to cycle
         </button>
@@ -566,10 +566,10 @@ function ClosedCycleNotice({
         <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
           <Lock className="h-4 w-4" strokeWidth={2.2} />
         </span>
-        <h1 className="mt-4 text-[16px] font-extrabold text-[var(--color-brand-fg)]">
+        <h1 className="mt-4 text-[1rem] font-extrabold text-[var(--color-brand-fg)]">
           This cycle is closed
         </h1>
-        <p className="mt-1.5 text-[12.5px] text-[var(--color-brand-muted)]">
+        <p className="mt-1.5 text-[0.78125rem] text-[var(--color-brand-muted)]">
           {closedAt
             ? `It was completed on ${fmtDate(closedAt)}, so no new records can be added.`
             : 'It has been completed, so no new records can be added.'}{' '}
@@ -579,14 +579,14 @@ function ClosedCycleNotice({
           <button
             type="button"
             onClick={onViewReport}
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-brand-primary)] px-4 text-[12.5px] font-bold text-white hover:bg-[var(--color-brand-primary-deep)]"
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-brand-primary)] px-4 text-[0.78125rem] font-bold text-white hover:bg-[var(--color-brand-primary-deep)]"
           >
             View full report
           </button>
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-[var(--color-brand-border)] px-4 text-[12.5px] font-bold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-[var(--color-brand-border)] px-4 text-[0.78125rem] font-bold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
           >
             Back to cycle
           </button>
@@ -602,12 +602,12 @@ function FullPageError({
   return (
     <div className="flex min-h-svh items-center justify-center bg-white p-6">
       <div className="max-w-[420px] rounded-2xl border border-[var(--color-brand-border)] bg-white p-6 text-center">
-        <h1 className="text-[16px] font-extrabold text-[var(--color-brand-fg)]">{title}</h1>
-        <p className="mt-1.5 text-[12.5px] text-[var(--color-brand-muted)]">{message}</p>
+        <h1 className="text-[1rem] font-extrabold text-[var(--color-brand-fg)]">{title}</h1>
+        <p className="mt-1.5 text-[0.78125rem] text-[var(--color-brand-muted)]">{message}</p>
         <button
           type="button"
           onClick={onBack}
-          className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-brand-primary)] px-4 text-[12.5px] font-bold text-white hover:bg-[var(--color-brand-primary-deep)]"
+          className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-brand-primary)] px-4 text-[0.78125rem] font-bold text-white hover:bg-[var(--color-brand-primary-deep)]"
         >
           Back to cycle
         </button>

@@ -74,14 +74,14 @@ export function CyclePicker({
           <Bird className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[13px] font-semibold text-[var(--color-brand-fg)]">
+          <span className="block text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
             {attached ? 'For this cycle' : 'Not linked to a cycle'}
           </span>
-          <span className="block truncate text-[11.5px] text-[var(--color-brand-muted)]">
+          <span className="block truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
             {only.breed} · {only.placedBirds.toLocaleString()} birds
           </span>
         </span>
-        <span className="shrink-0 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)]">
+        <span className="shrink-0 text-[0.71875rem] font-semibold text-[var(--color-brand-primary-deep)]">
           {attached ? 'Unlink' : 'Link'}
         </span>
       </button>
@@ -92,7 +92,7 @@ export function CyclePicker({
     <div className="rounded-xl border border-[var(--color-brand-border)] bg-white p-3">
       <label
         htmlFor="diagnose-cycle"
-        className="block text-[11px] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]"
+        className="block text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]"
       >
         Which cycle?
       </label>
@@ -100,7 +100,7 @@ export function CyclePicker({
         id="diagnose-cycle"
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value || null)}
-        className="mt-1.5 block h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 text-[13px]"
+        className="mt-1.5 block h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 text-[0.8125rem]"
       >
         <option value="">Not linked to a cycle</option>
         {cycles.map((c) => (
@@ -109,7 +109,7 @@ export function CyclePicker({
           </option>
         ))}
       </select>
-      <p className="mt-1.5 text-[11.5px] text-[var(--color-brand-muted)]">
+      <p className="mt-1.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
         Linking lets you add the result to that cycle&rsquo;s report.
       </p>
     </div>

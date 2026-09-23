@@ -366,7 +366,7 @@ function FeedForm({
 
           {/* Type tiles */}
           <div>
-            <p className="mb-1.5 text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <p className="mb-1.5 text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Feed type
             </p>
             <PillTiles
@@ -392,7 +392,7 @@ function FeedForm({
                 value={otherBrand}
                 onChange={(e) => setOtherBrand(e.target.value)}
                 placeholder="Type the brand name"
-                className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
+                className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.8125rem] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                 autoFocus
               />
             </div>

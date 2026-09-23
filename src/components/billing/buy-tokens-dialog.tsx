@@ -141,8 +141,8 @@ export function BuyTokensDialog({
               <Sparkles className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Buy tokens</p>
-              <p className="text-[11px] text-[var(--color-brand-muted)]">One token = one bird you can place.</p>
+              <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Buy tokens</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">One token = one bird you can place.</p>
             </div>
           </div>
           <button
@@ -202,7 +202,7 @@ export function BuyTokensDialog({
               onChange={(e) => setQuantity(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
               placeholder="100"
             />
-            <p className="mt-1 text-[11px] text-[var(--color-brand-muted)]">
+            <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">
               Round-trip from your account balance when you place a flock.
             </p>
           </div>
@@ -228,10 +228,10 @@ export function BuyTokensDialog({
 
           {/* Order summary */}
           <div className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
+            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
               Order summary
             </p>
-            <div className="mt-2 space-y-1.5 text-[13px]">
+            <div className="mt-2 space-y-1.5 text-[0.8125rem]">
               <Row
                 label={`${qty.toLocaleString()} × ${capitalize(tokenType)} / ${capitalize(tier)}`}
                 value={unitNaira != null ? formatMoney(unitNaira, matchingPrice?.currency ?? 'NGN') : '—'}
@@ -244,7 +244,7 @@ export function BuyTokensDialog({
             </div>
 
             {priceState !== 'ready' && (
-              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11.5px] leading-snug text-amber-800">
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[0.71875rem] leading-snug text-amber-800">
                 {priceState === 'loading' && 'Loading current prices…'}
                 {priceState === 'error' && (
                   <>
@@ -267,7 +267,7 @@ export function BuyTokensDialog({
               </div>
             )}
 
-            <p className="mt-2 inline-flex items-center gap-1 text-[10.5px] text-[var(--color-brand-muted)]">
+            <p className="mt-2 inline-flex items-center gap-1 text-[0.65625rem] text-[var(--color-brand-muted)]">
               <ShieldCheck className="h-3 w-3" /> Secure checkout via {capitalize(provider)}.
             </p>
           </div>
@@ -284,7 +284,7 @@ export function BuyTokensDialog({
             Continue to {capitalize(provider)}
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <p className="mt-2 text-center text-[11px] text-[var(--color-brand-muted)]">
+          <p className="mt-2 text-center text-[0.6875rem] text-[var(--color-brand-muted)]">
             You&rsquo;ll be redirected to {capitalize(provider)} to complete payment.
           </p>
         </div>
@@ -315,9 +315,9 @@ function PickerTile({
             {icon}
           </span>
         )}
-        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
+        <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
       </div>
-      <p className="text-[11px] text-[var(--color-brand-muted)]">{sub}</p>
+      <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">{sub}</p>
     </button>
   );
 }
@@ -337,8 +337,8 @@ function ProviderTile({
       )}
     >
       <div className="min-w-0">
-        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
-        <p className="truncate text-[11px] text-[var(--color-brand-muted)]">{hint}</p>
+        <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
+        <p className="truncate text-[0.6875rem] text-[var(--color-brand-muted)]">{hint}</p>
       </div>
       {active && <Check className="h-3.5 w-3.5 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />}
     </button>
@@ -348,8 +348,8 @@ function ProviderTile({
 function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className={cn('text-[12.5px]', muted ? 'text-[var(--color-brand-muted)]' : 'text-[var(--color-brand-fg-soft)]')}>{label}</span>
-      <span className={cn('text-[12.5px] font-semibold', muted ? 'text-[var(--color-brand-muted)]' : 'text-[var(--color-brand-fg)]')}>{value}</span>
+      <span className={cn('text-[0.78125rem]', muted ? 'text-[var(--color-brand-muted)]' : 'text-[var(--color-brand-fg-soft)]')}>{label}</span>
+      <span className={cn('text-[0.78125rem] font-semibold', muted ? 'text-[var(--color-brand-muted)]' : 'text-[var(--color-brand-fg)]')}>{value}</span>
     </div>
   );
 }

@@ -168,10 +168,10 @@ export default function HomePage() {
       {/* Greeting + cycle picker */}
       <section className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             {pickGreeting()} · {todayLabel()}
           </p>
-          <h1 className="mt-1 text-[20px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[22px]">
+          <h1 className="mt-1 text-[1.25rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.375rem]">
             {user?.name?.split(' ')[0] ?? 'Welcome'}
             {farm ? ` — ${farm.name}` : ''}
           </h1>
@@ -267,10 +267,10 @@ export default function HomePage() {
             <Sparkles className="h-4 w-4" />
           </span>
           <div className="flex-1">
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
               Daily logs, FCR &amp; cost analytics coming next
             </p>
-            <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
               Feed, water, vaccines, mortality — log in seconds, watch your margins grow.
             </p>
           </div>
@@ -347,7 +347,7 @@ function TodayRecordCTA({ cycle }: { cycle: FlockDto }) {
       <div className="min-w-0 flex-1">
         <p
           className={
-            'text-[10.5px] font-bold uppercase tracking-[0.16em] ' +
+            'text-[0.65625rem] font-bold uppercase tracking-[0.16em] ' +
             (todayHasRecord ? 'text-[var(--color-brand-primary-deep)]' : 'text-white/80')
           }
         >
@@ -355,7 +355,7 @@ function TodayRecordCTA({ cycle }: { cycle: FlockDto }) {
         </p>
         <p
           className={
-            'mt-0.5 text-[14px] font-bold tracking-tight ' +
+            'mt-0.5 text-[0.875rem] font-bold tracking-tight ' +
             (todayHasRecord ? 'text-[var(--color-brand-fg)]' : 'text-white')
           }
         >
@@ -369,7 +369,7 @@ function TodayRecordCTA({ cycle }: { cycle: FlockDto }) {
         </p>
         <p
           className={
-            'mt-0.5 text-[11.5px] leading-snug ' +
+            'mt-0.5 text-[0.71875rem] leading-snug ' +
             (todayHasRecord ? 'text-[var(--color-brand-muted)]' : 'text-white/80')
           }
         >
@@ -433,10 +433,10 @@ function EmptyCycleNudge({ completedCount = 0 }: { completedCount?: number }) {
       <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
         <Bird className="h-5 w-5" />
       </span>
-      <p className="mt-4 text-[14px] font-bold text-[var(--color-brand-fg)]">
+      <p className="mt-4 text-[0.875rem] font-bold text-[var(--color-brand-fg)]">
         {hasHistory ? 'No cycle running right now' : 'No active cycle yet'}
       </p>
-      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+      <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
         {hasHistory
           ? `Your ${completedCount === 1 ? 'completed cycle is' : `${completedCount} completed cycles are`} still here — place a new flock when you're ready.`
           : 'Place your first flock to start tracking feed, vaccines and margin.'}

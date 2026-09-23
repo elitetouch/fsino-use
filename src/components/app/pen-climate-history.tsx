@@ -121,7 +121,7 @@ export function PenClimateHistory({
               type="date"
               value={from}
               onChange={(e) => { setFrom(e.target.value); setPage(1); }}
-              className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[12.5px] focus:border-[var(--color-brand-primary)] focus:outline-none"
+              className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.78125rem] focus:border-[var(--color-brand-primary)] focus:outline-none"
             />
           </FilterField>
           <FilterField label="To">
@@ -129,7 +129,7 @@ export function PenClimateHistory({
               type="date"
               value={to}
               onChange={(e) => { setTo(e.target.value); setPage(1); }}
-              className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[12.5px] focus:border-[var(--color-brand-primary)] focus:outline-none"
+              className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.78125rem] focus:border-[var(--color-brand-primary)] focus:outline-none"
             />
           </FilterField>
 
@@ -138,7 +138,7 @@ export function PenClimateHistory({
               <select
                 value={deviceId}
                 onChange={(e) => { setDeviceId(e.target.value); setPage(1); }}
-                className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[12.5px] focus:border-[var(--color-brand-primary)] focus:outline-none"
+                className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.78125rem] focus:border-[var(--color-brand-primary)] focus:outline-none"
               >
                 <option value="">All stations</option>
                 {stations.map((s) => (
@@ -151,7 +151,7 @@ export function PenClimateHistory({
           )}
 
           <FilterField label="Show">
-            <div className="inline-flex rounded-md border border-[var(--color-brand-input-border)] bg-white p-0.5 text-[11.5px] font-semibold">
+            <div className="inline-flex rounded-md border border-[var(--color-brand-input-border)] bg-white p-0.5 text-[0.71875rem] font-semibold">
               {(['all', 'over'] as const).map((f) => (
                 <button
                   key={f}
@@ -171,7 +171,7 @@ export function PenClimateHistory({
           </FilterField>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <p className="text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.71875rem] text-[var(--color-brand-muted)]">
               {meta ? `${meta.total.toLocaleString()} rows` : '—'}
               {window && (
                 <span className="ml-2">
@@ -199,7 +199,7 @@ export function PenClimateHistory({
         <div className="max-w-full overflow-x-auto">
           <table className="w-full min-w-[880px] table-fixed border-collapse">
             <thead>
-              <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+              <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
                 <Th className="w-40">When</Th>
                 {multiStation && <Th className="w-28">Station</Th>}
                 <Th className="w-16">Left</Th>
@@ -225,10 +225,10 @@ export function PenClimateHistory({
                     <span className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
                       <Filter className="h-4.5 w-4.5" />
                     </span>
-                    <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">
+                    <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
                       No readings match your filters
                     </p>
-                    <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+                    <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
                       Try widening the date range or switching to &ldquo;All&rdquo;.
                     </p>
                   </td>
@@ -243,7 +243,7 @@ export function PenClimateHistory({
         {/* Pagination */}
         {meta && meta.lastPage > 1 && (
           <div className="flex items-center justify-between gap-3 border-t border-[var(--color-brand-border)] px-4 py-3">
-            <p className="text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.71875rem] text-[var(--color-brand-muted)]">
               Page {meta.currentPage} of {meta.lastPage}
             </p>
             <div className="inline-flex items-center gap-2">
@@ -284,15 +284,15 @@ function ReadingRow({ row, multiStation }: { row: FlockClimateReadingRow; multiS
   return (
     <tr
       className={cn(
-        'border-t border-[var(--color-brand-border)] text-[12px]',
+        'border-t border-[var(--color-brand-border)] text-[0.75rem]',
         anyOver ? 'bg-amber-50/30 hover:bg-amber-50/50' : 'hover:bg-[var(--color-brand-surface-soft)]',
       )}
     >
-      <Td className="whitespace-nowrap font-mono text-[11.5px] text-[var(--color-brand-fg)]">
+      <Td className="whitespace-nowrap font-mono text-[0.71875rem] text-[var(--color-brand-fg)]">
         {fmtDateTime(row.readingAt)}
       </Td>
       {multiStation && (
-        <Td className="truncate text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)]">
+        <Td className="truncate text-[0.71875rem] font-semibold text-[var(--color-brand-primary-deep)]">
           {row.stationLabel ?? row.deviceId?.slice(-4) ?? '—'}
         </Td>
       )}
@@ -347,7 +347,7 @@ function Td({ children, className, title }: { children: React.ReactNode; classNa
 function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+      <span className="text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
         {label}
       </span>
       {children}

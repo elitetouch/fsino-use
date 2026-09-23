@@ -123,13 +123,13 @@ export function StepShell({
         ) : (
           <span aria-hidden className="h-9 w-9" />
         )}
-        <p className="text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <p className="text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           Add record
         </p>
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-[12.5px] font-semibold text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]"
+          className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]"
         >
           Cancel
           <X className="h-3.5 w-3.5" />
@@ -141,9 +141,9 @@ export function StepShell({
         <div className={cn('flex items-center justify-between gap-3 rounded-lg px-3 py-2', pillTone)}>
           <div className="flex min-w-0 items-center gap-2">
             <span className="shrink-0">{sectionIcon}</span>
-            <p className="truncate text-[13px] font-bold tracking-tight">{sectionLabel}</p>
+            <p className="truncate text-[0.8125rem] font-bold tracking-tight">{sectionLabel}</p>
             {editing && (
-              <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+              <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[0.59375rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
                 Editing
               </span>
             )}
@@ -151,14 +151,14 @@ export function StepShell({
               <button
                 type="button"
                 onClick={onLearnMore}
-                className="inline-flex items-center gap-0.5 text-[11.5px] font-semibold underline-offset-2 hover:underline"
+                className="inline-flex items-center gap-0.5 text-[0.71875rem] font-semibold underline-offset-2 hover:underline"
               >
                 <Info className="h-3 w-3" />
                 Learn more
               </button>
             )}
           </div>
-          <p className="shrink-0 text-[11px] font-bold uppercase tracking-wider">
+          <p className="shrink-0 text-[0.6875rem] font-bold uppercase tracking-wider">
             Step {stepIndex} of {stepCount}
           </p>
         </div>
@@ -172,7 +172,7 @@ export function StepShell({
             <button
               type="button"
               onClick={onSkip}
-              className="text-[12.5px] font-semibold text-[var(--color-brand-muted)] underline-offset-4 hover:text-[var(--color-brand-fg)] hover:underline"
+              className="text-[0.78125rem] font-semibold text-[var(--color-brand-muted)] underline-offset-4 hover:text-[var(--color-brand-fg)] hover:underline"
             >
               Skip this step
             </button>
@@ -183,7 +183,7 @@ export function StepShell({
             <button
               type="button"
               onClick={() => setVoidOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12.5px] font-semibold text-rose-700 underline-offset-4 hover:bg-rose-50 hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[0.78125rem] font-semibold text-rose-700 underline-offset-4 hover:bg-rose-50 hover:underline"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Void this entry
@@ -212,7 +212,7 @@ export function StepShell({
           onClick={onContinue}
           disabled={continueDisabled || continuePending}
           className={cn(
-            'group flex h-12 w-full items-center justify-center gap-2 rounded-lg text-[14px] font-bold tracking-tight transition-all',
+            'group flex h-12 w-full items-center justify-center gap-2 rounded-lg text-[0.875rem] font-bold tracking-tight transition-all',
             continueDisabled
               ? 'cursor-not-allowed bg-[var(--color-brand-primary)]/40 text-white/80'
               : 'bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-primary-deep)]',
@@ -254,7 +254,7 @@ export function YesNoPills({
             key={opt}
             onClick={() => onChange(opt)}
             className={cn(
-              'h-12 rounded-lg text-[14px] font-bold capitalize transition-colors',
+              'h-12 rounded-lg text-[0.875rem] font-bold capitalize transition-colors',
               active
                 ? 'bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-primary-deep)]'
                 : 'bg-[var(--color-brand-surface-soft)] text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-border)]',
@@ -306,11 +306,11 @@ export function NumberKeypadInput({
     <div>
       {label && (
         <div className="mb-1.5 flex items-center justify-between">
-          <label htmlFor={id} className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <label htmlFor={id} className="text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             {label}
           </label>
           {description && (
-            <span className="text-[11px] text-[var(--color-brand-muted)]">{description}</span>
+            <span className="text-[0.6875rem] text-[var(--color-brand-muted)]">{description}</span>
           )}
         </div>
       )}
@@ -331,20 +331,20 @@ export function NumberKeypadInput({
           value={value}
           onChange={(e) => onChange(sanitiseNumeric(e.target.value))}
           placeholder={placeholder}
-          className="min-w-0 flex-1 bg-transparent text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none focus:outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+          className="min-w-0 flex-1 bg-transparent text-[1.125rem] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none focus:outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
         />
         {unitOptions && onUnitChange ? (
           <select
             value={unit ?? unitOptions[0]}
             onChange={(e) => onUnitChange(e.target.value)}
-            className="cursor-pointer rounded-md border-0 bg-[var(--color-brand-surface-soft)] py-1 pl-2 pr-7 text-[12.5px] font-semibold text-[var(--color-brand-fg)] focus:outline-none"
+            className="cursor-pointer rounded-md border-0 bg-[var(--color-brand-surface-soft)] py-1 pl-2 pr-7 text-[0.78125rem] font-semibold text-[var(--color-brand-fg)] focus:outline-none"
           >
             {unitOptions.map((u) => (
               <option key={u} value={u}>{u}</option>
             ))}
           </select>
         ) : unit ? (
-          <span className="shrink-0 text-[12.5px] font-semibold text-[var(--color-brand-muted)]">{unit}</span>
+          <span className="shrink-0 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)]">{unit}</span>
         ) : null}
       </div>
     </div>
@@ -387,10 +387,10 @@ export function BeigeAlert({
   return (
     <div className="rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-3">
       {title && (
-        <p className="mb-0.5 text-[12px] font-bold text-amber-900">{title}</p>
+        <p className="mb-0.5 text-[0.75rem] font-bold text-amber-900">{title}</p>
       )}
       {hasBody && (
-        <p className="text-[12px] leading-snug text-amber-900">{children}</p>
+        <p className="text-[0.75rem] leading-snug text-amber-900">{children}</p>
       )}
     </div>
   );
@@ -403,7 +403,7 @@ export function BeigeAlert({
  */
 export function AnomalyWarning({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-1.5 text-[11.5px] leading-snug text-[var(--color-brand-danger)]">
+    <p className="mt-1.5 text-[0.71875rem] leading-snug text-[var(--color-brand-danger)]">
       <strong className="font-bold">Are you sure?</strong> {children}
     </p>
   );
@@ -435,7 +435,7 @@ export function EditingBanner({
   onSwitchEntry?: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)]/30 px-3.5 py-3 text-[12px] leading-snug text-[var(--color-brand-primary-deep)]">
+    <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)]/30 px-3.5 py-3 text-[0.75rem] leading-snug text-[var(--color-brand-primary-deep)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="font-bold">Editing this entry</p>
@@ -451,7 +451,7 @@ export function EditingBanner({
           <button
             type="button"
             onClick={onSwitchEntry}
-            className="shrink-0 text-[11.5px] font-bold tracking-tight text-[var(--color-brand-primary-deep)] underline-offset-2 hover:underline"
+            className="shrink-0 text-[0.71875rem] font-bold tracking-tight text-[var(--color-brand-primary-deep)] underline-offset-2 hover:underline"
           >
             Pick a different entry
           </button>
@@ -498,7 +498,7 @@ export function LearnMoreDrawer({
       <div aria-hidden className="absolute inset-0 animate-fade-in bg-black/40" onClick={onClose} />
       <div className="relative z-10 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[520px] sm:rounded-2xl">
         <header className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
-          <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">{title}</p>
+          <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
           <button
             type="button"
             onClick={onClose}
@@ -508,7 +508,7 @@ export function LearnMoreDrawer({
             <X className="h-4 w-4" />
           </button>
         </header>
-        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-[13px] leading-relaxed text-[var(--color-brand-fg)]">
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-[0.8125rem] leading-relaxed text-[var(--color-brand-fg)]">
           {children}
         </div>
       </div>
@@ -522,7 +522,7 @@ export function LearnMoreDrawer({
  */
 export function LearnMoreHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
+    <h3 className="text-[0.78125rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
       {children}
     </h3>
   );

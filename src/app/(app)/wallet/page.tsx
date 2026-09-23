@@ -89,16 +89,16 @@ export default function WalletPage() {
       <section className="overflow-hidden rounded-xl bg-[var(--color-brand-primary-dark)] p-5 text-white">
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">Total tokens</p>
-            <p className="mt-1 text-[28px] font-extrabold leading-none tracking-tight sm:text-[34px]">
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.18em] text-white/70">Total tokens</p>
+            <p className="mt-1 text-[1.75rem] font-extrabold leading-none tracking-tight sm:text-[2.125rem]">
               {balances.isLoading ? '—' : totalBirds.toLocaleString()}
             </p>
-            <p className="mt-1 text-[12px] text-white/80">
+            <p className="mt-1 text-[0.75rem] text-white/80">
               Across all token types and tiers.
             </p>
           </div>
           {balances.data?.freemium && !balances.data.freemium.used && balances.data.freemium.enabled && (
-            <span className="rounded-md bg-white/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+            <span className="rounded-md bg-white/15 px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-wider text-white">
               1 freemium flock available
             </span>
           )}
@@ -107,7 +107,7 @@ export default function WalletPage() {
 
       {/* Balances grid */}
       <section>
-        <h2 className="mb-2 text-[13px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">Balances by token</h2>
+        <h2 className="mb-2 text-[0.8125rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">Balances by token</h2>
         {balances.isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -125,13 +125,13 @@ export default function WalletPage() {
 
       {/* Purchase history */}
       <section>
-        <h2 className="mb-2 text-[13px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">Recent purchases</h2>
+        <h2 className="mb-2 text-[0.8125rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">Recent purchases</h2>
         {purchases.isLoading ? (
           <div className="h-24 animate-pulse rounded-xl bg-white" />
         ) : (purchases.data?.purchases ?? []).length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-8 text-center">
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">No purchases yet</p>
-            <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">No purchases yet</p>
+            <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
               Your first purchase will show here.
             </p>
           </div>
@@ -158,23 +158,23 @@ function BalanceCard({ balance, onTopUp }: { balance: TokenBalanceDto; onTopUp: 
           <Bird className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <span className={cn(
-          'rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+          'rounded-md px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider',
           low ? 'bg-amber-50 text-amber-700' : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
         )}>
           {capitalize(balance.tier)}
         </span>
       </div>
-      <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
+      <p className="mt-3 text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted-soft)]">
         {capitalize(balance.tokenType)} tokens
       </p>
-      <p className="text-[22px] font-extrabold leading-none tracking-tight text-[var(--color-brand-fg)]">
+      <p className="text-[1.375rem] font-extrabold leading-none tracking-tight text-[var(--color-brand-fg)]">
         {balance.balance.toLocaleString()}
       </p>
       <Gate perm="billing.manage">
         <button
           type="button"
           onClick={onTopUp}
-          className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+          className="mt-3 inline-flex items-center gap-1 text-[0.75rem] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
         >
           <Plus className="h-3 w-3" /> Top up
         </button>
@@ -196,16 +196,16 @@ function PurchaseRow({ purchase, divider }: { purchase: TokenPurchaseDto; divide
         <statusTone.Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold text-[var(--color-brand-fg)]">
+        <p className="truncate text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
           {purchase.quantity.toLocaleString()} × {capitalize(purchase.tokenType)} · {capitalize(purchase.tier)}
         </p>
-        <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
           {capitalize(purchase.provider)} · {purchase.reference} · {purchase.createdAt?.slice(0, 10) ?? ''}
         </p>
       </div>
       <div className="text-right">
-        <p className={cn('text-[12px] font-bold', statusTone.cls)}>{statusTone.label}</p>
-        <p className="text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className={cn('text-[0.75rem] font-bold', statusTone.cls)}>{statusTone.label}</p>
+        <p className="text-[0.71875rem] text-[var(--color-brand-muted)]">
           {formatMoney(naira, purchase.currency)}
         </p>
       </div>

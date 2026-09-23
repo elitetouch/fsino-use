@@ -121,7 +121,7 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
-            <p className="text-[14px] font-bold tracking-tight">Cycle results</p>
+            <p className="text-[0.875rem] font-bold tracking-tight">Cycle results</p>
             <div aria-hidden className="h-8 w-8" />
           </div>
 
@@ -143,7 +143,7 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
                   type="button"
                   onClick={() => setTab(t.key as Tab)}
                   className={cn(
-                    'rounded-[5px] px-3 py-1.5 text-[11.5px] font-semibold transition-colors',
+                    'rounded-[5px] px-3 py-1.5 text-[0.71875rem] font-semibold transition-colors',
                     tab === t.key
                       ? 'bg-white text-[var(--color-brand-primary-dark)]'
                       : 'text-white/85 hover:text-white',
@@ -222,8 +222,8 @@ function ResultsTab({
             <Calendar className="h-4 w-4" strokeWidth={2.2} />
           </span>
           <div className="min-w-0">
-            <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Cycle {ordinal}</p>
-            <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Cycle {ordinal}</p>
+            <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
               Started {fmtDate(cycle.startDate)}
               {completedDate && completedDate !== cycle.startDate ? ` · ends ${fmtDate(completedDate)}` : ''}
               {pen && (
@@ -240,7 +240,7 @@ function ResultsTab({
             only action left is reading the report. */}
         {isArchived ? (
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-brand-muted)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-bg)] px-2.5 py-1 text-[0.6875rem] font-semibold text-[var(--color-brand-muted)]">
               <CheckCircle2 className="h-3 w-3" />
               {cycle.outcome === 'terminated' ? 'Ended early' : 'Completed'}
             </span>
@@ -307,8 +307,8 @@ function ResultsTab({
       <section className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-4">
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <div>
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">Add today&rsquo;s record</p>
-            <p className="text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">Add today&rsquo;s record</p>
+            <p className="text-[0.71875rem] text-[var(--color-brand-muted)]">
               Log feed, water, mortality and vaccines for this cycle.
             </p>
           </div>
@@ -330,8 +330,8 @@ function ResultsTab({
 function PlaceholderTab({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
-      <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{title} — coming soon</p>
-      <p className="mx-auto mt-1 max-w-md text-[12px] text-[var(--color-brand-muted)]">{body}</p>
+      <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title} — coming soon</p>
+      <p className="mx-auto mt-1 max-w-md text-[0.75rem] text-[var(--color-brand-muted)]">{body}</p>
     </div>
   );
 }
@@ -418,10 +418,10 @@ function CloseOutSheet({
               {isComplete ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
             </span>
             <div>
-              <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">
+              <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">
                 {isComplete ? 'Complete cycle' : 'End cycle early'}
               </p>
-              <p className="text-[11px] text-[var(--color-brand-muted)]">
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">
                 {isComplete
                   ? `Confirm final numbers, then archive. Pen ${penName ?? ''} becomes free.`
                   : `Tell us why so future reports stay honest. Pen ${penName ?? ''} becomes free.`}
@@ -472,7 +472,7 @@ function CloseOutSheet({
                     type="button"
                     onClick={() => setReason(r.value)}
                     className={cn(
-                      'rounded-xl border-2 px-3 py-2.5 text-left text-[12.5px] font-semibold transition-all',
+                      'rounded-xl border-2 px-3 py-2.5 text-left text-[0.78125rem] font-semibold transition-all',
                       reason === r.value
                         ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-accent)]/40 text-[var(--color-brand-primary-deep)]'
                         : 'border-[var(--color-brand-input-border)] bg-white text-[var(--color-brand-fg)] hover:border-[var(--color-brand-primary)]/40',
@@ -497,7 +497,7 @@ function CloseOutSheet({
               placeholder={isComplete
                 ? 'Anything worth remembering about this cycle?'
                 : 'Add the specifics — dates, symptoms, decisions.'}
-              className="w-full rounded-xl border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[13px] text-[var(--color-brand-fg)] outline-none placeholder:text-[var(--color-brand-muted-soft)] focus:border-[var(--color-brand-primary)]"
+              className="w-full rounded-xl border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.8125rem] text-[var(--color-brand-fg)] outline-none placeholder:text-[var(--color-brand-muted-soft)] focus:border-[var(--color-brand-primary)]"
             />
           </div>
         </div>
@@ -531,8 +531,8 @@ function CloseOutSheet({
 function NotFound() {
   return (
     <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
-      <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">Cycle not found</p>
-      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+      <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">Cycle not found</p>
+      <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
         It may have been archived. Pick another cycle.
       </p>
       <Button asChild size="sm" className="mt-4">

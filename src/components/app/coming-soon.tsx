@@ -26,8 +26,8 @@ export function ComingSoon({
         <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
           <Icon className="h-5 w-5" strokeWidth={2.2} />
         </span>
-        <p className="mt-4 text-[14px] font-bold text-[var(--color-brand-fg)]">Coming soon</p>
-        <p className="mx-auto mt-1 max-w-md text-[12px] text-[var(--color-brand-muted)]">{body}</p>
+        <p className="mt-4 text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Coming soon</p>
+        <p className="mx-auto mt-1 max-w-md text-[0.75rem] text-[var(--color-brand-muted)]">{body}</p>
       </div>
     </div>
   );

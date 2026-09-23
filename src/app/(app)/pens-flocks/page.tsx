@@ -110,7 +110,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors',
+        'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[0.78125rem] font-semibold transition-colors',
         active
           ? 'bg-white text-[var(--color-brand-fg)] shadow-sm'
           : 'text-[var(--color-brand-muted)] hover:text-[var(--color-brand-fg)]',
@@ -119,7 +119,7 @@ function TabButton({
       <Icon className="h-3.5 w-3.5" />
       {label}
       <span className={cn(
-        'ml-0.5 rounded-full px-1.5 text-[10px] font-bold',
+        'ml-0.5 rounded-full px-1.5 text-[0.625rem] font-bold',
         active ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]' : 'bg-[var(--color-brand-border)] text-[var(--color-brand-muted)]',
       )}>
         {count}
@@ -165,26 +165,26 @@ function PensView({ pens, loading }: { pens: PenDto[]; loading: boolean }) {
                 <Warehouse className="h-4 w-4" strokeWidth={2.2} />
               </span>
               <span className={cn(
-                'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                'rounded-full px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider',
                 occupied ? 'bg-amber-50 text-amber-700' : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
               )}>
                 {occupied ? 'Occupied' : 'Free'}
               </span>
             </div>
-            <p className="mt-3 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">{pen.name}</p>
-            <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="mt-3 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">{pen.name}</p>
+            <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
               {pen.penType ? pen.penType.replace(/_/g, ' ') : 'No type'}
               {pen.capacity ? ` · capacity ${pen.capacity.toLocaleString()}` : ''}
             </p>
             {occupied && pen.occupancy?.activeFlock && (
-              <p className="mt-2 truncate text-[11.5px] text-[var(--color-brand-muted)]">
+              <p className="mt-2 truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
                 <strong className="text-[var(--color-brand-fg)]">
                   {pen.occupancy.activeFlock.name ?? pen.occupancy.activeFlock.productionType}
                 </strong>
                 {' · '}{pen.occupancy.activeFlock.currentBirds.toLocaleString()} birds
               </p>
             )}
-            <p className="mt-3 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] transition-transform group-hover:translate-x-0.5">
+            <p className="mt-3 text-[0.71875rem] font-semibold text-[var(--color-brand-primary-deep)] transition-transform group-hover:translate-x-0.5">
               View cycle history →
             </p>
           </Link>
@@ -239,8 +239,8 @@ function Empty({
       <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
         <Icon className="h-4 w-4" />
       </span>
-      <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
-      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">{body}</p>
+      <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
+      <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">{body}</p>
       <Gate perm={ctaPerm}>
         <Button asChild size="sm" className="mt-4 h-9">
           <Link href={ctaHref}>

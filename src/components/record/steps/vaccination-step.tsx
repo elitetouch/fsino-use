@@ -269,7 +269,7 @@ function VaccinationForm({
           )}
 
           <div>
-            <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Did you vaccinate today?
             </p>
             <YesNoPills value={answer} onChange={setAnswer} primary="yes" />
@@ -298,9 +298,9 @@ function VaccinationForm({
 
               {vaccine === 'other' && (
                 <div>
-                  <label htmlFor="other-vaccine" className="mb-1.5 block text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+                  <label htmlFor="other-vaccine" className="mb-1.5 block text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
                     Vaccine name
-                    <span className="ml-2 font-normal text-[11px] text-[var(--color-brand-muted)]">
+                    <span className="ml-2 font-normal text-[0.6875rem] text-[var(--color-brand-muted)]">
                       Describe the vaccine
                     </span>
                   </label>
@@ -310,7 +310,7 @@ function VaccinationForm({
                     value={otherVaccine}
                     onChange={(e) => setOtherVaccine(e.target.value)}
                     placeholder="Type the vaccine name"
-                    className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[13px] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
+                    className={`h-11 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.8125rem] font-semibold text-[var(--color-brand-fg)] ${FOCUS_INPUT}`}
                     autoFocus
                   />
                 </div>

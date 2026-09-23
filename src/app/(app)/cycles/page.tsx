@@ -90,7 +90,7 @@ export default function CyclesPage() {
             placeholder="Search by breed…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="h-10 pl-9 text-[13px]"
+            className="h-10 pl-9 text-[0.8125rem]"
           />
         </div>
         <div className="relative sm:w-[220px]">
@@ -98,7 +98,7 @@ export default function CyclesPage() {
           <select
             value={penId}
             onChange={(e) => setPenId(e.target.value)}
-            className="block h-10 w-full appearance-none rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white pl-9 pr-3 text-[13px]"
+            className="block h-10 w-full appearance-none rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white pl-9 pr-3 text-[0.8125rem]"
           >
             <option value="all">All pens</option>
             {(pens.data?.pens ?? []).map((p: PenDto) => (
@@ -112,7 +112,7 @@ export default function CyclesPage() {
             value={status}
             onChange={(e) => setStatus(e.target.value as 'all' | 'active' | 'completed')}
             aria-label="Filter by cycle status"
-            className="block h-10 w-full appearance-none rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white pl-9 pr-3 text-[13px]"
+            className="block h-10 w-full appearance-none rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white pl-9 pr-3 text-[0.8125rem]"
           >
             <option value="all">All cycles ({all.length})</option>
             <option value="active">Running ({activeCount})</option>
@@ -180,20 +180,20 @@ function CycleRow({
         <Bird className="h-4 w-4" strokeWidth={2.2} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-semibold text-[var(--color-brand-fg)]">
+        <p className="truncate text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">
           Cycle {ordinal} · {cycle.breed}
         </p>
-        <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
           {pen ? `${pen.name} · ` : ''}{labelForProduction(cycle.productionType)} · {cycle.placedBirds.toLocaleString()} birds
         </p>
       </div>
       <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">
         {isArchived && (
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-brand-muted)]">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-brand-muted)]">
             Completed
           </span>
         )}
-        <span className="text-[11px] font-semibold text-[var(--color-brand-muted)]">
+        <span className="text-[0.6875rem] font-semibold text-[var(--color-brand-muted)]">
           {status}
         </span>
       </div>
@@ -223,10 +223,10 @@ function Empty({ filtered = false }: { filtered?: boolean }) {
       <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
         <Bird className="h-4 w-4" />
       </span>
-      <p className="mt-4 text-[13px] font-bold text-[var(--color-brand-fg)]">
+      <p className="mt-4 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
         {filtered ? 'No cycles match these filters' : 'No cycles yet'}
       </p>
-      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+      <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
         {filtered
           ? 'Try clearing the search, pen or status filter.'
           : 'Place a flock to start a new cycle.'}

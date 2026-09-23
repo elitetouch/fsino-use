@@ -54,7 +54,7 @@ export function Sidebar() {
         {visibleGroups.map((group, gi) => (
           <div key={group.heading ?? `g-${gi}`} className={gi > 0 ? 'mt-5' : ''}>
             {group.heading && (
-              <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+              <p className="mb-1 px-3 text-[0.75rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
                 {group.heading}
               </p>
             )}
@@ -64,7 +64,7 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-[var(--color-brand-border)] px-5 py-3">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-brand-muted-soft)]">
+        <p className="text-[0.625rem] uppercase tracking-[0.18em] text-[var(--color-brand-muted-soft)]">
           FS Innovation is registered in Nigeria
         </p>
       </div>
@@ -79,7 +79,7 @@ function SidebarLink({ href, label, icon: Icon, beta }: NavItem) {
     <Link
       href={href}
       className={cn(
-        'group flex h-10 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-colors',
+        'group flex h-10 items-center gap-2.5 rounded-lg px-3 text-[0.8125rem] font-medium transition-colors',
         active
           ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
           : 'text-[var(--color-brand-fg-soft)] hover:bg-[var(--color-brand-surface-soft)]',
@@ -97,7 +97,7 @@ function SidebarLink({ href, label, icon: Icon, beta }: NavItem) {
       </span>
       <span className="flex-1 truncate">{label}</span>
       {beta && (
-        <span className="shrink-0 rounded-full border border-[var(--color-brand-primary)]/35 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-[var(--color-brand-primary-deep)]">
+        <span className="shrink-0 rounded-full border border-[var(--color-brand-primary)]/35 px-1.5 py-px text-[0.59375rem] font-bold uppercase tracking-wide text-[var(--color-brand-primary-deep)]">
           Beta
         </span>
       )}

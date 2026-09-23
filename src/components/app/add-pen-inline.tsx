@@ -72,7 +72,7 @@ export function AddPenInline({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-accent)]/40"
+        className="mt-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[0.75rem] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-accent)]/40"
       >
         <Plus className="h-3.5 w-3.5" />
         Create a new pen
@@ -83,7 +83,7 @@ export function AddPenInline({
   return (
     <div className="mt-2 rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-[var(--color-brand-surface-soft)]/60 p-3.5">
       <div className="mb-2 flex items-center justify-between">
-        <p className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-brand-fg)]">
+        <p className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold text-[var(--color-brand-fg)]">
           <Warehouse className="h-3.5 w-3.5 text-[var(--color-brand-primary-deep)]" />
           New pen
         </p>
@@ -99,18 +99,18 @@ export function AddPenInline({
 
       <div className="space-y-2.5">
         <div>
-          <Label className="text-[11px]">Pen name / number *</Label>
+          <Label className="text-[0.6875rem]">Pen name / number *</Label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Pen 1, House A…"
-            className="h-9 text-[13px]"
+            className="h-9 text-[0.8125rem]"
             autoFocus
           />
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
-            <Label className="text-[11px]">Capacity</Label>
+            <Label className="text-[0.6875rem]">Capacity</Label>
             <Input
               type="number"
               inputMode="numeric"
@@ -121,15 +121,15 @@ export function AddPenInline({
                 setCapacity(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))
               }
               placeholder="500"
-              className="h-9 text-[13px]"
+              className="h-9 text-[0.8125rem]"
             />
           </div>
           <div>
-            <Label className="text-[11px]">Type</Label>
+            <Label className="text-[0.6875rem]">Type</Label>
             <select
               value={penType}
               onChange={(e) => setPenType(e.target.value)}
-              className="block h-9 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-2.5 text-[13px]"
+              className="block h-9 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-2.5 text-[0.8125rem]"
             >
               <option value="">Select…</option>
               <option value="deep_litter">Deep litter</option>

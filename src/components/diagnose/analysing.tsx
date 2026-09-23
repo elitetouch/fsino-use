@@ -52,10 +52,10 @@ export function Analysing({ preview }: { preview: string }) {
           <div className="absolute inset-0 animate-pulse bg-[var(--color-brand-primary)]/10" />
         </div>
 
-        <p className="mt-4 text-[15px] font-bold text-[var(--color-brand-fg)]">
+        <p className="mt-4 text-[0.9375rem] font-bold text-[var(--color-brand-fg)]">
           Examining your photo
         </p>
-        <p className="mt-0.5 text-[12.5px] text-[var(--color-brand-muted)]">
+        <p className="mt-0.5 text-[0.78125rem] text-[var(--color-brand-muted)]">
           This takes about 10 seconds. Keep this screen open.
         </p>
       </div>
@@ -87,7 +87,7 @@ export function Analysing({ preview }: { preview: string }) {
               </span>
               <span
                 className={[
-                  'text-[13px]',
+                  'text-[0.8125rem]',
                   done || active
                     ? 'font-semibold text-[var(--color-brand-fg)]'
                     : 'text-[var(--color-brand-muted)]',

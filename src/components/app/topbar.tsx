@@ -78,7 +78,7 @@ export function Topbar({
             <Logo height={36} />
           </Link>
           {title && (
-            <h1 className="hidden truncate text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] lg:block">
+            <h1 className="hidden truncate text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)] lg:block">
               {title}
             </h1>
           )}
@@ -88,7 +88,7 @@ export function Topbar({
         <div className="flex shrink-0 items-center gap-2">
           <span
             className={cn(
-              'hidden items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider sm:inline-flex',
+              'hidden items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider sm:inline-flex',
               online
                 ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                 : 'bg-amber-50 text-amber-700',
@@ -101,7 +101,7 @@ export function Topbar({
           <Link
             href="/wallet"
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors',
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.71875rem] font-semibold transition-colors',
               lowBalance
                 ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
                 : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)] hover:brightness-95',
@@ -115,7 +115,7 @@ export function Topbar({
             <span className="hidden sm:inline">tokens</span>
           </Link>
 
-          <Button asChild size="sm" className="hidden h-9 px-3.5 text-[13px] sm:inline-flex">
+          <Button asChild size="sm" className="hidden h-9 px-3.5 text-[0.8125rem] sm:inline-flex">
             <Link href="/setup/flocks">
               <Plus className="h-3.5 w-3.5" />
               New flock
@@ -130,10 +130,10 @@ export function Topbar({
               className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-border)] bg-white p-1 pr-2.5 transition-all hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-brand-surface-soft)]"
               aria-expanded={menuOpen}
             >
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-[11px] font-bold text-white">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-[0.6875rem] font-bold text-white">
                 {initial}
               </span>
-              <span className="hidden text-[13px] font-semibold text-[var(--color-brand-fg)] sm:inline">
+              <span className="hidden text-[0.8125rem] font-semibold text-[var(--color-brand-fg)] sm:inline">
                 {user?.name?.split(' ')[0] ?? 'Farmer'}
               </span>
               <ChevronDown className="hidden h-3.5 w-3.5 text-[var(--color-brand-muted)] sm:inline" />

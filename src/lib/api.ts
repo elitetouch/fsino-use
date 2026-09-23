@@ -169,6 +169,27 @@ export type DiagnosisDto = {
     next_action?: string;
     photos?: string[];
   };
+  /**
+   * Reference photographs for the predicted disease.
+   *
+   * Rendered under "Does this match what you are seeing?" — as a CHECK
+   * on the result, never as confirmation beneath the disease name. A
+   * farmer shown photos under a verdict sees what they have been told
+   * to see, and this model is wrong often enough to ship behind a beta
+   * badge.
+   *
+   * Empty unless owned, captioned, credited images exist for the class.
+   * Ordered early signs first: early is the only stage at which a
+   * farmer can still change the outcome.
+   */
+  referenceImages: Array<{
+    url: string;
+    /** What to LOOK AT, not what the photo depicts. */
+    caption: string;
+    severity: 'early' | 'established' | 'terminal';
+    credit: string;
+  }>;
+
   /** Base64 JPEG showing where the model looked. */
   gradcamOverlay: string | null;
   createdAt: string;

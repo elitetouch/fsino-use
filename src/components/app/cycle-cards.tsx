@@ -37,16 +37,16 @@ export function BreedSummaryCard({ flock }: { flock: FlockDto }) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-[15px] font-bold text-[var(--color-brand-fg)]">{flock.breed}</p>
+            <p className="truncate text-[0.9375rem] font-bold text-[var(--color-brand-fg)]">{flock.breed}</p>
             {/* Bird-count pill — figma uses BLACK here ("100 birds" /
                 "2,000 birds" / "280 birds"), not brand green. Only
                 weight/water/rating badges are green. Keeps counts
                 visually distinct from production-status badges. */}
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {flock.placedBirds.toLocaleString()} birds
             </span>
           </div>
-          <p className="mt-0.5 text-[12px] text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-muted)]">
             {labelForProduction(flock.productionType)}.{' '}
             <strong className="text-[var(--color-brand-fg)]">{days} days old</strong>.
           </p>
@@ -153,7 +153,7 @@ export function FeedConsumptionCard({
     <Card>
       <CardHeader icon={Wheat} title="Feed consumption" />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           fcrEmptyStateCopy(data)
         ) : ratingWord ? (
@@ -171,7 +171,7 @@ export function FeedConsumptionCard({
 
       {!empty && (
         <div className="mt-4">
-          <p className="mb-2 text-[12.5px] font-bold text-[var(--color-brand-fg)]">
+          <p className="mb-2 text-[0.78125rem] font-bold text-[var(--color-brand-fg)]">
             Feed conversion rate (FCR)
           </p>
           {/*
@@ -194,10 +194,10 @@ export function FeedConsumptionCard({
                 lot per kg out) sits on the LEFT next to the red zone,
                 LOW (either sweet-spot or logging-error-suspicious) sits
                 on the RIGHT next to the blue zone. */}
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-[var(--color-brand-muted)]">
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[0.6875rem] font-semibold text-[var(--color-brand-muted)]">
               High
             </span>
-            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-[var(--color-brand-muted)]">
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[0.6875rem] font-semibold text-[var(--color-brand-muted)]">
               Low
             </span>
             <div className="absolute inset-x-9 top-1/2 -translate-y-1/2">
@@ -211,7 +211,7 @@ export function FeedConsumptionCard({
               />
               {fcr != null && pct != null && (
                 <div
-                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2.5 py-0.5 text-[11.5px] font-bold leading-tight text-white shadow-md ring-2 ring-white"
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2.5 py-0.5 text-[0.71875rem] font-bold leading-tight text-white shadow-md ring-2 ring-white"
                   style={{ left: `${pct}%`, backgroundColor: pillBg }}
                 >
                   {fcr.toFixed(2)}
@@ -298,11 +298,11 @@ function DailyAmountSection({
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <p className="text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <p className="text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           {title}
         </p>
         {(itemType || itemBrand) && (
-          <p className="truncate text-[11px] text-[var(--color-brand-muted)]">
+          <p className="truncate text-[0.6875rem] text-[var(--color-brand-muted)]">
             {itemType && (
               <span className="font-bold text-[var(--color-brand-primary-deep)]">
                 {capitalizeFirst(itemType)}:
@@ -315,10 +315,10 @@ function DailyAmountSection({
       <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
         {items.map((d) => (
           <div key={d.date} className="flex min-w-0 flex-col items-center">
-            <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+            <p className="mb-1 w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
               {shortDate(d.date)}
             </p>
-            <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+            <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[0.65625rem] font-bold leading-none text-[var(--color-brand-fg)]">
               <span className="truncate">
                 {d.value == null ? '—' : `${fmtCompact(d.value)} ${unit}`}
               </span>
@@ -361,7 +361,7 @@ function LearnMoreFooter({
       <button
         type="button"
         onClick={onLearnMore}
-        className="inline-flex items-center gap-1 text-[12px] font-bold text-[var(--color-brand-primary-deep)] hover:underline"
+        className="inline-flex items-center gap-1 text-[0.75rem] font-bold text-[var(--color-brand-primary-deep)] hover:underline"
       >
         <BadgeCheck className="h-4 w-4 fill-[var(--color-brand-primary)] text-white" strokeWidth={2.4} />
         Learn more
@@ -370,7 +370,7 @@ function LearnMoreFooter({
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
+          className="inline-flex items-center gap-1 text-[0.75rem] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
         >
           {editLabel}
           <ChevronRight className="h-3 w-3" />
@@ -407,7 +407,7 @@ function LearnMoreDrawer({
         className="relative z-10 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[520px] sm:rounded-2xl"
       >
         <header className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
-          <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">{title}</p>
+          <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
           <button
             type="button"
             onClick={onClose}
@@ -418,7 +418,7 @@ function LearnMoreDrawer({
           </button>
         </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-[13px] leading-relaxed text-[var(--color-brand-fg)]">
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-[0.8125rem] leading-relaxed text-[var(--color-brand-fg)]">
           {children}
         </div>
       </div>
@@ -429,7 +429,7 @@ function LearnMoreDrawer({
 /** Small heading shared by every drawer body so they all read the same. */
 function DrawerSectionHeading({ children }: { children: ReactNode }) {
   return (
-    <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
+    <h3 className="text-[0.78125rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary)]">
       {children}
     </h3>
   );
@@ -565,14 +565,14 @@ export function WaterConsumptionCard({
             // Black pill matches the figma's "420ml" badge. Bird-count
             // and egg-collection cards already use this treatment; reusing
             // it here keeps the count-style pills visually grouped.
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {Math.round(avg)}ml
             </span>
           ) : undefined
         }
       />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           'No water amount entered.'
         ) : (
@@ -647,21 +647,21 @@ function WaterAmountSection({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+      <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
         {title}
       </p>
       {empty ? (
-        <p className="text-[11.5px] italic text-[var(--color-brand-muted)]">
+        <p className="text-[0.71875rem] italic text-[var(--color-brand-muted)]">
           No water amount entered.
         </p>
       ) : (
         <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
           {items.map((d) => (
             <div key={d.date} className="flex min-w-0 flex-col items-center">
-              <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+              <p className="mb-1 w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
                 {shortDate(d.date)}
               </p>
-              <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+              <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[0.65625rem] font-bold leading-none text-[var(--color-brand-fg)]">
                 <span className="truncate">
                   {d.value == null ? '—' : `${fmtCompact(d.value)} l`}
                 </span>
@@ -776,14 +776,14 @@ export function MortalityCard({
             // Black pill — figma uses black for the headline % regardless
             // of rating word (the rating colour is conveyed in the
             // description sentence, not the pill).
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {rate.toFixed(1).replace('.', ',')}%
             </span>
           ) : undefined
         }
       />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           'No mortality logged yet.'
         ) : (
@@ -804,7 +804,7 @@ export function MortalityCard({
       </p>
 
       <div className="mt-4">
-        <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           Birds dead or culled
         </p>
         <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
@@ -812,11 +812,11 @@ export function MortalityCard({
             const isSpike = typeof d.value === 'number' && d.value > 0 && d.value === maxValue;
             return (
               <div key={d.date} className="flex min-w-0 flex-col items-center">
-                <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+                <p className="mb-1 w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
                   {shortDate(d.date)}
                 </p>
                 <span className={cn(
-                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[0.65625rem] font-bold leading-none',
                   isSpike
                     ? 'bg-rose-50 text-rose-600'
                     : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
@@ -832,10 +832,10 @@ export function MortalityCard({
       </div>
 
       <div className="mt-4">
-        <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           Primary cause of death
         </p>
-        <p className="text-[12px] leading-snug text-[var(--color-brand-fg-soft)]">
+        <p className="text-[0.75rem] leading-snug text-[var(--color-brand-fg-soft)]">
           {cause ? (
             <>
               <strong className="font-bold text-[var(--color-brand-fg)]">{cause}</strong>{' '}
@@ -936,14 +936,14 @@ export function BirdsSoldCard({
         title="Birds sold"
         rightSlot={
           totalSold > 0 ? (
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {totalSold.toLocaleString()} birds
             </span>
           ) : undefined
         }
       />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           'No birds sold from this pen yet.'
         ) : percent != null ? (
@@ -966,7 +966,7 @@ export function BirdsSoldCard({
 
       {items.length > 0 && (
         <div className="mt-4">
-          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             Birds sold
           </p>
           <SporadicPillGrid items={items} renderValue={(v) => Math.round(v).toLocaleString()} />
@@ -1043,10 +1043,10 @@ function SporadicPillGrid({
     >
       {items.map((d) => (
         <div key={d.date} className="flex min-w-0 flex-col items-center">
-          <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+          <p className="mb-1 w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
             {shortDate(d.date)}
           </p>
-          <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+          <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[0.65625rem] font-bold leading-none text-[var(--color-brand-fg)]">
             <span className="truncate">
               {d.value == null ? '—' : renderValue(d.value)}
             </span>
@@ -1101,14 +1101,14 @@ export function BirdWeightCard({
         title="Bird weight"
         rightSlot={
           latest != null ? (
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {formatKg(latest)} kg
             </span>
           ) : undefined
         }
       />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           'No bird weight measurements yet.'
         ) : ratingWord ? (
@@ -1131,7 +1131,7 @@ export function BirdWeightCard({
 
       {items.length > 0 && (
         <div className="mt-4">
-          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             Average bird weight
           </p>
           <SporadicPillGrid items={items} renderValue={(v) => `${formatKg(v)} kg`} />
@@ -1273,14 +1273,14 @@ export function EggCollectionCard({
           avgPerDay != null ? (
             // Black "1,093 eggs" pill — same treatment as the bird-count
             // / birds-sold pills, deliberately count-style not rating-coloured.
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {Math.round(avgPerDay).toLocaleString()} eggs
             </span>
           ) : undefined
         }
       />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           'No eggs collected yet.'
         ) : avgPerDay != null && dataDayCount > 0 ? (
@@ -1312,7 +1312,7 @@ export function EggCollectionCard({
           line for both modes — useful context that doesn't fit in the
           per-day pills. Hidden when no damage has ever been logged. */}
       {lifetimeDamaged > 0 && (
-        <p className="mt-3 text-[11.5px] text-[var(--color-brand-fg-soft)]">
+        <p className="mt-3 text-[0.71875rem] text-[var(--color-brand-fg-soft)]">
           Lifetime:{' '}
           <strong className="text-[var(--color-brand-fg)]">
             {lifetimeGood.toLocaleString()} good
@@ -1359,7 +1359,7 @@ function EggDailySection({
   const cols = Math.min(5, items.length);
   return (
     <div>
-      <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+      <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
         {title}
       </p>
       <div
@@ -1368,10 +1368,10 @@ function EggDailySection({
       >
         {items.map((d) => (
           <div key={d.date} className="flex min-w-0 flex-col items-center">
-            <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+            <p className="mb-1 w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
               {shortDate(d.date)}
             </p>
-            <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[10.5px] font-bold leading-none text-[var(--color-brand-fg)]">
+            <span className="inline-flex h-6 w-full items-center justify-center rounded-md bg-[var(--color-brand-accent)]/55 px-1 text-[0.65625rem] font-bold leading-none text-[var(--color-brand-fg)]">
               <span className="truncate">
                 {d.value == null ? '—' : Math.round(d.value).toLocaleString()}
               </span>
@@ -1412,7 +1412,7 @@ function EggMomentSection({
 
   return (
     <div>
-      <p className="mb-2 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+      <p className="mb-2 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
         {title}
       </p>
 
@@ -1424,7 +1424,7 @@ function EggMomentSection({
         >
           <div />
           {items.map((d) => (
-            <p key={d.date} className="w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+            <p key={d.date} className="w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
               {shortDate(d.date)}
             </p>
           ))}
@@ -1435,7 +1435,7 @@ function EggMomentSection({
           className="grid items-center gap-1 sm:gap-1.5"
           style={{ gridTemplateColumns: `4.5rem repeat(${cols}, minmax(0, 1fr))` }}
         >
-          <p className="text-[11.5px] font-semibold text-[var(--color-brand-muted)]">Good:</p>
+          <p className="text-[0.71875rem] font-semibold text-[var(--color-brand-muted)]">Good:</p>
           {items.map((d) => {
             const isDrop = goodMax > 0
               && d.good != null
@@ -1444,7 +1444,7 @@ function EggMomentSection({
               <span
                 key={d.date}
                 className={cn(
-                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[0.65625rem] font-bold leading-none',
                   isDrop
                     ? 'bg-rose-50 text-rose-600'
                     : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
@@ -1463,7 +1463,7 @@ function EggMomentSection({
           className="grid items-center gap-1 sm:gap-1.5"
           style={{ gridTemplateColumns: `4.5rem repeat(${cols}, minmax(0, 1fr))` }}
         >
-          <p className="text-[11.5px] font-semibold text-[var(--color-brand-muted)]">Damaged:</p>
+          <p className="text-[0.71875rem] font-semibold text-[var(--color-brand-muted)]">Damaged:</p>
           {items.map((d) => {
             const isSpike = damagedMax > 0
               && d.damaged != null
@@ -1473,7 +1473,7 @@ function EggMomentSection({
               <span
                 key={d.date}
                 className={cn(
-                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                  'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[0.65625rem] font-bold leading-none',
                   isSpike
                     ? 'bg-rose-50 text-rose-600'
                     : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
@@ -1574,14 +1574,14 @@ export function EggSizeCard({
         title="Egg size"
         rightSlot={
           dominant ? (
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {dominant}
             </span>
           ) : undefined
         }
       />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           'No egg size grading yet.'
         ) : dominant ? (
@@ -1599,7 +1599,7 @@ export function EggSizeCard({
 
       {items.length > 0 && (
         <div className="mt-4">
-          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             Egg size
           </p>
           <SporadicCategoricalGrid items={items} highlight={dominant} />
@@ -1675,11 +1675,11 @@ function SporadicCategoricalGrid({
         const isDominant = !!highlight && d.value === highlight;
         return (
           <div key={d.date} className="flex min-w-0 flex-col items-center">
-            <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+            <p className="mb-1 w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
               {shortDate(d.date)}
             </p>
             <span className={cn(
-              'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+              'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[0.65625rem] font-bold leading-none',
               isDominant
                 ? 'bg-[var(--color-brand-fg)] text-white'
                 : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
@@ -1741,14 +1741,14 @@ export function EggWeightCard({
         title="Egg weight"
         rightSlot={
           avgG != null ? (
-            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
               {Math.round(avgG)} gram
             </span>
           ) : undefined
         }
       />
 
-      <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-brand-fg-soft)]">
+      <p className="mt-2 text-[0.78125rem] leading-snug text-[var(--color-brand-fg-soft)]">
         {empty ? (
           'No egg weight readings yet.'
         ) : avgG != null && dataCount > 0 ? (
@@ -1767,7 +1767,7 @@ export function EggWeightCard({
 
       {items.length > 0 && (
         <div className="mt-4">
-          <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             Egg weight
           </p>
           <div
@@ -1779,11 +1779,11 @@ export function EggWeightCard({
               const isWorst = minValue != null && v === minValue && items.length > 1;
               return (
                 <div key={d.date} className="flex min-w-0 flex-col items-center">
-                  <p className="mb-1 w-full truncate text-center text-[10.5px] font-medium text-[var(--color-brand-muted)]">
+                  <p className="mb-1 w-full truncate text-center text-[0.65625rem] font-medium text-[var(--color-brand-muted)]">
                     {shortDate(d.date)}
                   </p>
                   <span className={cn(
-                    'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[10.5px] font-bold leading-none',
+                    'inline-flex h-6 w-full items-center justify-center rounded-md px-1 text-[0.65625rem] font-bold leading-none',
                     isWorst
                       ? 'bg-rose-50 text-rose-600'
                       : 'bg-[var(--color-brand-accent)]/55 text-[var(--color-brand-fg)]',
@@ -1913,7 +1913,7 @@ export function VaccinationCard({
         rightSlot={
           total > 0 ? (
             <span className={cn(
-              'rounded-full px-2.5 py-0.5 text-[11.5px] font-bold tabular-nums',
+              'rounded-full px-2.5 py-0.5 text-[0.71875rem] font-bold tabular-nums',
               counterTone,
             )}>
               {completed} / {total}
@@ -1930,7 +1930,7 @@ export function VaccinationCard({
 
       {/* Empty state */}
       {empty && (
-        <p className="mt-3 text-[12px] text-[var(--color-brand-muted)]">
+        <p className="mt-3 text-[0.75rem] text-[var(--color-brand-muted)]">
           {summary == null
             ? 'No vaccination schedule found. Set the flock\'s breed to auto-build one.'
             : 'No vaccinations in your schedule yet.'}
@@ -1965,10 +1965,10 @@ export function VaccinationCard({
             className="flex w-full items-center justify-between gap-2 text-left"
           >
             <div className="min-w-0">
-              <p className="text-[11.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+              <p className="text-[0.71875rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
                 {offScheduleHeading(offSchedule)}
               </p>
-              <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+              <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
                 {offSchedule.length} entr{offSchedule.length === 1 ? 'y' : 'ies'} outside the schedule.
               </p>
             </div>
@@ -2000,7 +2000,7 @@ export function VaccinationCard({
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
+            className="inline-flex items-center gap-0.5 text-[0.75rem] font-semibold text-[var(--color-brand-fg-soft)] hover:text-[var(--color-brand-primary-deep)]"
           >
             {showAll ? 'Show less' : 'Show all'}
             <ChevronDown
@@ -2077,14 +2077,14 @@ function OffScheduleRow({ item }: { item: VaccinationOffScheduleItemDto }) {
 
   return (
     <li className="flex items-center gap-3 px-2 py-2.5 -mx-2">
-      <span className="inline-flex w-[3.4rem] shrink-0 items-center text-[10.5px] font-bold uppercase leading-tight tracking-[0.08em] text-[var(--color-brand-muted)]">
+      <span className="inline-flex w-[3.4rem] shrink-0 items-center text-[0.65625rem] font-bold uppercase leading-tight tracking-[0.08em] text-[var(--color-brand-muted)]">
         {item.recordedDateLabel}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 break-words text-[13px] font-semibold leading-snug text-[var(--color-brand-fg)]">
+        <p className="line-clamp-2 break-words text-[0.8125rem] font-semibold leading-snug text-[var(--color-brand-fg)]">
           {item.name}
         </p>
-        <p className="mt-0.5 text-[10.5px] uppercase tracking-[0.1em] text-[var(--color-brand-muted-soft)]">
+        <p className="mt-0.5 text-[0.65625rem] uppercase tracking-[0.1em] text-[var(--color-brand-muted-soft)]">
           {item.eventType} · day {item.ageDays}
         </p>
       </div>
@@ -2093,7 +2093,7 @@ function OffScheduleRow({ item }: { item: VaccinationOffScheduleItemDto }) {
         onClick={onAdopt}
         disabled={add.isPending}
         title="Add to my farm protocol"
-        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-brand-border)] bg-white px-2 py-1 text-[11px] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-accent)]/30 disabled:opacity-50"
+        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-brand-border)] bg-white px-2 py-1 text-[0.6875rem] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-accent)]/30 disabled:opacity-50"
       >
         {add.isPending ? '…' : <><Plus className="h-3 w-3" />Adopt</>}
       </button>
@@ -2118,10 +2118,10 @@ function SuggestionsBanner({ suggestions }: { suggestions: VaccinationSuggestion
       <div className="flex items-start gap-2">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" strokeWidth={2.2} />
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-bold text-amber-900">
+          <p className="text-[0.75rem] font-bold text-amber-900">
             Suggested for your protocol
           </p>
-          <p className="mt-0.5 text-[11.5px] leading-snug text-amber-800">
+          <p className="mt-0.5 text-[0.71875rem] leading-snug text-amber-800">
             We noticed these {suggestions.length === 1 ? 'is' : 'are'} given consistently
             across your recent cycles — adopt {suggestions.length === 1 ? 'it' : 'them'} so
             future flocks include {suggestions.length === 1 ? 'it' : 'them'} automatically.
@@ -2149,7 +2149,7 @@ function SuggestionRow({ suggestion }: { suggestion: VaccinationSuggestionDto })
   return (
     <li className="flex items-center gap-2 rounded-md bg-white/80 px-2 py-1.5">
       <CalendarPlus className="h-3.5 w-3.5 shrink-0 text-amber-700" strokeWidth={2.2} />
-      <p className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[var(--color-brand-fg)]">
+      <p className="min-w-0 flex-1 truncate text-[0.75rem] font-semibold text-[var(--color-brand-fg)]">
         {suggestion.name}{' '}
         <span className="font-normal text-[var(--color-brand-muted)]">
           · day {suggestion.ageDays} · {suggestion.cycleCount} cycles
@@ -2159,7 +2159,7 @@ function SuggestionRow({ suggestion }: { suggestion: VaccinationSuggestionDto })
         type="button"
         onClick={onAdopt}
         disabled={add.isPending}
-        className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-200 disabled:opacity-50"
+        className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-100 px-2 py-1 text-[0.6875rem] font-semibold text-amber-900 hover:bg-amber-200 disabled:opacity-50"
       >
         {add.isPending ? '…' : <><Plus className="h-3 w-3" />Adopt</>}
       </button>
@@ -2273,7 +2273,7 @@ function VaccinationRow({ item }: { item: VaccinationItemDto }) {
         regardless of label length. "OCT 2" is 5 chars, "OCT 14" is 6;
         the column is sized for the longer one.
       */}
-      <span className="inline-flex w-[3.4rem] shrink-0 items-center text-[10.5px] font-bold uppercase leading-tight tracking-[0.08em] text-[var(--color-brand-muted)]">
+      <span className="inline-flex w-[3.4rem] shrink-0 items-center text-[0.65625rem] font-bold uppercase leading-tight tracking-[0.08em] text-[var(--color-brand-muted)]">
         {formatScheduledDate(item.scheduledDateLabel)}
       </span>
 
@@ -2285,7 +2285,7 @@ function VaccinationRow({ item }: { item: VaccinationItemDto }) {
             // to two lines on phones instead of getting ellipsized
             // mid-disease. On desktop most names fit on one line so
             // visually nothing changes for short labels.
-            'line-clamp-2 break-words text-[13.5px] leading-snug text-[var(--color-brand-fg)]',
+            'line-clamp-2 break-words text-[0.84375rem] leading-snug text-[var(--color-brand-fg)]',
             // Bold the vaccine name on today's row (per figma); keep
             // normal weight otherwise so the row reads cleanly.
             isToday ? 'font-extrabold' : 'font-semibold',
@@ -2325,7 +2325,7 @@ function VaccinationStatusIndicator({ item }: { item: VaccinationItemDto }) {
     // itself is already tinted beige (see VaccinationRow), so the
     // indicator stays muted/textual.
     return (
-      <span className="shrink-0 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-fg)]">
+      <span className="shrink-0 text-[0.65625rem] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-fg)]">
         Today
       </span>
     );
@@ -2356,7 +2356,7 @@ function VaccinationStatusIndicator({ item }: { item: VaccinationItemDto }) {
 
   if (item.status === 'skipped') {
     return (
-      <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+      <span className="shrink-0 text-[0.65625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
         Skipped
       </span>
     );
@@ -2435,7 +2435,7 @@ function CardHeader({
             rate" + the right-pill "Excellent — Beating Benchmark") can
             ellipsize cleanly on phones instead of pushing the pill off
             the card. */}
-        <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
+        <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
       </div>
       {rightSlot && <div className="shrink-0">{rightSlot}</div>}
     </div>
@@ -2477,10 +2477,10 @@ function DailyBars({
                 style={{ height: `${h}px` }}
               />
             </div>
-            <p className="mt-1 w-full truncate text-center text-[10px] font-semibold text-[var(--color-brand-fg)]">
+            <p className="mt-1 w-full truncate text-center text-[0.625rem] font-semibold text-[var(--color-brand-fg)]">
               {d.value == null ? '—' : `${fmtCompact(v)}${unit}`}
             </p>
-            <p className="w-full truncate text-center text-[9px] text-[var(--color-brand-muted-soft)]">
+            <p className="w-full truncate text-center text-[0.5625rem] text-[var(--color-brand-muted-soft)]">
               {shortDate(d.date)}
             </p>
           </div>

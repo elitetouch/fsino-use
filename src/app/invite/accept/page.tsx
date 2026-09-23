@@ -82,7 +82,7 @@ function InviteAcceptInner() {
       <Shell>
         <div className="flex flex-col items-center gap-3 py-10">
           <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand-primary)]" />
-          <p className="text-[12.5px] text-[var(--color-brand-muted)]">Checking your invite…</p>
+          <p className="text-[0.78125rem] text-[var(--color-brand-muted)]">Checking your invite…</p>
         </div>
       </Shell>
     );
@@ -118,7 +118,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.18)]">
           {children}
         </div>
-        <p className="mt-4 text-center text-[11px] text-[var(--color-brand-muted)]">
+        <p className="mt-4 text-center text-[0.6875rem] text-[var(--color-brand-muted)]">
           Invites are farm-scoped. Accepting only grants access to the farm shown above.
         </p>
       </div>
@@ -132,11 +132,11 @@ function ErrorState({ message }: { message: string }) {
       <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-700">
         <AlertTriangle className="h-5 w-5" />
       </span>
-      <h1 className="mt-4 text-[18px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+      <h1 className="mt-4 text-[1.125rem] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
         Invite unavailable
       </h1>
-      <p className="mt-1.5 text-[13px] text-[var(--color-brand-muted)]">{message}</p>
-      <p className="mt-1.5 text-[12px] text-[var(--color-brand-muted)]">
+      <p className="mt-1.5 text-[0.8125rem] text-[var(--color-brand-muted)]">{message}</p>
+      <p className="mt-1.5 text-[0.75rem] text-[var(--color-brand-muted)]">
         Ask the farm owner to send you a fresh link.
       </p>
       <Button asChild variant="outline" size="sm" className="mt-5 h-9">
@@ -158,13 +158,13 @@ function InviteHeader({ data }: { data: InvitePreviewDto }) {
 
   return (
     <div className="border-b border-[var(--color-brand-border)] px-6 py-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
         You&rsquo;ve been invited
       </p>
-      <h1 className="mt-1.5 text-[20px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+      <h1 className="mt-1.5 text-[1.25rem] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
         Join <span className="text-[var(--color-brand-primary-deep)]">{farm?.name ?? 'this farm'}</span>
       </h1>
-      <p className="mt-1.5 text-[13px] text-[var(--color-brand-muted)]">
+      <p className="mt-1.5 text-[0.8125rem] text-[var(--color-brand-muted)]">
         Sent to <strong className="text-[var(--color-brand-fg)]">{invite.email}</strong>.
       </p>
 
@@ -185,7 +185,7 @@ function InviteHeader({ data }: { data: InvitePreviewDto }) {
 
       {invite.role === 'staff' && grantedKeys.length > 0 && (
         <details className="group mt-3">
-          <summary className="cursor-pointer text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline">
+          <summary className="cursor-pointer text-[0.75rem] font-semibold text-[var(--color-brand-primary-deep)] hover:underline">
             See exactly what you can do
           </summary>
           <ul className="mt-2 grid gap-1 sm:grid-cols-2">
@@ -194,7 +194,7 @@ function InviteHeader({ data }: { data: InvitePreviewDto }) {
               .map((p) => (
                 <li
                   key={p.key}
-                  className="flex items-start gap-2 rounded-md bg-[var(--color-brand-accent)]/40 px-2.5 py-1.5 text-[11.5px] text-[var(--color-brand-fg)]"
+                  className="flex items-start gap-2 rounded-md bg-[var(--color-brand-accent)]/40 px-2.5 py-1.5 text-[0.71875rem] text-[var(--color-brand-fg)]"
                 >
                   <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-[var(--color-brand-primary-deep)]" />
                   {p.label}
@@ -212,10 +212,10 @@ function Pill({
 }: { icon: typeof ShieldCheck; label: string; value: string }) {
   return (
     <div className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-3 py-2.5">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+      <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
         {label}
       </p>
-      <p className="mt-0.5 inline-flex items-center gap-1.5 text-[13px] font-bold capitalize text-[var(--color-brand-fg)]">
+      <p className="mt-0.5 inline-flex items-center gap-1.5 text-[0.8125rem] font-bold capitalize text-[var(--color-brand-fg)]">
         <Icon className="h-3.5 w-3.5 text-[var(--color-brand-primary-deep)]" />
         {value}
       </p>
@@ -248,7 +248,7 @@ function ActionPanel({ data, token }: { data: InvitePreviewDto; token: string })
   if (next === 'accept') {
     return (
       <div className="px-6 py-6">
-        <p className="text-[13px] text-[var(--color-brand-muted)]">
+        <p className="text-[0.8125rem] text-[var(--color-brand-muted)]">
           You&rsquo;re signed in with the same email this invite was sent to. One tap and you&rsquo;re in.
         </p>
         <Button
@@ -268,7 +268,7 @@ function ActionPanel({ data, token }: { data: InvitePreviewDto; token: string })
   if (next === 'login') {
     return (
       <div className="px-6 py-6">
-        <p className="text-[13px] text-[var(--color-brand-muted)]">
+        <p className="text-[0.8125rem] text-[var(--color-brand-muted)]">
           You already have an account with this email. Sign in to accept the invite.
         </p>
         <Button asChild size="block" className="mt-4">
@@ -339,7 +339,7 @@ function RegisterPanel({ data, token }: { data: InvitePreviewDto; token: string 
       noValidate
       onSubmit={(e) => { e.preventDefault(); if (validate()) submit.mutate(); }}
     >
-      <div className="mb-4 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-accent)]/40 px-3.5 py-3 text-[12.5px] text-[var(--color-brand-fg)]">
+      <div className="mb-4 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-accent)]/40 px-3.5 py-3 text-[0.78125rem] text-[var(--color-brand-fg)]">
         <strong className="text-[var(--color-brand-primary-deep)]">First time on {brand.name}?</strong>{' '}
         Set up your account in 30 seconds. You&rsquo;ll sign in with{' '}
         <strong>{data.invite.email}</strong> from now on.
@@ -407,7 +407,7 @@ function RegisterPanel({ data, token }: { data: InvitePreviewDto; token: string 
         <ArrowRight className="h-4 w-4" />
       </Button>
 
-      <p className="mt-3 text-center text-[11.5px] text-[var(--color-brand-muted)]">
+      <p className="mt-3 text-center text-[0.71875rem] text-[var(--color-brand-muted)]">
         Already have an account?{' '}
         <Link
           href={`/login?next=${encodeURIComponent(returnTo)}`}

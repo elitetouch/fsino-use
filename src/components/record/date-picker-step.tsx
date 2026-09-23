@@ -109,7 +109,7 @@ export function DatePickerStep({
       >
         {/* Date header strip */}
         <div className="mb-4 rounded-xl border border-[var(--color-brand-border)] bg-white px-4 py-3 text-center">
-          <p className="text-[13.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <p className="text-[0.84375rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             {headerText}
           </p>
         </div>
@@ -126,7 +126,7 @@ export function DatePickerStep({
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <p className="text-[13.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <p className="text-[0.84375rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               {monthLabel}
             </p>
             <button
@@ -142,7 +142,7 @@ export function DatePickerStep({
           {/* Weekday header */}
           <div className="mb-1 grid grid-cols-7 gap-1 px-1">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-              <p key={d} className="text-center text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+              <p key={d} className="text-center text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
                 {d}
               </p>
             ))}
@@ -165,7 +165,7 @@ export function DatePickerStep({
               //   not selected, today   → outlined green (today indicator)
               //   not selected, hasRecs → light-green fill
               //   else                  → white
-              let cls = 'h-10 rounded-md text-[12.5px] font-semibold transition-colors';
+              let cls = 'h-10 rounded-md text-[0.78125rem] font-semibold transition-colors';
               if (future) {
                 cls += ' cursor-not-allowed text-[var(--color-brand-muted-soft)]';
               } else if (!inMonth) {
@@ -199,7 +199,7 @@ export function DatePickerStep({
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[10.5px] text-[var(--color-brand-muted)]">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[0.65625rem] text-[var(--color-brand-muted)]">
             <span className="inline-flex items-center gap-1">
               <span className="inline-block h-3 w-3 rounded-sm bg-[var(--color-brand-primary)]" />
               Today

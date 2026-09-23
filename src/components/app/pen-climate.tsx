@@ -83,7 +83,7 @@ export function PenClimateWithHistory({
               type="button"
               onClick={() => setView(v)}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors',
+                'rounded-lg px-3 py-1.5 text-[0.75rem] font-semibold transition-colors',
                 view === v
                   ? 'bg-[var(--color-brand-primary)] text-white'
                   : 'text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]',
@@ -293,10 +293,10 @@ function Live({
           <span className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
             <CloudOff className="h-4.5 w-4.5" />
           </span>
-          <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">
+          <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
             No readings yet from {active.stationLabel ?? 'this station'}
           </p>
-          <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
             Waiting for the device to send its first data frame. Check the
             unit is powered on and connected to Wi-Fi.
           </p>
@@ -313,35 +313,35 @@ function Live({
           <InfoCard icon={Calendar} label="Subscription">
             {subscription ? (
               <>
-                <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+                <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
                   {fmtDate(subscription.startDate)} → {fmtDate(subscription.endDate)}
                 </p>
-                <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+                <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
                   {subscription.daysRemaining > 0
                     ? `${subscription.daysRemaining} day${subscription.daysRemaining === 1 ? '' : 's'} remaining`
                     : 'Expired'}
                 </p>
               </>
             ) : (
-              <p className="text-[12px] text-[var(--color-brand-muted)]">No active subscription</p>
+              <p className="text-[0.75rem] text-[var(--color-brand-muted)]">No active subscription</p>
             )}
           </InfoCard>
 
           <InfoCard icon={Layers} label="Flock age">
-            <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+            <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
               {flockAgeDays != null ? `${flockAgeDays} day${flockAgeDays === 1 ? '' : 's'}` : '—'}
             </p>
-            <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
               Actual bird age today
             </p>
           </InfoCard>
 
           {activeCurrent && (
             <InfoCard icon={Wifi} label="Network">
-              <p className="break-all text-[13px] font-semibold text-[var(--color-brand-fg)]">
+              <p className="break-all text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
                 {activeCurrent.network.ssid}
               </p>
-              <p className="mt-0.5 break-all text-[11.5px] text-[var(--color-brand-muted)]">
+              <p className="mt-0.5 break-all text-[0.71875rem] text-[var(--color-brand-muted)]">
                 {activeCurrent.network.ipAddress} · {activeCurrent.network.signal}
               </p>
             </InfoCard>
@@ -349,14 +349,14 @@ function Live({
 
           {activeCurrent?.location && (
             <InfoCard icon={MapPin} label="Location">
-              <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+              <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
                 {activeCurrent.location.lat.toFixed(4)}, {activeCurrent.location.lon.toFixed(4)}
               </p>
               <a
                 href={`https://www.google.com/maps?q=${activeCurrent.location.lat},${activeCurrent.location.lon}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-0.5 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+                className="mt-0.5 inline-flex items-center gap-1 text-[0.71875rem] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
               >
                 Open in Maps
                 <ArrowRight className="h-3 w-3" />
@@ -366,21 +366,21 @@ function Live({
 
           {activeCurrent && (
             <InfoCard icon={Activity} label="Battery health">
-              <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+              <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
                 {activeCurrent.battery.healthPct.toFixed(1)}%
               </p>
-              <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+              <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
                 {activeCurrent.battery.voltage.toFixed(2)} V
               </p>
             </InfoCard>
           )}
 
           <InfoCard icon={Radio} label="Firmware">
-            <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+            <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
               PENKEEP v{active.device.version}
             </p>
             {active.device.serialNumber && (
-              <p className="mt-0.5 break-all text-[11.5px] text-[var(--color-brand-muted)]">
+              <p className="mt-0.5 break-all text-[0.71875rem] text-[var(--color-brand-muted)]">
                 SN {active.device.serialNumber}
               </p>
             )}
@@ -420,7 +420,7 @@ function StationPicker({
             aria-selected={on}
             onClick={() => onChange(i)}
             className={cn(
-              'flex snap-start items-center gap-2 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors',
+              'flex snap-start items-center gap-2 rounded-lg px-3 py-1.5 text-[0.75rem] font-semibold transition-colors',
               on
                 ? 'bg-[var(--color-brand-primary)] text-white'
                 : 'bg-transparent text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface-soft)]',
@@ -444,7 +444,7 @@ function StationPicker({
               <span
                 aria-label="offline"
                 className={cn(
-                  'inline-block rounded px-1 text-[9px] font-bold uppercase',
+                  'inline-block rounded px-1 text-[0.5625rem] font-bold uppercase',
                   on ? 'bg-white/25' : 'bg-rose-100 text-rose-700',
                 )}
               >
@@ -487,24 +487,24 @@ function PenOverviewStrip({
     <section className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             Pen climate
           </p>
-          <h1 className="mt-0.5 truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">
+          <h1 className="mt-0.5 truncate text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.125rem]">
             {penName ?? 'This pen'}
             {total > 1 && (
-              <span className="ml-2 rounded-full bg-[var(--color-brand-accent)] px-2 py-0.5 align-middle text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+              <span className="ml-2 rounded-full bg-[var(--color-brand-accent)] px-2 py-0.5 align-middle text-[0.65625rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
                 {total} stations
               </span>
             )}
           </h1>
-          <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">
             {online} of {total} online · pick a station below to inspect its readings.
           </p>
         </div>
         <span
           className={cn(
-            'inline-flex items-center gap-1.5 self-start rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider',
+            'inline-flex items-center gap-1.5 self-start rounded-full px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-wider',
             worst === 'rose' ? 'bg-rose-50 text-rose-700'
               : worst === 'amber' ? 'bg-amber-50 text-amber-800'
               : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
@@ -533,14 +533,14 @@ function SectionHeader({
 }: { eyebrow: string; title: string; description?: string }) {
   return (
     <div>
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+      <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
         {eyebrow}
       </p>
-      <h2 className="mt-1 text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[16px]">
+      <h2 className="mt-1 text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1rem]">
         {title}
       </h2>
       {description && (
-        <p className="mt-1 max-w-[60ch] text-[12px] leading-relaxed text-[var(--color-brand-muted)]">
+        <p className="mt-1 max-w-[60ch] text-[0.75rem] leading-relaxed text-[var(--color-brand-muted)]">
           {description}
         </p>
       )}
@@ -612,18 +612,18 @@ function DeviceStatusStrip({
     <section className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             PENKEEP {firmwareVersion}
             {stationLabel && <span className="ml-2 text-[var(--color-brand-muted)]">· {stationLabel}</span>}
           </p>
-          <h1 className="mt-0.5 truncate text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">
+          <h1 className="mt-0.5 truncate text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.125rem]">
             {stationLabel
               ? `${stationLabel} station`
               : penName ? `${penName} climate` : 'Pen climate'}
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className={cn(
-              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
+              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65625rem] font-bold uppercase tracking-wider',
               offline
                 ? 'bg-rose-50 text-rose-700'
                 : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
@@ -634,7 +634,7 @@ function DeviceStatusStrip({
               )} />
               {offline ? 'Offline' : 'Live'}
             </span>
-            <span className="text-[11px] text-[var(--color-brand-muted)]">· last seen {lastSeenLabel}</span>
+            <span className="text-[0.6875rem] text-[var(--color-brand-muted)]">· last seen {lastSeenLabel}</span>
           </div>
         </div>
 
@@ -671,7 +671,7 @@ function PillMetric({
       : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]';
   return (
     <span className={cn(
-      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold uppercase tracking-wider',
+      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.71875rem] font-semibold uppercase tracking-wider',
       toneClass,
     )}>
       <Icon className="h-3.5 w-3.5" />
@@ -725,13 +725,13 @@ function ZoneCard({
     )}>
       <div className="flex items-start justify-between gap-2">
         <p className={cn(
-          'inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
+          'inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-0.5 text-[0.65625rem] font-bold uppercase tracking-wider',
           accentText,
         )}>
           {label}
         </p>
         <span className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider',
           badgeClass,
         )}>
           <Badge className="h-3 w-3" strokeWidth={2.4} />
@@ -739,13 +739,13 @@ function ZoneCard({
         </span>
       </div>
 
-      <p className="mt-3 text-[36px] font-bold leading-none tracking-tight text-[var(--color-brand-fg)] sm:text-[40px]">
-        {zone.current.toFixed(1)}<span className="text-[18px] font-semibold text-[var(--color-brand-muted)] sm:text-[20px]">{unitGlyph}</span>
+      <p className="mt-3 text-[2.25rem] font-bold leading-none tracking-tight text-[var(--color-brand-fg)] sm:text-[2.5rem]">
+        {zone.current.toFixed(1)}<span className="text-[1.125rem] font-semibold text-[var(--color-brand-muted)] sm:text-[1.25rem]">{unitGlyph}</span>
       </p>
 
       {/* Min → Max range bar with current-value indicator */}
       <div className="mt-4">
-        <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wider text-[var(--color-brand-fg-soft)]">
+        <div className="flex items-center justify-between text-[0.65625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-fg-soft)]">
           <span>Min {zone.min}°</span>
           <span>Max {zone.max}°</span>
         </div>
@@ -763,12 +763,12 @@ function ZoneCard({
 
       {/* Heater state */}
       <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-white/85 px-3 py-2">
-        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-brand-fg)]">
+        <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold text-[var(--color-brand-fg)]">
           <Flame className={cn('h-3.5 w-3.5', zone.heaterOn ? 'text-rose-600' : 'text-[var(--color-brand-muted)]')} />
           Heater
         </span>
         <span className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
+          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65625rem] font-bold uppercase tracking-wider',
           zone.heaterOn ? 'bg-rose-100 text-rose-700' : 'bg-[var(--color-brand-bg)] text-[var(--color-brand-muted)]',
         )}>
           {zone.heaterOn ? 'On' : 'Off'}
@@ -814,14 +814,14 @@ function EnvChip({
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">
             {label}
           </p>
-          <p className={cn('mt-0.5 break-words text-[20px] font-bold leading-tight tracking-tight', valueClass)}>
+          <p className={cn('mt-0.5 break-words text-[1.25rem] font-bold leading-tight tracking-tight', valueClass)}>
             {value}
           </p>
           {sub && (
-            <p className="mt-0.5 text-[11px] text-[var(--color-brand-muted)]">{sub}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-[var(--color-brand-muted)]">{sub}</p>
           )}
         </div>
       </div>
@@ -909,10 +909,10 @@ function RelayToggle({
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">
+          <p className="truncate text-[0.65625rem] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">
             {relay.id}
           </p>
-          <p className="truncate text-[13px] font-semibold text-[var(--color-brand-fg)]">
+          <p className="truncate text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
             {relay.label ?? `Relay ${relay.id}`}
           </p>
         </div>
@@ -949,7 +949,7 @@ function InfoCard({
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">
             {label}
           </p>
           <div className="mt-0.5">
@@ -970,10 +970,10 @@ function SetupEmptyState({ penId, penName }: { penId: string; penName?: string }
         <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
           <CloudOff className="h-6 w-6" />
         </span>
-        <h2 className="mt-4 text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <h2 className="mt-4 text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           No PENKEEP paired with {penName ?? 'this pen'} yet
         </h2>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-[var(--color-brand-muted)]">
+        <p className="mt-2 text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
           Once a PENKEEP unit is wired up and connected to Wi-Fi, this page
           lights up with live temperature for each heater zone, humidity,
           air quality (NH₃ / CO₂), battery, GPS and manual relay controls.
@@ -1013,12 +1013,12 @@ function SetupEmptyState({ penId, penName }: { penId: string; penName?: string }
 function SetupStep({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-3 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 p-3">
-      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-[12px] font-bold text-white">
+      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-[0.75rem] font-bold text-white">
         {n}
       </span>
       <div className="min-w-0">
-        <p className="text-[12.5px] font-bold text-[var(--color-brand-fg)]">{title}</p>
-        <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--color-brand-fg-soft)]">{children}</p>
+        <p className="text-[0.78125rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
+        <p className="mt-0.5 text-[0.71875rem] leading-snug text-[var(--color-brand-fg-soft)]">{children}</p>
       </div>
     </li>
   );

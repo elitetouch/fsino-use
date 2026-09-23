@@ -56,10 +56,10 @@ export function AlertsFeed({ className }: { className?: string }) {
             <TriangleAlert className="h-4 w-4" strokeWidth={2.2} />
           </span>
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
               Alerts
             </p>
-            <h2 className="text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 className="text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               {activeCount} active {activeCount === 1 ? 'alert' : 'alerts'}
             </h2>
           </div>
@@ -120,7 +120,7 @@ function AlertRow({ alert }: { alert: FlockAlertDto }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className={cn(
-              'text-[13.5px] leading-snug tracking-tight text-[var(--color-brand-fg)]',
+              'text-[0.84375rem] leading-snug tracking-tight text-[var(--color-brand-fg)]',
               !isAck && 'font-bold',
             )}>
               {alert.headline}
@@ -137,20 +137,20 @@ function AlertRow({ alert }: { alert: FlockAlertDto }) {
             </button>
           </div>
 
-          <p className="mt-0.5 text-[11px] text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.6875rem] text-[var(--color-brand-muted)]">
             {alert.topic} · fired {timeAgo(alert.firedAt)}
             {isAck ? ' · acknowledged' : ''}
           </p>
 
           {expanded && (
             <div className="mt-3 space-y-3 rounded-lg bg-[var(--color-brand-surface-soft)]/60 p-3">
-              <p className="text-[12px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+              <p className="text-[0.75rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
                 {alert.detail}
               </p>
 
               {alert.userFeedback === null ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-[11px] text-[var(--color-brand-muted)]">
+                  <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">
                     Was this alert useful?
                   </p>
                   <Button
@@ -169,7 +169,7 @@ function AlertRow({ alert }: { alert: FlockAlertDto }) {
                   </Button>
                 </div>
               ) : (
-                <p className="text-[11px] text-[var(--color-brand-muted)]">
+                <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">
                   You rated this: <strong className="text-[var(--color-brand-fg)]">
                     {alert.userFeedback === 'helpful' ? 'Helpful' : 'False alarm'}
                   </strong>
@@ -180,7 +180,7 @@ function AlertRow({ alert }: { alert: FlockAlertDto }) {
 
           {dismissing && (
             <div className="mt-3 rounded-lg border border-[var(--color-brand-border)] bg-white p-3">
-              <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+              <label className="block text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
                 Reason (optional)
               </label>
               <input
@@ -188,7 +188,7 @@ function AlertRow({ alert }: { alert: FlockAlertDto }) {
                 value={dismissReason}
                 onChange={(e) => setDismissReason(e.target.value.slice(0, 500))}
                 placeholder="e.g. Already handled — no longer relevant."
-                className="mt-1 block h-9 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2.5 text-[12.5px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+                className="mt-1 block h-9 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2.5 text-[0.78125rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => dismiss.mutate()} disabled={dismiss.isPending}>

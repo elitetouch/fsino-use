@@ -6,6 +6,7 @@ import {
   AlertTriangle, Camera, CheckCircle2, Eye, FileText, Info, Loader2,
   ShieldAlert, ThumbsDown, ThumbsUp,
 } from 'lucide-react';
+import { ReferenceImages } from '@/components/diagnose/reference-images';
 import { VetConsultation } from '@/components/diagnose/vet-consultation';
 import { Button } from '@/components/ui/button';
 import { endpoints, apiErrorMessage, type DiagnosisDto } from '@/lib/api';
@@ -43,11 +44,35 @@ export function ResultCard({
   const info = result.diseaseInfo ?? {};
 
   return (
-    <div className="space-y-4">
-      {/* ---- The verdict ---- */}
+    /*
+     * TWO COLUMNS ON WIDE SCREENS, ONE ON A PHONE.
+     *
+     * The single 560px column left roughly half a desktop window empty.
+     * The fix is NOT to stretch it: body copy at 1100px runs to ~140
+     * characters a line, well past the ~65-75 where reading stays
+     * comfortable — a farmer on a laptop would get the whitespace
+     * filled and a harder page to read.
+     *
+     * So the empty space becomes a second column, split by ROLE rather
+     * than by length:
+     *
+     *   left   what is wrong and what to do about it — read top to
+     *          bottom, sized to keep line length sane
+     *   right  what to do NEXT: was it right, do you want a vet, put
+     *          it in the report
+     *
+     * The payoff is more than tidiness. On a phone those actions sit
+     * below a screenful of treatment detail and most people never
+     * scroll that far; beside the result they are simply visible, which
+     * is the difference between a feedback loop that works and one that
+     * technically exists.
+     */
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
+      {/* ---- The verdict. Spans both columns: it is the answer, and
+           nothing should sit beside it competing for attention. ---- */}
       <div
         className={[
-          'rounded-xl border p-5',
+          'rounded-xl border p-5 lg:col-span-2',
           healthy
             ? 'border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)]/40'
             : critical
@@ -76,10 +101,10 @@ export function ResultCard({
           </span>
 
           <div className="min-w-0 flex-1">
-            <h2 className="text-[19px] font-extrabold leading-tight text-[var(--color-brand-fg)]">
+            <h2 className="text-[1.1875rem] font-extrabold leading-tight text-[var(--color-brand-fg)]">
               {result.disease}
             </h2>
-            <p className="mt-0.5 text-[12.5px] text-[var(--color-brand-muted)]">
+            <p className="mt-0.5 text-[0.78125rem] text-[var(--color-brand-muted)]">
               {band.label} · {band.note}
             </p>
           </div>
@@ -92,7 +117,7 @@ export function ResultCard({
         {framing.leadWith && (
           <p
             className={[
-              'mt-3.5 text-[13.5px] font-medium leading-relaxed',
+              'mt-3.5 text-[0.84375rem] font-medium leading-relaxed',
               critical ? 'text-[var(--color-brand-danger)]' : 'text-[var(--color-brand-fg)]',
             ].join(' ')}
           >
@@ -101,10 +126,12 @@ export function ResultCard({
         )}
       </div>
 
-      {/* ---- What to do ---- */}
-      {!healthy && (info.treatment || info.next_action || info.dosage) && (
+      {/* ---- Primary column: what is wrong, and what to do ---- */}
+      <div className="space-y-4">
+        {/* ---- What to do ---- */}
+        {!healthy && (info.treatment || info.next_action || info.dosage) && (
         <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
-          <h3 className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
+          <h3 className="text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
             {framing.headline}
           </h3>
 
@@ -114,7 +141,7 @@ export function ResultCard({
             {info.next_action && <Field label="Next step" value={info.next_action} />}
           </dl>
 
-          <p className="mt-3.5 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-3.5 flex items-start gap-1.5 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             <Info className="mt-0.5 h-3 w-3 shrink-0" />
             <span>
               This is guidance, not a prescription. Confirm dosages with a vet before treating —
@@ -124,24 +151,37 @@ export function ResultCard({
         </section>
       )}
 
-      {/* ---- Symptoms, to sanity-check against the actual birds ---- */}
-      {info.symptoms && (
+      {/* ---- Symptoms, to sanity-check against the actual birds ----
+           The section shows if EITHER the text or the photographs are
+           available. Gating the whole thing on `symptoms` would hide a
+           full reference gallery because one CSV cell was blank. */}
+      {(info.symptoms || (result.referenceImages ?? []).length > 0) && (
         <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
-          <h3 className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
+          <h3 className="text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
             Does this match what you are seeing?
           </h3>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--color-brand-fg)]">
-            {info.symptoms}
-          </p>
-          <p className="mt-2 text-[11.5px] text-[var(--color-brand-muted)]">
+          {info.symptoms && (
+            <p className="mt-2 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg)]">
+              {info.symptoms}
+            </p>
+          )}
+          <ReferenceImages images={result.referenceImages ?? []} />
+
+          <p className="mt-2 text-[0.71875rem] text-[var(--color-brand-muted)]">
             If your birds show none of these, treat the result with caution.
           </p>
         </section>
       )}
 
-      {result.gradcamOverlay && <WhatItLookedAt image={result.gradcamOverlay} />}
+      </div>
 
-      <Feedback diagnosisId={result.id} />
+      {/* ---- Secondary column: what to do next.
+           Sticky on desktop so the actions stay in view while a long
+           treatment section scrolls beside them. ---- */}
+      <div className="space-y-4 lg:sticky lg:top-4">
+        {result.gradcamOverlay && <WhatItLookedAt image={result.gradcamOverlay} />}
+
+        <Feedback diagnosisId={result.id} />
 
       {/* Offered after the answer, not instead of it. A farmer who
           trusts this result skips it; one who doesn't now has somewhere
@@ -154,10 +194,11 @@ export function ResultCard({
         <AddToReport diagnosisId={result.id} initial={result.includeInReport} />
       )}
 
-      <Button variant="outline" size="sm" className="w-full" onClick={onRetake}>
-        <Camera className="h-3.5 w-3.5" />
-        Check another photo
-      </Button>
+        <Button variant="outline" size="sm" className="w-full" onClick={onRetake}>
+          <Camera className="h-3.5 w-3.5" />
+          Check another photo
+        </Button>
+      </div>
     </div>
   );
 }
@@ -165,8 +206,8 @@ export function ResultCard({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11.5px] font-semibold text-[var(--color-brand-muted)]">{label}</dt>
-      <dd className="mt-0.5 text-[13.5px] leading-relaxed text-[var(--color-brand-fg)]">{value}</dd>
+      <dt className="text-[0.71875rem] font-semibold text-[var(--color-brand-muted)]">{label}</dt>
+      <dd className="mt-0.5 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg)]">{value}</dd>
     </div>
   );
 }
@@ -191,10 +232,10 @@ function WhatItLookedAt({ image }: { image: string }) {
         aria-expanded={open}
       >
         <Eye className="h-4 w-4 text-[var(--color-brand-muted)]" />
-        <span className="flex-1 text-[13px] font-semibold text-[var(--color-brand-fg)]">
+        <span className="flex-1 text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
           See what the app looked at
         </span>
-        <span className="text-[12px] text-[var(--color-brand-muted)]">{open ? 'Hide' : 'Show'}</span>
+        <span className="text-[0.75rem] text-[var(--color-brand-muted)]">{open ? 'Hide' : 'Show'}</span>
       </button>
 
       {open && (
@@ -205,7 +246,7 @@ function WhatItLookedAt({ image }: { image: string }) {
             alt="Your photo with the areas the app focused on highlighted"
             className="w-full rounded-lg border border-[var(--color-brand-border)]"
           />
-          <p className="mt-2 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-2 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             The bright areas are what the app paid most attention to. If those areas are not on the
             droppings, the result is less trustworthy — take another photo closer in.
           </p>
@@ -239,7 +280,7 @@ function Feedback({ diagnosisId }: { diagnosisId: string }) {
 
   if (sent === 'agreed' || sent === 'disagreed') {
     return (
-      <p className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3 text-center text-[12.5px] text-[var(--color-brand-muted)]">
+      <p className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3 text-center text-[0.78125rem] text-[var(--color-brand-muted)]">
         Thank you — this makes the tool better for every farmer using it.
       </p>
     );
@@ -247,10 +288,10 @@ function Feedback({ diagnosisId }: { diagnosisId: string }) {
 
   return (
     <section className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-4">
-      <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+      <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
         Does this match what you found?
       </p>
-      <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+      <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
         Your answer trains the tool on real Nigerian farms.
       </p>
       <div className="mt-3 flex gap-2">
@@ -309,10 +350,10 @@ function AddToReport({ diagnosisId, initial }: { diagnosisId: string; initial: b
       <div className="flex items-start gap-2.5">
         <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-brand-muted)]" />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+          <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
             {included ? 'Added to this cycle\u2019s report' : 'Add to this cycle\u2019s report'}
           </p>
-          <p className="mt-0.5 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             {included
               ? 'It will appear alongside your treatment and mortality records.'
               : 'Your cycle report is shared with buyers and lenders. Only add a result you are confident in.'}
@@ -330,7 +371,7 @@ function AddToReport({ diagnosisId, initial }: { diagnosisId: string; initial: b
           </Button>
 
           {error && (
-            <p className="mt-2 text-[12px] font-medium text-[var(--color-brand-danger)]">{error}</p>
+            <p className="mt-2 text-[0.75rem] font-medium text-[var(--color-brand-danger)]">{error}</p>
           )}
         </div>
       </div>
@@ -357,10 +398,10 @@ function RefusalCard({ result, onRetake }: { result: DiagnosisDto; onRetake: () 
             <Camera className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[17px] font-extrabold leading-tight text-[var(--color-brand-fg)]">
+            <h2 className="text-[1.0625rem] font-extrabold leading-tight text-[var(--color-brand-fg)]">
               {copy.title}
             </h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-brand-muted)]">
+            <p className="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-brand-muted)]">
               {copy.body}
             </p>
           </div>
@@ -368,7 +409,7 @@ function RefusalCard({ result, onRetake }: { result: DiagnosisDto; onRetake: () 
 
         <ul className="mt-4 space-y-2">
           {copy.fixes.map((fix) => (
-            <li key={fix} className="flex items-start gap-2 text-[13px] text-[var(--color-brand-fg)]">
+            <li key={fix} className="flex items-start gap-2 text-[0.8125rem] text-[var(--color-brand-fg)]">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brand-primary)]" />
               {fix}
             </li>

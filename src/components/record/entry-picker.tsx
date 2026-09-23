@@ -150,13 +150,13 @@ export function EntryPicker({
     <div className="space-y-3">
       <div className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
         <header className="border-b border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-4 py-3">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             Multiple entries today
           </p>
-          <p className="mt-0.5 text-[13px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <p className="mt-0.5 text-[0.8125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             Today already has {entries.length} {eventLabel}{entries.length === 1 ? '' : 's'}
           </p>
-          <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.71875rem] leading-snug text-[var(--color-brand-muted)]">
             Tap an entry to edit it, or add a new one. Picking an entry only
             changes that one row &mdash; the others stay untouched.
           </p>
@@ -203,15 +203,15 @@ export function EntryPicker({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+                      <p className="text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
                         {fmtClock(rec.occurredAt)}
                       </p>
-                      <p className="text-[11.5px] text-[var(--color-brand-muted)]">
+                      <p className="text-[0.71875rem] text-[var(--color-brand-muted)]">
                         · {author}{isOwn ? ' (you)' : ''}
                       </p>
                       {!isOwn && (
                         <span
-                          className="inline-flex items-center gap-0.5 rounded-full bg-[var(--color-brand-surface-soft)] px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]"
+                          className="inline-flex items-center gap-0.5 rounded-full bg-[var(--color-brand-surface-soft)] px-1.5 py-0.5 text-[0.59375rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]"
                           title="Staff users can only edit records they created themselves. Tap to try anyway — the server will return a clear message if it's not allowed."
                         >
                           <Lock className="h-2.5 w-2.5" />
@@ -219,7 +219,7 @@ export function EntryPicker({
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 truncate text-[12px] text-[var(--color-brand-fg-soft)]">
+                    <p className="mt-0.5 truncate text-[0.75rem] text-[var(--color-brand-fg-soft)]">
                       {summary(rec)}
                     </p>
                   </div>
@@ -231,7 +231,7 @@ export function EntryPicker({
 
         {totalLine && (
           <footer className="border-t border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-4 py-2.5">
-            <p className="text-[11.5px] font-semibold tracking-tight text-[var(--color-brand-fg-soft)]">
+            <p className="text-[0.71875rem] font-semibold tracking-tight text-[var(--color-brand-fg-soft)]">
               {totalLine}
             </p>
           </footer>
@@ -244,7 +244,7 @@ export function EntryPicker({
       <button
         type="button"
         onClick={onAddAnother}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-brand-primary)]/40 bg-white px-4 py-3 text-[13px] font-bold tracking-tight text-[var(--color-brand-primary-deep)] transition-colors hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)]/40"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-brand-primary)]/40 bg-white px-4 py-3 text-[0.8125rem] font-bold tracking-tight text-[var(--color-brand-primary-deep)] transition-colors hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)]/40"
       >
         <Plus className="h-4 w-4" />
         Add another {eventLabel}

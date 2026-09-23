@@ -41,13 +41,13 @@ export function MarketingHero() {
       >
         {/* LEFT — copy */}
         <div className="animate-fade-up">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)] px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)] px-3 py-1 text-[0.75rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-brand-primary)]" />
             Built for African poultry farmers
           </span>
 
           <h1
-            className="mt-6 text-[34px] font-extrabold leading-[1.05] tracking-tight text-[var(--color-brand-fg)] sm:text-[44px] lg:text-[56px]"
+            className="mt-6 text-[2.125rem] font-extrabold leading-[1.05] tracking-tight text-[var(--color-brand-fg)] sm:text-[2.75rem] lg:text-[3.5rem]"
           >
             Run a tighter farm.{' '}
             <span className="bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-dark)] bg-clip-text text-transparent">
@@ -67,7 +67,7 @@ export function MarketingHero() {
           {/* Dual CTA: web app sign-up + Play Store. Both have equal
               visual weight so we don't favour one surface over the other. */}
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <Button asChild size="lg" className="group h-14 px-7 text-[16px] sm:h-[60px]">
+            <Button asChild size="lg" className="group h-14 px-7 text-[1rem] sm:h-[60px]">
               <Link href="/register">
                 Start on the web
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -108,7 +108,7 @@ function FlockPreviewCard() {
         aria-hidden
         className="animate-float absolute -left-6 -top-6 hidden rounded-2xl border border-[var(--color-brand-border)] bg-white px-4 py-3 shadow-[0_10px_30px_-15px_rgba(15,80,30,0.25)] md:block"
       >
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">Today</p>
+        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">Today</p>
         <p className="mt-1 text-base font-bold text-[var(--color-brand-fg)]">2 vaccines due</p>
       </div>
 
@@ -116,20 +116,20 @@ function FlockPreviewCard() {
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">
               Flock · Pen 4
             </p>
             <p className="mt-1 text-lg font-bold text-[var(--color-brand-fg)]">Broiler · Cobb 500</p>
             <p className="mt-0.5 text-xs text-[var(--color-brand-muted)]">Day 21 of 42 · 1,485 birds</p>
           </div>
-          <span className="rounded-full bg-[var(--color-brand-accent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+          <span className="rounded-full bg-[var(--color-brand-accent)] px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
             Healthy
           </span>
         </div>
 
         {/* Progress */}
         <div className="mt-5">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--color-brand-muted)]">
+          <div className="flex items-center justify-between text-[0.6875rem] font-semibold text-[var(--color-brand-muted)]">
             <span>Cycle</span>
             <span>50%</span>
           </div>
@@ -153,7 +153,7 @@ function FlockPreviewCard() {
               className="rounded-2xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3"
             >
               <m.icon className="h-4 w-4 text-[var(--color-brand-primary-deep)]" />
-              <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
+              <p className="mt-2 text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
                 {m.label}
               </p>
               <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">{m.value}</p>
@@ -164,12 +164,12 @@ function FlockPreviewCard() {
         {/* Cost line */}
         <div className="mt-5 flex items-center justify-between rounded-2xl bg-[var(--color-brand-primary-dark)] px-4 py-3 text-white">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-white/60">
               Cost / bird so far
             </p>
             <p className="mt-0.5 text-lg font-bold">₦ 1,840</p>
           </div>
-          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-wider text-white">
             ↓ 6% vs last
           </span>
         </div>
@@ -180,7 +180,7 @@ function FlockPreviewCard() {
         aria-hidden
         className="animate-float [animation-delay:1.5s] absolute -bottom-5 -right-3 hidden rounded-2xl border border-[var(--color-brand-border)] bg-white px-4 py-3 shadow-[0_10px_30px_-15px_rgba(15,80,30,0.25)] md:block"
       >
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">FCR</p>
+        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">FCR</p>
         <p className="mt-1 text-base font-bold text-[var(--color-brand-fg)]">1.68</p>
       </div>
     </div>

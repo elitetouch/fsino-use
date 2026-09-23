@@ -87,12 +87,12 @@ export default function SubscriptionPage() {
               <WalletIcon className="h-4 w-4" strokeWidth={2.2} />
             </span>
             <div>
-              <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+              <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
                 Current balance
               </p>
-              <p className="text-[15px] font-bold text-[var(--color-brand-fg)]">
+              <p className="text-[0.9375rem] font-bold text-[var(--color-brand-fg)]">
                 {totalBalance.toLocaleString()} token{totalBalance === 1 ? '' : 's'}
-                <span className="ml-2 text-[12px] font-medium text-[var(--color-brand-fg-soft)]">
+                <span className="ml-2 text-[0.75rem] font-medium text-[var(--color-brand-fg-soft)]">
                   ({(balances.data?.balances ?? []).length} bucket{(balances.data?.balances ?? []).length === 1 ? '' : 's'})
                 </span>
               </p>
@@ -152,13 +152,13 @@ export default function SubscriptionPage() {
       <section className="rounded-2xl border border-[var(--color-brand-primary)] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] p-6 text-white sm:p-8">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-white/80">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-white/80">
               Ready to place a cycle?
             </p>
-            <h2 className="mt-1 text-[20px] font-bold tracking-tight text-white sm:text-[22px]">
+            <h2 className="mt-1 text-[1.25rem] font-bold tracking-tight text-white sm:text-[1.375rem]">
               Buy tokens now — no subscription, no recurring fee
             </h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-white/80">
+            <p className="mt-1 text-[0.8125rem] leading-relaxed text-white/80">
               Pay only for the birds you place. Tokens don&apos;t expire on the shelf — only when a cycle uses them.
             </p>
           </div>
@@ -219,7 +219,7 @@ function PlanCard({
     )}>
       {highlighted && (
         <div className="bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] px-5 py-2 text-center">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-white">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.18em] text-white">
             Most complete
           </p>
         </div>
@@ -235,27 +235,27 @@ function PlanCard({
             <Sparkles className="h-4 w-4" strokeWidth={2.2} />
           </span>
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
               {eyebrow}
             </p>
-            <h3 className="mt-0.5 text-[20px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h3 className="mt-0.5 text-[1.25rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               {title}
             </h3>
           </div>
         </div>
 
-        <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+        <p className="mt-3 text-[0.8125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
           {summary}
         </p>
 
         {/* Price grid — one row per bird type present in the tier. */}
         <div className="mt-5 space-y-2">
           {loading ? (
-            <div className="flex items-center gap-2 rounded-lg border border-dashed border-[var(--color-brand-border)] p-3 text-[12.5px] text-[var(--color-brand-muted)]">
+            <div className="flex items-center gap-2 rounded-lg border border-dashed border-[var(--color-brand-border)] p-3 text-[0.78125rem] text-[var(--color-brand-muted)]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading prices…
             </div>
           ) : prices.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-[var(--color-brand-border)] p-3 text-[12.5px] text-[var(--color-brand-muted)]">
+            <div className="rounded-lg border border-dashed border-[var(--color-brand-border)] p-3 text-[0.78125rem] text-[var(--color-brand-muted)]">
               Pricing for this plan isn&apos;t configured for your market yet — contact support.
             </div>
           ) : (
@@ -268,7 +268,7 @@ function PlanCard({
         {/* Features list — what the farmer actually gets. */}
         <ul className="mt-5 space-y-2">
           {features.map((f) => (
-            <li key={f} className="flex items-start gap-2 text-[13px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+            <li key={f} className="flex items-start gap-2 text-[0.8125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>{f}</span>
             </li>
@@ -277,10 +277,10 @@ function PlanCard({
 
         {notIncluded && notIncluded.length > 0 && (
           <div className="mt-4 rounded-lg bg-[var(--color-brand-surface-soft)]/60 p-3">
-            <p className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
               Not in this plan
             </p>
-            <ul className="mt-1.5 space-y-1 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+            <ul className="mt-1.5 space-y-1 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
               {notIncluded.map((n) => (
                 <li key={n}>· {n}</li>
               ))}
@@ -290,7 +290,7 @@ function PlanCard({
       </div>
 
       <div className="mt-auto border-t border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 p-5">
-        <Gate perm="billing.manage" fallback={<p className="text-[11.5px] text-[var(--color-brand-muted)]">Ask the farm owner or a billing manager to top up.</p>}>
+        <Gate perm="billing.manage" fallback={<p className="text-[0.71875rem] text-[var(--color-brand-muted)]">Ask the farm owner or a billing manager to top up.</p>}>
           <Button
             className={cn(
               'w-full',
@@ -320,11 +320,11 @@ function PriceRow({ price }: { price: TokenPriceDto }) {
     <div className="flex items-center justify-between rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/50 px-3.5 py-2.5">
       <div className="flex items-center gap-2">
         <Bird className="h-3.5 w-3.5 text-[var(--color-brand-muted)]" />
-        <span className="text-[12.5px] font-semibold text-[var(--color-brand-fg)]">{label}</span>
+        <span className="text-[0.78125rem] font-semibold text-[var(--color-brand-fg)]">{label}</span>
       </div>
       <div className="text-right">
-        <p className="text-[15px] font-bold tabular-nums text-[var(--color-brand-fg)]">{formatted}</p>
-        <p className="text-[10.5px] text-[var(--color-brand-muted)]">per bird per cycle</p>
+        <p className="text-[0.9375rem] font-bold tabular-nums text-[var(--color-brand-fg)]">{formatted}</p>
+        <p className="text-[0.65625rem] text-[var(--color-brand-muted)]">per bird per cycle</p>
       </div>
     </div>
   );
@@ -351,7 +351,7 @@ function HardwareFees() {
 
   if (devicePrices.isLoading) {
     return (
-      <section className="rounded-2xl border border-dashed border-[var(--color-brand-border)] bg-white p-5 text-[12.5px] text-[var(--color-brand-muted)]">
+      <section className="rounded-2xl border border-dashed border-[var(--color-brand-border)] bg-white p-5 text-[0.78125rem] text-[var(--color-brand-muted)]">
         <Loader2 className="mr-2 inline h-3.5 w-3.5 animate-spin" /> Loading hardware pricing…
       </section>
     );
@@ -388,13 +388,13 @@ function DeviceOfferCard({ offer }: { offer: DeviceOfferDto }) {
           <Cpu className="h-5 w-5" strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             Hardware · pricing for {offer.country}
           </p>
-          <h3 className="mt-0.5 text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <h3 className="mt-0.5 text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             {offer.label}
           </h3>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <p className="mt-1 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             {isPenkeep
               ? 'One PENKEEP covers a full pen with three heater zones and monitors temperature, humidity, ammonia and CO₂ around the clock. Only needed if you\'re on Premium — Basic runs on record-keeping alone.'
               : 'Reach out to support to order.'}
@@ -402,26 +402,26 @@ function DeviceOfferCard({ offer }: { offer: DeviceOfferDto }) {
 
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/50 px-3 py-2">
-              <p className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+              <p className="text-[0.65625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
                 Subscription
               </p>
-              <p className="mt-0.5 text-[15px] font-bold tabular-nums text-[var(--color-brand-fg)]">
+              <p className="mt-0.5 text-[0.9375rem] font-bold tabular-nums text-[var(--color-brand-fg)]">
                 {fmt(sub.price, sub.currency)}
               </p>
-              <p className="text-[10.5px] text-[var(--color-brand-muted)]">
+              <p className="text-[0.65625rem] text-[var(--color-brand-muted)]">
                 per {sub.cycleWeeks}-week cycle
               </p>
             </div>
             <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/50 px-3 py-2">
-              <p className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+              <p className="text-[0.65625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
                 Installation
               </p>
               {inst ? (
                 <>
-                  <p className="mt-0.5 text-[15px] font-bold tabular-nums text-[var(--color-brand-fg)]">
+                  <p className="mt-0.5 text-[0.9375rem] font-bold tabular-nums text-[var(--color-brand-fg)]">
                     {fmt(inst.fee, inst.currency)}
                   </p>
-                  <p className="text-[10.5px] text-[var(--color-brand-muted)]">
+                  <p className="text-[0.65625rem] text-[var(--color-brand-muted)]">
                     one-off · {inst.scope === 'state' && inst.stateName
                       ? `${inst.stateName} rate`
                       : `${offer.country} default`}
@@ -429,8 +429,8 @@ function DeviceOfferCard({ offer }: { offer: DeviceOfferDto }) {
                 </>
               ) : (
                 <>
-                  <p className="mt-0.5 text-[13px] italic text-[var(--color-brand-muted)]">Contact support</p>
-                  <p className="text-[10.5px] text-[var(--color-brand-muted)]">
+                  <p className="mt-0.5 text-[0.8125rem] italic text-[var(--color-brand-muted)]">Contact support</p>
+                  <p className="text-[0.65625rem] text-[var(--color-brand-muted)]">
                     Fee not yet configured for {offer.country}
                   </p>
                 </>
@@ -441,7 +441,7 @@ function DeviceOfferCard({ offer }: { offer: DeviceOfferDto }) {
         <div className="sm:text-right">
           <a
             href="/contact"
-            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-surface-soft)]"
+            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2 text-[0.75rem] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-surface-soft)]"
           >
             Talk to support to order →
           </a>
@@ -467,13 +467,13 @@ function TokenRulesPanel() {
             <ShieldCheck className="h-5 w-5" strokeWidth={2.2} />
           </span>
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
               How this works
             </p>
-            <h2 className="mt-0.5 text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 className="mt-0.5 text-[1.125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               One token, one bird, one tracked cycle
             </h2>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+            <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
               Tokens are how you pay for flock tracking. Each placed bird debits one token from the matching{' '}
               <strong className="text-[var(--color-brand-fg)]">token type × tier</strong> bucket, and that single debit keeps the cycle live for the full production window. No daily fees. No recurring charges per record.
             </p>
@@ -489,10 +489,10 @@ function TokenRulesPanel() {
 
         {/* Deduction rules. */}
         <div className="mt-6 rounded-xl border border-[var(--color-brand-border)] bg-white p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
             When tokens are deducted
           </p>
-          <ul className="mt-2.5 space-y-2 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <ul className="mt-2.5 space-y-2 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
@@ -516,10 +516,10 @@ function TokenRulesPanel() {
 
         {/* Expiry + archive rules. */}
         <div className="mt-4 rounded-xl border border-[var(--color-brand-border)] bg-white p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
             When cycles end (and tokens do their job)
           </p>
-          <ul className="mt-2.5 space-y-2 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <ul className="mt-2.5 space-y-2 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
@@ -549,10 +549,10 @@ function TokenRulesPanel() {
 
         {/* Wallet policy. */}
         <div className="mt-4 rounded-xl border border-[var(--color-brand-border)] bg-white p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
             About your token wallet
           </p>
-          <ul className="mt-2.5 space-y-2 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <ul className="mt-2.5 space-y-2 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
@@ -573,7 +573,7 @@ function TokenRulesPanel() {
             </li>
             <li className="flex items-start gap-2 rounded-lg bg-[var(--color-brand-surface-soft)]/60 p-2.5">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
-              <span className="text-[12px] text-[var(--color-brand-muted)]">
+              <span className="text-[0.75rem] text-[var(--color-brand-muted)]">
                 Questions about a specific charge or bulk discount? Reach us on the <a href="/contact" className="font-semibold text-[var(--color-brand-primary-deep)] hover:underline">Contact us</a> page — support usually replies same-day.
               </span>
             </li>
@@ -587,13 +587,13 @@ function TokenRulesPanel() {
 function CycleTypeCard({ label, window, body }: { label: string; window: string; body: string }) {
   return (
     <div className="rounded-xl border border-[var(--color-brand-border)] bg-white px-4 py-3.5">
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+      <p className="text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
         {label}
       </p>
-      <p className="mt-1 text-[14px] font-bold text-[var(--color-brand-fg)]">
+      <p className="mt-1 text-[0.875rem] font-bold text-[var(--color-brand-fg)]">
         {window}
       </p>
-      <p className="mt-0.5 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+      <p className="mt-0.5 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
         {body}
       </p>
     </div>

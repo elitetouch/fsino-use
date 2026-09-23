@@ -49,7 +49,7 @@ export default function FarmDetailPage({ params }: { params: Promise<{ id: strin
       <div className="flex items-center justify-between">
         <Link
           href="/farms"
-          className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary-deep)]"
+          className="inline-flex items-center gap-1 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary-deep)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           All farms
@@ -149,10 +149,10 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
         </div>
 
         <div className="w-full min-w-0">
-          <p className="line-clamp-2 break-words text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">{farm.name}</p>
+          <p className="line-clamp-2 break-words text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.125rem]">{farm.name}</p>
           {farm.membership?.role && (
             <span className={cn(
-              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
+              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wider',
               farm.membership.role === 'owner'
                 ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                 : farm.membership.role === 'manager'
@@ -162,7 +162,7 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
               You are {farm.membership.role}
             </span>
           )}
-          <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">
             {productionLabel(farm.primaryProduction)}
           </p>
         </div>
@@ -171,7 +171,7 @@ function LogoBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-[11.5px] text-[var(--color-brand-muted)]"
+            className="h-8 text-[0.71875rem] text-[var(--color-brand-muted)]"
             onClick={() => remove.mutate()}
             disabled={remove.isPending}
           >
@@ -285,7 +285,7 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
     return (
       <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
+          <h2 className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
         </div>
         <form
           className="space-y-4"
@@ -352,7 +352,7 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
                   onClick={() => setProduction(opt)}
                   disabled={save.isPending}
                   className={cn(
-                    'flex flex-col items-center gap-1 rounded-lg border px-3 py-3 text-[11.5px] font-semibold transition',
+                    'flex flex-col items-center gap-1 rounded-lg border px-3 py-3 text-[0.71875rem] font-semibold transition',
                     production === opt
                       ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-accent)]/40 text-[var(--color-brand-primary-deep)]'
                       : 'border-[var(--color-brand-border)] bg-white text-[var(--color-brand-fg-soft)] hover:border-[var(--color-brand-primary)]/40',
@@ -404,9 +404,9 @@ function DetailsBlock({ farm, canEdit }: { farm: FarmDto; canEdit: boolean }) {
   return (
     <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
+        <h2 className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Farm details</h2>
         {canEdit && (
-          <Button variant="outline" size="sm" className="h-8 shrink-0 text-[11.5px]" onClick={() => setEditing(true)}>
+          <Button variant="outline" size="sm" className="h-8 shrink-0 text-[0.71875rem]" onClick={() => setEditing(true)}>
             <Pencil className="h-3 w-3" />
             Edit
           </Button>
@@ -450,12 +450,12 @@ function DetailRow({
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
           {/* break-words — see /profile DetailRow for the rationale.
               Long addresses ("12B Iyaba road, Ikorodu, Lagos") and
               breed labels don't truncate cleanly on a 320px viewport,
               so we wrap to multiple lines instead. */}
-          <p className="break-words text-[13px] font-semibold text-[var(--color-brand-fg)]">{value}</p>
+          <p className="break-words text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">{value}</p>
         </div>
       </div>
     </div>
@@ -468,7 +468,7 @@ function StatsBlock({ farm }: { farm: FarmDto }) {
   return (
     <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Activity</h2>
+        <h2 className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Activity</h2>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <Stat
@@ -507,8 +507,8 @@ function Stat({
       <span className="mx-auto mb-1 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
         <Icon className="h-4 w-4" strokeWidth={2.2} />
       </span>
-      <p className="break-words text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">{value.toLocaleString()}</p>
-      <p className="break-words text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
+      <p className="break-words text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.125rem]">{value.toLocaleString()}</p>
+      <p className="break-words text-[0.65625rem] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
     </div>
   );
 }
@@ -546,7 +546,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
       <ImageIcon className="mx-auto h-6 w-6 text-[var(--color-brand-muted)]" />
-      <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">
+      <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
         Could not load this farm
       </p>
       <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>

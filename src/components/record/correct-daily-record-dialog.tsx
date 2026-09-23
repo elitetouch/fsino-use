@@ -149,10 +149,10 @@ export function CorrectDailyRecordDialog({
       <div className="w-full max-w-lg overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
         <header className="flex items-start justify-between gap-3 border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
               Correct entry
             </p>
-            <h2 id="correct-dialog-title" className="mt-0.5 text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 id="correct-dialog-title" className="mt-0.5 text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Post a correction for {prettyType(record.eventType)}
             </h2>
           </div>
@@ -171,8 +171,8 @@ export function CorrectDailyRecordDialog({
             <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-800" />
               <div>
-                <p className="text-[13px] font-bold text-amber-900">This entry is itself a correction</p>
-                <p className="mt-1 text-[12px] text-amber-900">
+                <p className="text-[0.8125rem] font-bold text-amber-900">This entry is itself a correction</p>
+                <p className="mt-1 text-[0.75rem] text-amber-900">
                   Corrections can&rsquo;t be corrected — post a new correction on the ORIGINAL entry instead.
                 </p>
               </div>
@@ -180,7 +180,7 @@ export function CorrectDailyRecordDialog({
           </div>
         ) : (
           <div className="space-y-4 p-4 sm:p-5">
-            <div className="flex items-start gap-2 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 p-3 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 p-3 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" />
               <p>
                 Type what the entry <em>should have been</em>. We&rsquo;ll post a reversal entry that offsets the original — nothing gets deleted, and the fix (with your reason) is visible in the records CSV so your bank / co-op can trust the audit trail.
@@ -246,7 +246,7 @@ export function CorrectDailyRecordDialog({
             )}
 
             <div>
-              <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]" htmlFor="correct-reason">
+              <label className="block text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]" htmlFor="correct-reason">
                 Reason (required)
               </label>
               <textarea
@@ -255,9 +255,9 @@ export function CorrectDailyRecordDialog({
                 onChange={(e) => setReason(e.target.value.slice(0, 500))}
                 rows={3}
                 placeholder="e.g. Miscount — actual mortality was 1, not 18."
-                className="mt-1 block w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[13.5px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+                className="mt-1 block w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.84375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               />
-              <p className={cn('mt-1 text-[11px]', reasonOk ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
+              <p className={cn('mt-1 text-[0.6875rem]', reasonOk ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
                 {reasonOk
                   ? `Saved with the correction and shown in the records CSV. ${reason.length}/500 chars.`
                   : `At least 3 characters — bank readers rely on this to trust the audit. ${reason.length}/500 chars.`}
@@ -302,32 +302,32 @@ function PairField({
 }) {
   return (
     <div>
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+      <p className="text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
         {label}
       </p>
       <div className="mt-1 grid gap-2 sm:grid-cols-2">
         <div className="rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 px-3 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
+          <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
             {originalLabel}
           </p>
-          <p className="mt-0.5 text-[14px] font-bold tabular-nums text-[var(--color-brand-fg)]">
+          <p className="mt-0.5 text-[0.875rem] font-bold tabular-nums text-[var(--color-brand-fg)]">
             {originalValue}
           </p>
         </div>
         <div className="rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 py-2 focus-within:border-[var(--color-brand-primary)] focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/20">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
             {inputLabel}
           </p>
           <input
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="mt-0.5 block w-full bg-transparent text-[14px] font-bold tabular-nums text-[var(--color-brand-fg)] focus:outline-none"
+            className="mt-0.5 block w-full bg-transparent text-[0.875rem] font-bold tabular-nums text-[var(--color-brand-fg)] focus:outline-none"
             {...rest}
           />
         </div>
       </div>
       {helperText && (
-        <p className="mt-1 text-[11px] text-[var(--color-brand-muted)]">{helperText}</p>
+        <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">{helperText}</p>
       )}
     </div>
   );

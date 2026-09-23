@@ -112,14 +112,14 @@ function CyclePicker({
 
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">
+      <span className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">
         Cycle
       </span>
       <div className="relative">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="block h-11 w-full appearance-none rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white pl-3.5 pr-9 text-[14px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+          className="block h-11 w-full appearance-none rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white pl-3.5 pr-9 text-[0.875rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
         >
           {sorted.map((c) => (
             <option key={c.id} value={c.id}>
@@ -179,13 +179,13 @@ function CycleHead({
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-gradient-to-br from-[var(--color-brand-accent)]/60 to-white p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             {flock.productionType || 'flock'} · cycle report
           </p>
-          <h1 className="mt-0.5 truncate text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[20px]">
+          <h1 className="mt-0.5 truncate text-[1.125rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.25rem]">
             {flock.breed}
           </h1>
-          <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
             {pen?.name ?? 'No pen'} · Started {fmtDate(flock.startDate)}
             {flock.archivedAt ? <> · <span className="text-amber-700">Archived {fmtDate(flock.archivedAt)}</span></> : null}
           </p>
@@ -194,7 +194,7 @@ function CycleHead({
               records CSV for the reasons. Aggregations on this page
               already use the NET (original + correction). */}
           {(summary.correctionsCount ?? 0) > 0 && (
-            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-amber-800">
+            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[0.65625rem] font-bold uppercase tracking-wider text-amber-800">
               {summary.correctionsCount} correction{summary.correctionsCount === 1 ? '' : 's'} applied
             </p>
           )}
@@ -212,13 +212,13 @@ function CycleHead({
 function MiniStat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div>
-      <p className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+      <p className="text-[0.59375rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
         {label}
       </p>
-      <p className="mt-0.5 text-[15px] font-bold tabular-nums text-[var(--color-brand-fg)] sm:text-[17px]">
+      <p className="mt-0.5 text-[0.9375rem] font-bold tabular-nums text-[var(--color-brand-fg)] sm:text-[1.0625rem]">
         {value}
       </p>
-      <p className="text-[10px] text-[var(--color-brand-muted)]">{sub}</p>
+      <p className="text-[0.625rem] text-[var(--color-brand-muted)]">{sub}</p>
     </div>
   );
 }
@@ -313,10 +313,10 @@ function KpiCard({
         <span className={cn('inline-flex h-8 w-8 items-center justify-center rounded-lg', badge)}>
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">{label}</p>
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">{label}</p>
       </div>
-      <p className="mt-3 text-[22px] font-bold tabular-nums leading-none text-[var(--color-brand-fg)]">{value}</p>
-      <p className="mt-1.5 text-[11.5px] leading-snug text-[var(--color-brand-muted)]">{sub}</p>
+      <p className="mt-3 text-[1.375rem] font-bold tabular-nums leading-none text-[var(--color-brand-fg)]">{value}</p>
+      <p className="mt-1.5 text-[0.71875rem] leading-snug text-[var(--color-brand-muted)]">{sub}</p>
     </article>
   );
 }
@@ -370,17 +370,17 @@ function FinancialsCard({
   return (
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Financials</p>
-        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">Cost, revenue &amp; margin</h2>
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Financials</p>
+        <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">Cost, revenue &amp; margin</h2>
       </header>
       <div className="divide-y divide-[var(--color-brand-border)]">
         {rows.map((r) => (
           <div key={r.label} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="min-w-0">
-              <p className={cn('text-[13px]', r.strong ? 'font-bold text-[var(--color-brand-fg)]' : 'text-[var(--color-brand-fg-soft)]')}>{r.label}</p>
-              <p className="text-[11px] text-[var(--color-brand-muted)]">{r.note}</p>
+              <p className={cn('text-[0.8125rem]', r.strong ? 'font-bold text-[var(--color-brand-fg)]' : 'text-[var(--color-brand-fg-soft)]')}>{r.label}</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">{r.note}</p>
             </div>
-            <p className={cn('shrink-0 tabular-nums', r.strong ? 'text-[15px] font-bold' : 'text-[13.5px]', 'text-[var(--color-brand-fg)]')}>
+            <p className={cn('shrink-0 tabular-nums', r.strong ? 'text-[0.9375rem] font-bold' : 'text-[0.84375rem]', 'text-[var(--color-brand-fg)]')}>
               {r.value}
             </p>
           </div>
@@ -407,8 +407,8 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
             <Thermometer className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">Climate report unavailable</p>
-            <p className="mt-0.5 text-[12px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">Climate report unavailable</p>
+            <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-muted)]">
               {reason}
             </p>
           </div>
@@ -426,14 +426,14 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Climate — PENKEEP</p>
-          <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">Zone comfort &amp; air quality</h2>
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Climate — PENKEEP</p>
+          <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">Zone comfort &amp; air quality</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider', confidenceBadge)}>
+          <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.65625rem] font-bold uppercase tracking-wider', confidenceBadge)}>
             Confidence: {climate.confidence}
           </span>
-          <span className="text-[11px] text-[var(--color-brand-muted)]">
+          <span className="text-[0.6875rem] text-[var(--color-brand-muted)]">
             coverage {formatDecimal(climate.coveragePct, 1)}% ·{' '}
             {formatCount(climate.readingCount)} readings ·{' '}
             {climate.stations} station{climate.stations === 1 ? '' : 's'}
@@ -443,9 +443,9 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
 
       {/* Zone table */}
       <div className="max-w-full overflow-x-auto">
-        <table className="w-full min-w-[520px] border-collapse text-[12px]">
+        <table className="w-full min-w-[520px] border-collapse text-[0.75rem]">
           <thead>
-            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
               <th className="px-4 py-2 sm:px-5">Zone</th>
               <th className="px-4 py-2 text-right sm:px-5">Average temp</th>
               <th className="px-4 py-2 text-right sm:px-5">Hours below min</th>
@@ -520,7 +520,7 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
       )}
       {climate.temperatureAdvisory?.available === false && (
         <div className="border-t border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 p-4 sm:p-5">
-          <p className="text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             <strong className="text-[var(--color-brand-fg)]">Temperature vs breed target:</strong>{' '}
             {climate.temperatureAdvisory.reason}
           </p>
@@ -529,7 +529,7 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
 
       {/* Honest note */}
       <div className="border-t border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 p-4 sm:p-5">
-        <p className="flex items-start gap-2 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+        <p className="flex items-start gap-2 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" />
           <span>
             {climate.thresholds.note}{' '}
@@ -570,24 +570,24 @@ function TemperatureAdvisoryBlock({
     <div className="border-t border-[var(--color-brand-border)] p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
             Temperature vs breed / age comfort curve
           </p>
-          <h3 className="mt-0.5 text-[13px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <h3 className="mt-0.5 text-[0.8125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             {advisory.verdictLabel}
           </h3>
           {advisory.cycleAvgC !== null && (
-            <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+            <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">
               Cycle-average pen temperature: {advisory.cycleAvgC.toFixed(1)} °C over {totalDays} day{totalDays === 1 ? '' : 's'}.
             </p>
           )}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <span className={cn('rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider', verdictClass)}>
+          <span className={cn('rounded-full px-2.5 py-1 text-[0.65625rem] font-bold uppercase tracking-wider', verdictClass)}>
             Verdict: {advisory.verdict}
           </span>
           {advisory.tentative === true && (
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-amber-800">
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[0.65625rem] font-bold uppercase tracking-wider text-amber-800">
               Tentative · {Math.round(advisory.coveragePct ?? 0)}% coverage
             </span>
           )}
@@ -595,7 +595,7 @@ function TemperatureAdvisoryBlock({
       </div>
 
       {advisory.tentative === true && (
-        <div className="mt-2 rounded-lg bg-amber-50/60 px-3 py-2 text-[11.5px] leading-relaxed text-amber-900">
+        <div className="mt-2 rounded-lg bg-amber-50/60 px-3 py-2 text-[0.71875rem] leading-relaxed text-amber-900">
           Coverage was thin this cycle. The verdict may shift as more readings come in — treat this as guidance, not a final grade.
         </div>
       )}
@@ -612,13 +612,13 @@ function TemperatureAdvisoryBlock({
       {advisory.recommendation && (
         <div className="mt-3 flex items-start gap-2 rounded-lg border-l-4 border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5 px-3 py-2.5">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" />
-          <p className="text-[12px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <p className="text-[0.75rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             <strong className="text-[var(--color-brand-fg)]">Recommendation.</strong> {advisory.recommendation}
           </p>
         </div>
       )}
 
-      <p className="mt-3 text-[10.5px] leading-relaxed text-[var(--color-brand-muted)]">
+      <p className="mt-3 text-[0.65625rem] leading-relaxed text-[var(--color-brand-muted)]">
         Each day is rated against the physiological target for the flock&rsquo;s age <em>on that day</em> — day 3 is graded on the 32–34 °C brooding target; day 30 on the 20–23 °C growing target. The verdict shows the worst-day rating, not the average, because a single bad day of welfare-level stress matters more than an otherwise-green trend.
       </p>
     </div>
@@ -638,9 +638,9 @@ function DayCountChip({
   const dim = count === 0 ? 'opacity-40' : '';
   return (
     <div className={cn('rounded-lg border px-3 py-2', bg, dim)}>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
-      <p className="mt-0.5 text-[16px] font-bold tabular-nums text-[var(--color-brand-fg)]">{count}</p>
-      <p className="text-[10px] text-[var(--color-brand-muted)]">day{count === 1 ? '' : 's'}</p>
+      <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
+      <p className="mt-0.5 text-[1rem] font-bold tabular-nums text-[var(--color-brand-fg)]">{count}</p>
+      <p className="text-[0.625rem] text-[var(--color-brand-muted)]">day{count === 1 ? '' : 's'}</p>
     </div>
   );
 }
@@ -669,10 +669,10 @@ function AqChip({
         <span className={cn('inline-flex h-6 w-6 items-center justify-center rounded-md', iconBg)}>
           <Icon className="h-3 w-3" strokeWidth={2.2} />
         </span>
-        <p className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
+        <p className="text-[0.65625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">{label}</p>
       </div>
-      <p className="mt-1.5 text-[16px] font-bold tabular-nums text-[var(--color-brand-fg)]">{value}</p>
-      <p className="text-[10.5px] text-[var(--color-brand-muted)]">{sub}</p>
+      <p className="mt-1.5 text-[1rem] font-bold tabular-nums text-[var(--color-brand-fg)]">{value}</p>
+      <p className="text-[0.65625rem] text-[var(--color-brand-muted)]">{sub}</p>
     </div>
   );
 }
@@ -685,8 +685,8 @@ function BreakdownCard({
   if (breakdown.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-5">
-        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">No daily records yet</p>
-        <p className="mt-0.5 text-[12px] text-[var(--color-brand-muted)]">
+        <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">No daily records yet</p>
+        <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-muted)]">
           Once you start logging feed, water, vaccines and other events for this cycle, they&rsquo;ll roll up here.
         </p>
       </section>
@@ -696,13 +696,13 @@ function BreakdownCard({
   return (
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Daily records</p>
-        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">By event type</h2>
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Daily records</p>
+        <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">By event type</h2>
       </header>
       <div className="max-w-full overflow-x-auto">
-        <table className="w-full min-w-[520px] border-collapse text-[12px]">
+        <table className="w-full min-w-[520px] border-collapse text-[0.75rem]">
           <thead>
-            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
               <th className="px-4 py-2 sm:px-5">Event</th>
               <th className="px-4 py-2 text-right sm:px-5">Events</th>
               <th className="px-4 py-2 text-right sm:px-5">Corrections</th>
@@ -799,14 +799,14 @@ function DetailedEntryTable({
   return (
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">{eyebrow}</p>
-        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">{title}</h2>
-        <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">{description}</p>
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">{eyebrow}</p>
+        <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">{title}</h2>
+        <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">{description}</p>
       </header>
       <div className="max-w-full overflow-x-auto">
-        <table className="w-full min-w-[560px] border-collapse text-[12px]">
+        <table className="w-full min-w-[560px] border-collapse text-[0.75rem]">
           <thead>
-            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
               <th className="px-4 py-2 sm:px-5">Date</th>
               <th className="px-4 py-2 sm:px-5">{itemColumnLabel}</th>
               <th className="px-4 py-2 sm:px-5">Brand</th>
@@ -872,9 +872,9 @@ function RecommendationsBlock({
   if (recommendations.length === 0) {
     return (
       <section className="rounded-2xl border border-[var(--color-brand-border)] bg-[var(--color-brand-accent)]/25 p-4 sm:p-5">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Recommendations</p>
-        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">Nothing pressing to change</h2>
-        <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Recommendations</p>
+        <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">Nothing pressing to change</h2>
+        <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
           Every metric we track is inside its healthy band for this cycle&rsquo;s current phase. Keep logging daily records and we&rsquo;ll flag any change here as soon as it shows up.
         </p>
       </section>
@@ -889,11 +889,11 @@ function RecommendationsBlock({
   return (
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Recommendations</p>
-        <h2 className="mt-0.5 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Recommendations</p>
+        <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           {sorted.length} item{sorted.length === 1 ? '' : 's'} to act on
         </h2>
-        <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">
           Items tagged <em>current cycle</em> are still actionable right now. Items tagged <em>next cycle</em> are lessons for the next placement.
         </p>
       </header>
@@ -905,8 +905,8 @@ function RecommendationsBlock({
               <TimingBadge timing={r.timing} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{r.headline}</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-[var(--color-brand-fg-soft)]">{r.action}</p>
+              <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{r.headline}</p>
+              <p className="mt-1 text-[0.75rem] leading-relaxed text-[var(--color-brand-fg-soft)]">{r.action}</p>
             </div>
           </li>
         ))}
@@ -920,7 +920,7 @@ function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
     : severity === 'medium' ? 'bg-amber-50 text-amber-800'
     : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]';
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', cls)}>
+    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider', cls)}>
       {severity}
     </span>
   );
@@ -929,7 +929,7 @@ function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
 function TimingBadge({ timing }: { timing: 'current_cycle' | 'next_cycle' }) {
   const label = timing === 'current_cycle' ? 'Current cycle' : 'Next cycle';
   return (
-    <span className="inline-flex items-center rounded-full bg-[var(--color-brand-surface-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-brand-muted)]">
+    <span className="inline-flex items-center rounded-full bg-[var(--color-brand-surface-soft)] px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--color-brand-muted)]">
       {label}
     </span>
   );
@@ -953,8 +953,8 @@ function ExportsRow({ flockId }: { flockId: string }) {
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-[var(--color-brand-primary)]/5 p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">Share with your bank or co-op</p>
-          <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+          <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">Share with your bank or co-op</p>
+          <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
             The PDF is a printable one-page cycle summary — signable, shareable, honest about coverage.
             The CSV is every raw daily-record row for your own spreadsheets.
           </p>
@@ -978,8 +978,8 @@ function ExportsRow({ flockId }: { flockId: string }) {
 
 function AccuracyNotes() {
   return (
-    <details className="rounded-xl border border-[var(--color-brand-border)] bg-white px-4 py-3 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)] sm:px-5">
-      <summary className="cursor-pointer text-[12px] font-bold text-[var(--color-brand-fg)]">
+    <details className="rounded-xl border border-[var(--color-brand-border)] bg-white px-4 py-3 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)] sm:px-5">
+      <summary className="cursor-pointer text-[0.75rem] font-bold text-[var(--color-brand-fg)]">
         How these numbers are computed
       </summary>
       <ul className="mt-3 space-y-1.5">
@@ -1020,8 +1020,8 @@ function EmptyState() {
       <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
         <Bird className="h-5 w-5" />
       </span>
-      <p className="mt-4 text-[14px] font-bold text-[var(--color-brand-fg)]">No cycles to report on yet</p>
-      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+      <p className="mt-4 text-[0.875rem] font-bold text-[var(--color-brand-fg)]">No cycles to report on yet</p>
+      <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
         Place a flock and log some daily records — you&rsquo;ll be able to export a full cycle report once there&rsquo;s data.
       </p>
       <Button asChild size="sm" className="mt-5">
@@ -1046,8 +1046,8 @@ function PageSkeleton() {
 function ErrorState({ error }: { error: unknown }) {
   return (
     <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-5">
-      <p className="text-[13px] font-bold text-rose-900">Couldn&rsquo;t load this cycle report</p>
-      <p className="mt-1 text-[12px] text-rose-900">{apiErrorMessage(error, 'Please retry — if this keeps happening, contact support.')}</p>
+      <p className="text-[0.8125rem] font-bold text-rose-900">Couldn&rsquo;t load this cycle report</p>
+      <p className="mt-1 text-[0.75rem] text-rose-900">{apiErrorMessage(error, 'Please retry — if this keeps happening, contact support.')}</p>
     </div>
   );
 }

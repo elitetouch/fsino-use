@@ -102,7 +102,7 @@ export function OtpInput({
           disabled={disabled}
           className={cn(
             'aspect-square w-full min-w-0 rounded-2xl border-2 border-[var(--color-brand-input-border)] bg-white text-center font-bold text-[var(--color-brand-fg)]',
-            'text-xl sm:text-2xl xl:text-[28px] 3xl:text-3xl',
+            'text-xl sm:text-2xl xl:text-[1.75rem] 3xl:text-3xl',
             'transition focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20',
             'disabled:cursor-not-allowed disabled:opacity-60',
           )}
