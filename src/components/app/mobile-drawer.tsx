@@ -3,52 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import {
-  LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, Info, Phone, MessageCircle, ChevronRight, X, Wallet, Receipt,
-  TrendingUp,
-} from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
 import { cn } from '@/lib/utils';
-
-const GROUPS: Array<{
-  heading?: string;
-  items: Array<{ href: string; label: string; icon: React.ElementType }>;
-}> = [
-  {
-    // First group has no heading — the brand block above already
-    // identifies the workspace; a redundant label crowds the logo.
-    items: [
-      { href: '/home',    label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/reports', label: 'Reports',   icon: BarChart3 },
-    ],
-  },
-  {
-    heading: 'Account',
-    items: [
-      { href: '/farms',         label: 'Farms',           icon: Tractor },
-      { href: '/profile',       label: 'Profile',         icon: User },
-      { href: '/pens-flocks',   label: 'Pens and flocks', icon: Bird },
-      { href: '/users',         label: 'Users',           icon: Users2 },
-      { href: '/settings',      label: 'Settings',        icon: Settings },
-      { href: '/wallet',        label: 'Wallet',           icon: Wallet },
-      { href: '/expenses',      label: 'Expenses',        icon: Receipt },
-      { href: '/sales',         label: 'Sales',           icon: TrendingUp },
-      { href: '/subscription',  label: 'Subscription',    icon: CreditCard },
-    ],
-  },
-  // Shop / Pen accessories — hidden until the storefront can fulfil
-  // orders. Route + page kept live for direct links.
-  {
-    heading: 'Customer support',
-    items: [
-      { href: '/about',     label: 'About this app',     icon: Info },
-      { href: '/contact',   label: 'Contact us',         icon: Phone },
-      { href: '/community', label: 'WhatsApp community', icon: MessageCircle },
-    ],
-  },
-];
+import { NAV_GROUPS } from '@/lib/nav';
 
 export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
@@ -57,8 +16,8 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
   // Same filter as the desktop sidebar — see sidebar.tsx for the
   // rationale on keeping all groups visible while loading.
   const visibleGroups = p.loading
-    ? GROUPS
-    : GROUPS
+    ? NAV_GROUPS
+    : NAV_GROUPS
         .map((g) => ({
           ...g,
           items: g.items.filter((it) => p.satisfies(ruleForPath(it.href) ?? { openToMembers: true })),
@@ -122,6 +81,14 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
                       <item.icon className="h-3.5 w-3.5" strokeWidth={2.2} />
                     </span>
                     <span className="flex-1">{item.label}</span>
+                    {/* Phone users are most of the user base and the ones
+                        standing in the pen with the camera — the beta
+                        caveat has to reach them, not just desktop. */}
+                    {item.beta && (
+                      <span className="shrink-0 rounded-full border border-[var(--color-brand-primary)]/35 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-[var(--color-brand-primary-deep)]">
+                        Beta
+                      </span>
+                    )}
                     <ChevronRight className="h-3.5 w-3.5 text-[var(--color-brand-muted-soft)]" />
                   </Link>
                 );
