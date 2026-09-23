@@ -175,9 +175,16 @@ export function ResultCard({
 
       </div>
 
-      {/* ---- Secondary column: what to do next.
-           Sticky on desktop so the actions stay in view while a long
-           treatment section scrolls beside them. ---- */}
+      {/* ---- Secondary column ----
+           The Grad-CAM leads here rather than sitting with the symptoms,
+           and the reason is column balance rather than taxonomy: the
+           LEFT column already carries the treatment block, the symptom
+           text AND the reference gallery, so it is the right column that
+           needs the height.
+
+           Its expanded height is capped (see WhatItLookedAt) — at full
+           size the heatmap ran 700px and left a hole under the left
+           column, which is the whitespace this layout set out to fix. ---- */}
       <div className="space-y-4 lg:sticky lg:top-4">
         {result.gradcamOverlay && <WhatItLookedAt image={result.gradcamOverlay} />}
 
@@ -241,10 +248,18 @@ function WhatItLookedAt({ image }: { image: string }) {
       {open && (
         <div className="px-4 pb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* Height-capped on desktop, full width on a phone.
+              At its natural size the heatmap rendered ~700px tall in a
+              two-column layout and left a hole under the other column —
+              the exact whitespace this layout exists to remove. The cap
+              costs nothing diagnostically: the farmer needs to see
+              WHERE the bright areas fall, not read the image at full
+              resolution. `object-contain` keeps the whole frame visible
+              rather than cropping the very areas being judged. */}
           <img
             src={`data:image/jpeg;base64,${image}`}
             alt="Your photo with the areas the app focused on highlighted"
-            className="w-full rounded-lg border border-[var(--color-brand-border)]"
+            className="w-full rounded-lg border border-[var(--color-brand-border)] object-contain lg:max-h-[17.5rem]"
           />
           <p className="mt-2 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             The bright areas are what the app paid most attention to. If those areas are not on the

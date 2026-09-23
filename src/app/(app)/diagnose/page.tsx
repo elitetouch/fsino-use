@@ -100,22 +100,16 @@ function Diagnose() {
 
   return (
     /*
-     * Width is chosen per STATE, not once for the page.
+     * The page is wide on desktop; each STATE decides how to use it.
      *
-     * The camera-first screens (start, confirm, analysing) stay narrow
-     * and centred: each is a single focal action, and stretching "take
-     * a photo" across a 27-inch monitor makes it harder to use, not
-     * easier.
-     *
-     * The result view earns the full width — it has enough distinct
-     * content to fill a second column. See ResultCard.
+     * An earlier cut kept the camera screens pinned to 35rem on the
+     * reasoning that stretching "take a photo" across a 27-inch monitor
+     * makes it harder to use. That is true of the BUTTON and not of the
+     * PAGE — the fix is a second column, not a wider button. So the
+     * container is wide throughout and the states that need a narrow
+     * measure (confirm, analysing) impose it on themselves.
      */
-    <div
-      className={[
-        'mx-auto w-full space-y-5 pb-8',
-        result ? 'max-w-[68.75rem]' : 'max-w-[35rem]',
-      ].join(' ')}
-    >
+    <div className="mx-auto w-full max-w-[68.75rem] space-y-5 pb-8">
       <PageHeader
         eyebrow="Health check · Beta"
         title="Disease check"
@@ -145,11 +139,15 @@ function Diagnose() {
       />
 
       {busy && preview ? (
-        <Analysing preview={preview} />
+        // Narrow on purpose: one photograph and a progress line. There
+        // is nothing to put beside it.
+        <div className="mx-auto w-full max-w-[35rem]">
+          <Analysing preview={preview} />
+        </div>
       ) : result ? (
         <ResultCard result={result} onRetake={reset} />
       ) : preview ? (
-        <>
+        <div className="mx-auto w-full max-w-[35rem] space-y-5">
           {/* On the confirm step, not the start screen: asking which
               cycle before they have even taken a photo is a question
               standing between the farmer and the camera. */}
@@ -160,7 +158,7 @@ function Diagnose() {
             onDiagnose={() => file && diagnose.mutate(file)}
             onRetake={reset}
           />
-        </>
+        </div>
       ) : (
         <Start
           onCamera={() => cameraRef.current?.click()}
@@ -207,11 +205,30 @@ function BetaNotice() {
 /** Opening state: one obvious action, and how to make it work. */
 function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () => void }) {
   return (
-    <div className="space-y-4">
+    /*
+     * CAMERA LEFT, GUIDANCE RIGHT on wide screens.
+     *
+     * Stacked, the photo rules sat below the camera button — read after
+     * the decision they were meant to inform, if at all. Beside it they
+     * are in view while the farmer is still deciding how to frame the
+     * shot, which is the only moment they can change anything.
+     *
+     * That matters more here than it looks. Most refusals are bad
+     * photographs rather than a bad model, and a farmer refused twice
+     * concludes the tool is broken and stops using it. Guidance read
+     * BEFORE the shutter prevents more failures than any error message
+     * after it.
+     *
+     * The camera column is capped rather than filling its half: a
+     * dashed drop target stretched across a monitor reads as a page
+     * background, not a button.
+     */
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+      <div className="space-y-4 lg:mx-auto lg:w-full lg:max-w-[28rem]">
       <button
         type="button"
         onClick={onCamera}
-        className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-accent)]/30 px-6 py-9 transition-colors hover:bg-[var(--color-brand-accent)]/50"
+        className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-accent)]/30 px-6 py-9 transition-colors hover:bg-[var(--color-brand-accent)]/50 lg:py-14"
       >
         <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)] text-white">
           <Camera className="h-6 w-6" />
@@ -230,6 +247,7 @@ function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () =>
         <ImageUp className="h-3.5 w-3.5" />
         Choose a photo you already took
       </button>
+      </div>
 
       <PhotoGuide />
     </div>

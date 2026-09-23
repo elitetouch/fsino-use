@@ -40,6 +40,14 @@ type ReferenceImage = DiagnosisDto['referenceImages'][number];
 export function ReferenceImages({ images }: { images: ReferenceImage[] }) {
   const [open, setOpen] = useState<ReferenceImage | null>(null);
 
+  // Defence in depth. The server already drops any image whose file is
+  // missing, so this only fires on a request that failed in transit —
+  // but the failure mode is a broken-image icon with the caption's alt
+  // text spilling out of a card, in the middle of a medical result.
+  // Dropping the tile silently is strictly better than showing that.
+  const [broken, setBroken] = useState<Set<string>>(new Set());
+  const visible = images.filter((i) => !broken.has(i.url));
+
   // Escape closes the lightbox, and the body stops scrolling behind it.
   // Without the scroll lock a phone drags the page under the overlay,
   // which reads as the app having frozen.
@@ -60,7 +68,7 @@ export function ReferenceImages({ images }: { images: ReferenceImage[] }) {
     };
   }, [open]);
 
-  if (images.length === 0) return null;
+  if (visible.length === 0) return null;
 
   return (
     <div className="mt-3">
@@ -72,7 +80,7 @@ export function ReferenceImages({ images }: { images: ReferenceImage[] }) {
           shrinks each photo to a thumbnail too small to read a clinical
           sign from, which defeats the point of showing them. */}
       <ul className="-mx-1 mt-2 flex gap-2.5 overflow-x-auto px-1 pb-1">
-        {images.map((image) => (
+        {visible.map((image) => (
           <li key={image.url} className="w-[10.5rem] shrink-0">
             <button
               type="button"
@@ -85,6 +93,13 @@ export function ReferenceImages({ images }: { images: ReferenceImage[] }) {
                 src={image.url}
                 alt={image.caption}
                 loading="lazy"
+                onError={() =>
+                  setBroken((prev) => {
+                    const next = new Set(prev);
+                    next.add(image.url);
+                    return next;
+                  })
+                }
                 className="h-[7.5rem] w-full rounded-lg border border-[var(--color-brand-border)] object-cover"
               />
               <p className="mt-1.5 text-[0.71875rem] leading-snug text-[var(--color-brand-fg)]">
