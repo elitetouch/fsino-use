@@ -185,12 +185,12 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
           {/* break-words handles the pathological "single 40-character
               token" case (e.g. a typed-in display name without spaces);
               line-clamp-2 keeps the avatar block predictable in height. */}
-          <p className="line-clamp-2 break-words text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[18px]">
+          <p className="line-clamp-2 break-words text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.125rem]">
             {user.name}
           </p>
           {topRole && (
             <span className={cn(
-              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
+              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wider',
               topRole === 'owner'
                 ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                 : topRole === 'manager'
@@ -201,7 +201,7 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
               {topRole}
             </span>
           )}
-          <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">
             {farms.length === 0
               ? 'No farm memberships yet'
               : `${farms.length} ${farms.length === 1 ? 'farm' : 'farms'}`}
@@ -212,7 +212,7 @@ function IdentityBlock({ user, farms }: { user: AppUserDto; farms: FarmDto[] }) 
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-[11.5px] text-[var(--color-brand-muted)]"
+            className="h-8 text-[0.71875rem] text-[var(--color-brand-muted)]"
             onClick={() => remove.mutate()}
             disabled={remove.isPending}
           >
@@ -338,7 +338,7 @@ function ContactBlock({ user }: { user: AppUserDto }) {
     return (
       <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
+          <h2 className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
         </div>
         <form
           className="space-y-4"
@@ -367,7 +367,7 @@ function ContactBlock({ user }: { user: AppUserDto }) {
             />
             <FieldError message={errors.email} />
             {email !== user.email && (
-              <p className="mt-1 text-[11px] text-[var(--color-brand-muted)]">
+              <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">
                 Changing your email will require a new verification code.
               </p>
             )}
@@ -386,7 +386,7 @@ function ContactBlock({ user }: { user: AppUserDto }) {
             />
             <FieldError message={errors.phone} />
             {phone && normalisePhone(phone) !== String(user.phone ?? '') && (
-              <p className="mt-1 text-[11px] text-[var(--color-brand-muted)]">
+              <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">
                 Changing your phone will require a new verification code.
               </p>
             )}
@@ -428,8 +428,8 @@ function ContactBlock({ user }: { user: AppUserDto }) {
   return (
     <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
-        <Button variant="outline" size="sm" className="h-8 shrink-0 text-[11.5px]" onClick={() => setEditing(true)}>
+        <h2 className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Personal details</h2>
+        <Button variant="outline" size="sm" className="h-8 shrink-0 text-[0.71875rem]" onClick={() => setEditing(true)}>
           <Pencil className="h-3 w-3" />
           Edit
         </Button>
@@ -472,16 +472,16 @@ function DetailRow({
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.12em] text-[var(--color-brand-muted)]">{label}</p>
           {/* break-all (not truncate) on the value: emails / phone
               numbers are a single unbroken token, so word-break needs
               to be character-level. truncate hides text that no
               ellipsis can really fix on a narrow viewport — wrapping is
               better than concealing. */}
-          <p className="break-all text-[13px] font-semibold text-[var(--color-brand-fg)]">{value}</p>
+          <p className="break-all text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">{value}</p>
           {badge && (
             <span className={cn(
-              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider',
+              'mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65625rem] font-bold uppercase tracking-wider',
               badge.tone === 'green'
                 ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                 : 'bg-amber-100 text-amber-800',
@@ -502,10 +502,10 @@ function FarmsBlock({ farms, loading }: { farms: FarmDto[]; loading: boolean }) 
   return (
     <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-[14px] font-bold text-[var(--color-brand-fg)]">Your farms</h2>
+        <h2 className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Your farms</h2>
         <Link
           href="/farms"
-          className="shrink-0 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+          className="shrink-0 text-[0.71875rem] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
         >
           View all
         </Link>
@@ -518,7 +518,7 @@ function FarmsBlock({ farms, loading }: { farms: FarmDto[]; loading: boolean }) 
           ))}
         </div>
       ) : farms.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-[var(--color-brand-input-border)] px-3 py-6 text-center text-[12px] text-[var(--color-brand-muted)]">
+        <p className="rounded-lg border border-dashed border-[var(--color-brand-input-border)] px-3 py-6 text-center text-[0.75rem] text-[var(--color-brand-muted)]">
           You don&rsquo;t belong to any farms yet.
         </p>
       ) : (
@@ -539,14 +539,14 @@ function FarmsBlock({ farms, loading }: { farms: FarmDto[]; loading: boolean }) 
                 <div className="min-w-0 flex-1">
                   {/* line-clamp-2 + break-words handles farms with long
                       names without the row growing taller than two lines. */}
-                  <p className="line-clamp-2 break-words text-[13px] font-semibold text-[var(--color-brand-fg)]">{f.name}</p>
-                  <p className="line-clamp-1 break-words text-[11px] text-[var(--color-brand-muted)]">
+                  <p className="line-clamp-2 break-words text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">{f.name}</p>
+                  <p className="line-clamp-1 break-words text-[0.6875rem] text-[var(--color-brand-muted)]">
                     {[f.state, f.address].filter(Boolean).join(' · ') || 'No location set'}
                   </p>
                 </div>
                 {f.membership?.role && (
                   <span className={cn(
-                    'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                    'shrink-0 rounded-full px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider',
                     f.membership.role === 'owner'
                       ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                       : f.membership.role === 'manager'
@@ -584,7 +584,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
       <ImageIcon className="mx-auto h-6 w-6 text-[var(--color-brand-muted)]" />
-      <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">
+      <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
         Could not load your profile
       </p>
       <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>

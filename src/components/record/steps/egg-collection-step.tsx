@@ -349,7 +349,7 @@ function EggCollectionForm({
           )}
 
           <div>
-            <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Did you pick eggs today?
             </p>
             <YesNoPills value={answer} onChange={setAnswer} primary="yes" />
@@ -421,10 +421,10 @@ function EggCollectionForm({
               {crates !== null && (
                 <div className="rounded-xl bg-[var(--color-brand-fg)] px-4 py-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[12px] font-bold tracking-tight text-white/80">
+                    <p className="text-[0.75rem] font-bold tracking-tight text-white/80">
                       Crates
                     </p>
-                    <p className="text-[16px] font-extrabold tracking-tight text-white">
+                    <p className="text-[1rem] font-extrabold tracking-tight text-white">
                       {crates.toFixed(1)}
                     </p>
                   </div>

@@ -62,7 +62,7 @@ function PenCard({ pen }: { pen: PenDto }) {
         </span>
         <span
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.625rem] font-bold uppercase tracking-wider',
             occupied
               ? 'bg-amber-50 text-amber-700'
               : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
@@ -85,7 +85,7 @@ function PenCard({ pen }: { pen: PenDto }) {
           {' '}· {pen.occupancy.activeFlock.currentBirds.toLocaleString()} birds
         </p>
       )}
-      <p className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-primary-deep)] transition-transform group-hover:translate-x-0.5">
+      <p className="mt-4 inline-flex items-center gap-1 text-[0.75rem] font-semibold text-[var(--color-brand-primary-deep)] transition-transform group-hover:translate-x-0.5">
         View cycle history →
       </p>
     </Link>

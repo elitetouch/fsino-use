@@ -82,7 +82,7 @@ export function Features() {
               <h3 className="relative mt-5 text-lg font-bold tracking-tight text-[var(--color-brand-fg)]">
                 {f.title}
               </h3>
-              <p className="relative mt-2 text-[15px] leading-relaxed text-[var(--color-brand-muted)]">
+              <p className="relative mt-2 text-[0.9375rem] leading-relaxed text-[var(--color-brand-muted)]">
                 {f.body}
               </p>
             </article>

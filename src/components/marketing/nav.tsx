@@ -100,7 +100,7 @@ export function MarketingNav() {
               type="button"
               onClick={() => setProductsOpen((v) => !v)}
               aria-expanded={productsOpen}
-              className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-[15px] font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
+              className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-[0.9375rem] font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
             >
               Products
               <ChevronDown
@@ -143,11 +143,11 @@ export function MarketingNav() {
         <div className="hidden shrink-0 items-center gap-3 lg:flex">
           <Link
             href="/login"
-            className="rounded-full px-4 py-2 text-[15px] font-semibold text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
+            className="rounded-full px-4 py-2 text-[0.9375rem] font-semibold text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
           >
             Log in
           </Link>
-          <Button asChild className="h-11 px-5 text-[15px]">
+          <Button asChild className="h-11 px-5 text-[0.9375rem]">
             <Link href="/register">Get started</Link>
           </Button>
         </div>
@@ -197,7 +197,7 @@ function NavLinkInline({ href, children }: { href: string; children: React.React
   return (
     <Link
       href={href}
-      className="rounded-full px-4 py-2 text-[15px] font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
+      className="rounded-full px-4 py-2 text-[0.9375rem] font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
     >
       {children}
     </Link>

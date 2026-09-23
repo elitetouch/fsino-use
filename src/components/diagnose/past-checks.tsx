@@ -51,7 +51,7 @@ export function PastChecks({ highlightId }: { highlightId?: string | null }) {
 
   return (
     <section className="space-y-2">
-      <h2 className="px-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
+      <h2 className="px-1 text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
         Past checks
       </h2>
 
@@ -70,7 +70,7 @@ export function PastChecks({ highlightId }: { highlightId?: string | null }) {
                 className="flex w-full items-center gap-2.5 p-3 text-left"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13.5px] font-semibold text-[var(--color-brand-fg)]">
+                  <p className="truncate text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">
                     {check.predicted_class ?? 'No result'}
                     {check.confidence !== null && (
                       <span className="font-normal text-[var(--color-brand-muted)]">
@@ -79,7 +79,7 @@ export function PastChecks({ highlightId }: { highlightId?: string | null }) {
                       </span>
                     )}
                   </p>
-                  <p className="text-[11.5px] text-[var(--color-brand-muted)]">
+                  <p className="text-[0.71875rem] text-[var(--color-brand-muted)]">
                     {new Date(check.created_at).toLocaleDateString(undefined, {
                       day: 'numeric',
                       month: 'short',
@@ -91,13 +91,13 @@ export function PastChecks({ highlightId }: { highlightId?: string | null }) {
                 {/* A reply waiting to be read is the only thing on this
                     row worth interrupting for, so it is the only badge. */}
                 {hasReply && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-2 py-0.5 text-[10.5px] font-bold text-white">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-2 py-0.5 text-[0.65625rem] font-bold text-white">
                     <UserRound className="h-3 w-3" />
                     Vet replied
                   </span>
                 )}
                 {waiting && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-brand-surface-soft)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--color-brand-muted)]">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-brand-surface-soft)] px-2 py-0.5 text-[0.65625rem] font-semibold text-[var(--color-brand-muted)]">
                     <Stethoscope className="h-3 w-3" />
                     With vet
                   </span>
@@ -114,7 +114,7 @@ export function PastChecks({ highlightId }: { highlightId?: string | null }) {
               {open && (
                 <div className="space-y-3 border-t border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 p-3">
                   {check.inconclusive_reason && (
-                    <p className="text-[12.5px] leading-relaxed text-[var(--color-brand-muted)]">
+                    <p className="text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
                       {check.inconclusive_reason}
                     </p>
                   )}

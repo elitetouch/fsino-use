@@ -43,7 +43,7 @@ export function PermissionsPicker({
   return (
     <div className={cn(disabled && 'pointer-events-none opacity-60')}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] text-[var(--color-brand-muted)]">
+        <p className="text-[0.75rem] text-[var(--color-brand-muted)]">
           <strong className="text-[var(--color-brand-fg)]">{selectedCount}</strong> of {ALL_PERMISSION_KEYS.length} permissions selected
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -76,11 +76,11 @@ export function PermissionsPicker({
             key={group.heading}
             className="rounded-xl border border-[var(--color-brand-border)] bg-white"
           >
-            <legend className="ml-3 mr-3 px-1.5 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+            <legend className="ml-3 mr-3 px-1.5 text-[0.75rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
               {group.heading}
             </legend>
             {group.description && (
-              <p className="px-4 pt-1 text-[11.5px] text-[var(--color-brand-muted)]">{group.description}</p>
+              <p className="px-4 pt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">{group.description}</p>
             )}
             <div className="grid gap-1 px-2 pb-2 pt-1 sm:grid-cols-2">
               {group.items.map((perm) => (
@@ -133,8 +133,8 @@ function PermissionRow({
         {checked && <Check className="h-3 w-3 text-white" strokeWidth={3.5} />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">{perm.label}</p>
-        <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--color-brand-muted)]">{perm.hint}</p>
+        <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">{perm.label}</p>
+        <p className="mt-0.5 text-[0.71875rem] leading-snug text-[var(--color-brand-muted)]">{perm.hint}</p>
       </div>
     </label>
   );
@@ -146,7 +146,7 @@ function PresetButton({ label, active, onClick }: { label: string; active?: bool
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors',
+        'rounded-full border px-2.5 py-1 text-[0.6875rem] font-semibold transition-colors',
         active
           ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
           : 'border-[var(--color-brand-input-border)] bg-white text-[var(--color-brand-muted)] hover:border-[var(--color-brand-primary)]/40 hover:text-[var(--color-brand-fg)]',

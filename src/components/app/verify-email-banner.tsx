@@ -42,16 +42,16 @@ export function VerifyEmailBanner() {
           <ShieldAlert className="h-3.5 w-3.5" strokeWidth={2.4} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[12.5px] font-semibold leading-tight text-amber-900">
+          <p className="text-[0.78125rem] font-semibold leading-tight text-amber-900">
             Please verify your email address
           </p>
-          <p className="hidden text-[11.5px] leading-tight text-amber-800/80 sm:block">
+          <p className="hidden text-[0.71875rem] leading-tight text-amber-800/80 sm:block">
             You haven&rsquo;t confirmed your email yet. Verifying secures your account and unlocks password recovery.
           </p>
         </div>
         <Link
           href="/verify"
-          className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1.5 text-[11.5px] font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1.5 text-[0.71875rem] font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
         >
           <Mail className="h-3 w-3" />
           <span className="hidden sm:inline">Verify now</span>

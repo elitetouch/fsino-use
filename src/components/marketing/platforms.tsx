@@ -65,8 +65,8 @@ export function Platforms() {
                   <f.icon className="h-4 w-4" strokeWidth={2.2} />
                 </span>
                 <div>
-                  <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">{f.title}</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-brand-muted)]">{f.body}</p>
+                  <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{f.title}</p>
+                  <p className="mt-0.5 text-[0.6875rem] leading-snug text-[var(--color-brand-muted)]">{f.body}</p>
                 </div>
               </div>
             ))}
@@ -74,7 +74,7 @@ export function Platforms() {
 
           {/* Dual CTAs */}
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button asChild size="lg" className="group h-14 px-6 text-[15px] sm:h-[60px]">
+            <Button asChild size="lg" className="group h-14 px-6 text-[0.9375rem] sm:h-[60px]">
               <Link href="/register">
                 Open the web app
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -117,10 +117,10 @@ function PlayStoreLink() {
         <path d="M15.5 9.6 L20.5 12 L15.5 14.4 L11.3 12 Z" fill="#4285F4" />
       </svg>
       <span className="flex flex-col items-start leading-tight">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-white/70">
+        <span className="text-[0.625rem] font-medium uppercase tracking-wider text-white/70">
           Get it on
         </span>
-        <span className="text-[15px] font-semibold tracking-tight">Google Play</span>
+        <span className="text-[0.9375rem] font-semibold tracking-tight">Google Play</span>
       </span>
     </Link>
   );

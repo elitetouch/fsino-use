@@ -50,20 +50,30 @@
                'Helvetica Neue', Arial, sans-serif;
 
   /* Stepped type scale — aligned to the mobile Figma design.
-     Mobile-first; sm + lg adjustments stay modest so the web app
-     never feels chunky vs the mobile mockups.
+
+     IN REM, NOT PX, AND THAT IS THE WHOLE POINT.
+     -------------------------------------------
+     These were px, as were ~970 hardcoded `text-[13px]`-style sizes
+     across the components. px ignores the root font size, so the app
+     had no single knob: every size was pinned to the mobile mockups
+     and stayed pinned on a 27-inch monitor, where 11px body copy is
+     genuinely hard to read.
+
+     In rem, all of it scales from one number — see the `html` rule
+     below. The comments keep the px equivalents at the 16px default
+     root so the values stay legible against the Figma source.
 
      Marketing surfaces (landing hero, final CTA) keep their own larger
      hero token because they're a different surface.
    */
-  --text-display: 32px;   /* landing hero only */
-  --text-hero:    22px;   /* sm: 24px */
-  --text-h1:      18px;   /* sm: 20px — page headers */
-  --text-h2:      15px;   /* section headers */
-  --text-lead:    14px;   /* lead paragraphs / descriptions */
-  --text-body:    14px;   /* body */
-  --text-small:   13px;
-  --text-micro:   11px;   /* eyebrow / labels */
+  --text-display: 2rem;      /* 32px — landing hero only */
+  --text-hero:    1.375rem;  /* 22px */
+  --text-h1:      1.125rem;  /* 18px — page headers */
+  --text-h2:      0.9375rem; /* 15px — section headers */
+  --text-lead:    0.875rem;  /* 14px — lead paragraphs / descriptions */
+  --text-body:    0.875rem;  /* 14px */
+  --text-small:   0.8125rem; /* 13px */
+  --text-micro:   0.6875rem; /* 11px — eyebrow / labels */
 
   /* Container */
   --container-page: 1280px;
@@ -73,8 +83,52 @@
   --breakpoint-3xl: 1920px;
 }
 
+/*
+ * THE TYPE KNOB.
+ * --------------
+ * Every font size in the app is now rem, so this single value scales
+ * all of them — and their line-heights with them, since the components
+ * use ratio-based `leading-*` keywords rather than pinned pixels.
+ *
+ * Mobile stays at the browser default 16px, which reproduces the old
+ * pixel sizes EXACTLY. That is deliberate: the small sizes were drawn
+ * against mobile Figma mockups for one-handed use in a pen, and they
+ * work there. The problem was only ever that they never grew.
+ *
+ * Desktop steps up, because the same 11-13px body copy that reads fine
+ * at arm's length on a phone is genuinely small on a monitor two feet
+ * away at three times the pixel width.
+ *
+ * FLUID, NOT STEPPED. The middle term grows with the viewport, so type
+ * scales smoothly from phone to monitor instead of jumping at two
+ * breakpoints — a window dragged wider gets gradually more readable
+ * rather than snapping a size at 1024px.
+ *
+ * Calibrated so that:
+ *     <=  700px   16px   phones — EXACTLY the old pixel sizes
+ *        1024px   17px   laptops
+ *        1440px   18px   desktop monitors
+ *     >= 1500px   18px   capped; beyond this, longer line lengths are
+ *                        the readability problem, not size
+ *
+ * THE UNITS ARE THE ACCESSIBILITY STORY.
+ * --------------------------------------
+ * `rem` on the root resolves against the font size the reader chose in
+ * their browser settings — the one accessibility control people with
+ * poor eyesight actually use. So both bounds and the base of the middle
+ * term move with their preference: someone running a 20px default gets
+ * 20px on a phone and ~22.5px on a monitor.
+ *
+ * A flat `font-size: 18px` here would silently throw that away, and a
+ * pure-`vw` middle term would break browser zoom. `rem + vw` is the
+ * combination that is both fluid and respects both controls.
+ *
+ * To make the whole app bigger or smaller later, move the two bounds
+ * and nothing else.
+ */
 html {
   scroll-behavior: smooth;
+  font-size: clamp(1rem, 0.909rem + 0.24vw, 1.125rem);
 }
 
 html,

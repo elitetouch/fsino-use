@@ -37,10 +37,10 @@ export default function CommunityPage() {
           </span>
 
           <div className="flex-1">
-            <h2 className="text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 className="text-[1.125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Join hundreds of African poultry farmers
             </h2>
-            <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+            <p className="mt-1 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
               Ask questions, share what worked, get faster answers than any
               support channel can offer. Our team is in the chat too — you
               don&apos;t need to file a ticket for a quick answer.
@@ -52,7 +52,7 @@ export default function CommunityPage() {
               href={groupUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1DA851]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-[0.875rem] font-bold text-white transition-colors hover:bg-[#1DA851]"
             >
               <MessageCircle className="h-4 w-4" />
               Request to join
@@ -70,10 +70,10 @@ export default function CommunityPage() {
         <div className="flex items-start gap-3">
           <Users2 className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-brand-primary-deep)]" />
           <div>
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
               House rules
             </p>
-            <ul className="mt-2 space-y-1 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+            <ul className="mt-2 space-y-1 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
               <li>• Poultry-related questions, tips and market chatter only.</li>
               <li>• No political, religious or off-topic content.</li>
               <li>• No selling of birds outside the announced buy-sell days.</li>

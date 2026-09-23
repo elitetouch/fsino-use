@@ -55,7 +55,7 @@ export function HowItWorks() {
               <h3 className="mt-3 text-xl font-bold tracking-tight text-[var(--color-brand-fg)]">
                 {s.title}
               </h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-brand-muted)]">
+              <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--color-brand-muted)]">
                 {s.body}
               </p>
             </article>

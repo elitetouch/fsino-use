@@ -86,7 +86,7 @@ export function CycleWindowBanner({
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-semibold text-[var(--color-brand-fg)]">
+          <p className="text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">
             {locked
               ? 'This cycle is no longer being tracked'
               : days <= 1
@@ -94,7 +94,7 @@ export function CycleWindowBanner({
                 : `Tracking ends in ${days} days`}
           </p>
 
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
             {locked ? (
               <>
                 The tracking period ended on{' '}
@@ -133,7 +133,7 @@ export function CycleWindowBanner({
           </Gate>
 
           {error && (
-            <p className="mt-2 text-[12px] font-medium text-[var(--color-brand-danger)]">{error}</p>
+            <p className="mt-2 text-[0.75rem] font-medium text-[var(--color-brand-danger)]">{error}</p>
           )}
         </div>
       </div>

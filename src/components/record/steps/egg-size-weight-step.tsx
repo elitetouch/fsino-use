@@ -259,7 +259,7 @@ export function EggSizeWeightStep({
           )}
 
           <div>
-            <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               {questionLabel}
             </p>
             <YesNoPills value={answer} onChange={setAnswer} primary="no" />
@@ -275,9 +275,9 @@ export function EggSizeWeightStep({
 
               {trackSize && (
                 <div>
-                  <p className="mb-1.5 text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+                  <p className="mb-1.5 text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
                     Egg size
-                    <span className="ml-2 font-normal text-[11px] text-[var(--color-brand-muted)]">
+                    <span className="ml-2 font-normal text-[0.6875rem] text-[var(--color-brand-muted)]">
                       Select one
                     </span>
                   </p>
@@ -320,10 +320,10 @@ export function EggSizeWeightStep({
               {trackWeight && avgWeight !== null && avgWeight > 0 && (
                 <div className="rounded-xl bg-[var(--color-brand-fg)] px-4 py-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[12px] font-bold tracking-tight text-white/80">
+                    <p className="text-[0.75rem] font-bold tracking-tight text-white/80">
                       Average weight
                     </p>
-                    <p className="text-[16px] font-extrabold tracking-tight text-white">
+                    <p className="text-[1rem] font-extrabold tracking-tight text-white">
                       {Math.round(avgWeight)} gram
                     </p>
                   </div>

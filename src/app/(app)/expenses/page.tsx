@@ -89,18 +89,18 @@ export default function ExpensesPage() {
 
       {totals.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
+          <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted)]">
             Page total{totals.length > 1 ? 's' : ''}
           </p>
           {totals.map((t) => (
             <span
               key={t.currency}
-              className="rounded-md bg-[var(--color-brand-accent)] px-2.5 py-1 text-[13px] font-bold text-[var(--color-brand-primary-deep)]"
+              className="rounded-md bg-[var(--color-brand-accent)] px-2.5 py-1 text-[0.8125rem] font-bold text-[var(--color-brand-primary-deep)]"
             >
               {formatAmount(t.amount, t.currency)}
             </span>
           ))}
-          <p className="text-[11px] text-[var(--color-brand-muted)]">
+          <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">
             {rows.length} entr{rows.length === 1 ? 'y' : 'ies'} · voided rows excluded
           </p>
         </div>
@@ -110,7 +110,7 @@ export default function ExpensesPage() {
         <select
           value={filterFlockId}
           onChange={(e) => setFilterFlockId(e.target.value)}
-          className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[12.5px]"
+          className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.78125rem]"
         >
           <option value="">All flocks</option>
           {(flocks.data?.flocks ?? []).map((f) => (
@@ -120,7 +120,7 @@ export default function ExpensesPage() {
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value as ExpenseCategory | '')}
-          className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[12.5px]"
+          className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.78125rem]"
         >
           <option value="">All categories</option>
           {CATEGORY_KEYS.map((k) => (
@@ -131,16 +131,16 @@ export default function ExpensesPage() {
 
       <div className="overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white">
         {expenses.isLoading ? (
-          <div className="flex items-center justify-center p-10 text-[13px] text-[var(--color-brand-muted)]">
+          <div className="flex items-center justify-center p-10 text-[0.8125rem] text-[var(--color-brand-muted)]">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading expenses…
           </div>
         ) : rows.length === 0 ? (
           <div className="p-10 text-center">
             <Receipt className="mx-auto h-8 w-8 text-[var(--color-brand-muted)]" />
-            <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">
+            <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
               No expenses logged yet
             </p>
-            <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+            <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
               Add costs like feed purchases, vaccines, drugs and fuel so the reports show the true margin.
             </p>
           </div>
@@ -187,7 +187,7 @@ function ExpenseRow({
     <li className="grid gap-2 px-4 py-3 sm:grid-cols-[auto_1fr_auto_auto] sm:items-center sm:gap-4 sm:px-5">
       <div>
         <span className={cn(
-          'inline-block rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider',
+          'inline-block rounded-md px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wider',
           voided
             ? 'bg-[var(--color-brand-surface-soft)] text-[var(--color-brand-muted)] line-through'
             : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
@@ -197,12 +197,12 @@ function ExpenseRow({
       </div>
       <div className="min-w-0">
         <p className={cn(
-          'text-[13.5px] font-bold text-[var(--color-brand-fg)]',
+          'text-[0.84375rem] font-bold text-[var(--color-brand-fg)]',
           voided && 'text-[var(--color-brand-muted)] line-through',
         )}>
           {expense.description ?? expense.vendor ?? '—'}
         </p>
-        <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
           {expense.flockName ?? 'Unknown flock'} · {expense.expenseDate}
           {expense.vendor && expense.description ? ` · ${expense.vendor}` : ''}
           {expense.createdByName ? ` · by ${expense.createdByName}` : ''}
@@ -211,7 +211,7 @@ function ExpenseRow({
       </div>
       <div className="text-right">
         <p className={cn(
-          'text-[14px] font-bold text-[var(--color-brand-fg)]',
+          'text-[0.875rem] font-bold text-[var(--color-brand-fg)]',
           voided && 'text-[var(--color-brand-muted)] line-through',
         )}>
           {formatAmount(expense.amount, expense.currency)}
@@ -281,10 +281,10 @@ function AddExpenseDialog({
       <div className="w-full max-w-md overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
         <header className="flex items-start justify-between gap-3 border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
               New expense
             </p>
-            <h2 className="mt-0.5 text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 className="mt-0.5 text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Log a cost
             </h2>
           </div>
@@ -303,7 +303,7 @@ function AddExpenseDialog({
             <select
               value={flockId}
               onChange={(e) => setFlockId(e.target.value)}
-              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[13px]"
+              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
             >
               <option value="">Select a flock…</option>
               {flocks.map((f) => (
@@ -316,7 +316,7 @@ function AddExpenseDialog({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[13px]"
+              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
             >
               {CATEGORY_KEYS.map((k) => (
                 <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
@@ -334,7 +334,7 @@ function AddExpenseDialog({
                   placeholder="0"
                   min={0}
                   step="0.01"
-                  className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[13px]"
+                  className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
                 />
               </Field>
             </div>
@@ -343,7 +343,7 @@ function AddExpenseDialog({
                 type="text"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
-                className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[13px] uppercase"
+                className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem] uppercase"
               />
             </Field>
           </div>
@@ -353,7 +353,7 @@ function AddExpenseDialog({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[13px]"
+              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
             />
           </Field>
 
@@ -363,7 +363,7 @@ function AddExpenseDialog({
               value={vendor}
               onChange={(e) => setVendor(e.target.value.slice(0, 120))}
               placeholder="e.g. Olam, Hipro Vet"
-              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[13px]"
+              className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
             />
           </Field>
 
@@ -373,7 +373,7 @@ function AddExpenseDialog({
               onChange={(e) => setDescription(e.target.value.slice(0, 2000))}
               placeholder="e.g. 10 bags of starter mash"
               rows={2}
-              className="w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 py-1.5 text-[13px]"
+              className="w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 py-1.5 text-[0.8125rem]"
             />
           </Field>
         </div>
@@ -428,10 +428,10 @@ function VoidExpenseDialog({
       <div className="w-full max-w-md overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
         <header className="flex items-start justify-between gap-3 border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-rose-700">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-rose-700">
               Void expense
             </p>
-            <h2 className="mt-0.5 text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 className="mt-0.5 text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Remove this expense from totals?
             </h2>
           </div>
@@ -447,14 +447,14 @@ function VoidExpenseDialog({
 
         <div className="space-y-3 p-4 sm:p-5">
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5">
-            <p className="text-[12.5px] font-bold text-amber-900">The row stays in the ledger</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-amber-900">
+            <p className="text-[0.78125rem] font-bold text-amber-900">The row stays in the ledger</p>
+            <p className="mt-1 text-[0.75rem] leading-relaxed text-amber-900">
               Voiding is not a delete — the entry stays with your reason so a bank or co-op can trust the audit trail. It just stops counting in totals and cost projection.
             </p>
           </div>
 
           <div>
-            <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+            <label className="block text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
               Reason (required)
             </label>
             <textarea
@@ -462,9 +462,9 @@ function VoidExpenseDialog({
               onChange={(e) => setReason(e.target.value.slice(0, 500))}
               rows={3}
               placeholder="e.g. Duplicate entry — the same feed purchase was logged twice."
-              className="mt-1 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[13px]"
+              className="mt-1 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.8125rem]"
             />
-            <p className={cn('mt-1 text-[11px]', canSubmit ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
+            <p className={cn('mt-1 text-[0.6875rem]', canSubmit ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
               At least 3 characters. {reason.length}/500
             </p>
           </div>
@@ -494,7 +494,7 @@ function VoidExpenseDialog({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+      <label className="block text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
         {label}
       </label>
       <div className="mt-1">{children}</div>

@@ -67,7 +67,7 @@ export default function UsersPage() {
       />
 
       <section>
-        <h2 className="mb-2 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+        <h2 className="mb-2 text-[0.75rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
           Active members
         </h2>
         {members.isLoading ? (
@@ -86,14 +86,14 @@ export default function UsersPage() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+        <h2 className="mb-2 text-[0.75rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
           Pending invites
         </h2>
         {invites.isLoading ? (
           <SkeletonRows count={2} />
         ) : (invites.data?.invites ?? []).filter((i) => i.status === 'invited').length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-6 text-center">
-            <p className="text-[12.5px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.78125rem] text-[var(--color-brand-muted)]">
               No pending invites. New invitations show up here until they&rsquo;re accepted.
             </p>
           </div>
@@ -151,25 +151,25 @@ function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolea
 
   return (
     <div className={cn('flex items-center gap-3 px-4 py-3', divider && 'border-b border-[var(--color-brand-border)]')}>
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-[12px] font-bold text-white">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] text-[0.75rem] font-bold text-white">
         {initial}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+        <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
           {member.name}
-          {isSelf && <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">(you)</span>}
+          {isSelf && <span className="ml-1.5 text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">(you)</span>}
         </p>
-        <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">{member.email}</p>
+        <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">{member.email}</p>
       </div>
       <div className="hidden text-right sm:block">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
           {member.role}
         </p>
-        <p className="text-[11px] text-[var(--color-brand-muted)]">
+        <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">
           {member.joinedAt ? `Joined ${fmtDate(member.joinedAt)}` : 'Pending'}
         </p>
       </div>
-      <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', statusTone)}>
+      <span className={cn('rounded-full px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider', statusTone)}>
         {member.status}
       </span>
 
@@ -192,7 +192,7 @@ function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolea
                     <button
                       type="button"
                       onClick={() => { setEditingPerms(true); setMenuOpen(false); }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-semibold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.78125rem] font-semibold text-[var(--color-brand-fg)] hover:bg-[var(--color-brand-surface-soft)]"
                     >
                       <ShieldCheck className="h-3.5 w-3.5" />
                       Edit permissions
@@ -203,7 +203,7 @@ function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolea
                       type="button"
                       disabled={setStatus.isPending}
                       onClick={() => { setStatus.mutate('suspended'); setMenuOpen(false); }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-60"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.78125rem] font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-60"
                     >
                       <Pause className="h-3.5 w-3.5" />
                       Suspend
@@ -214,7 +214,7 @@ function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolea
                       type="button"
                       disabled={setStatus.isPending}
                       onClick={() => { setStatus.mutate('active'); setMenuOpen(false); }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-surface-soft)] disabled:opacity-60"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.78125rem] font-semibold text-[var(--color-brand-primary-deep)] hover:bg-[var(--color-brand-surface-soft)] disabled:opacity-60"
                     >
                       <Play className="h-3.5 w-3.5" />
                       Reactivate
@@ -224,7 +224,7 @@ function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolea
                     <button
                       type="button"
                       onClick={() => { setConfirmingRemove(true); setMenuOpen(false); }}
-                      className="flex w-full items-center gap-2 border-t border-[var(--color-brand-border)] px-3 py-2 text-left text-[12.5px] font-semibold text-[var(--color-brand-danger)] hover:bg-rose-50"
+                      className="flex w-full items-center gap-2 border-t border-[var(--color-brand-border)] px-3 py-2 text-left text-[0.78125rem] font-semibold text-[var(--color-brand-danger)] hover:bg-rose-50"
                     >
                       <UserX className="h-3.5 w-3.5" />
                       Remove from farm
@@ -280,8 +280,8 @@ function EditPermissionsDialog({ member, onClose }: { member: FarmMemberDto; onC
       <div className="animate-fade-up relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(15,80,30,0.30)] sm:max-w-[640px] sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-5 py-4">
           <div>
-            <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Edit permissions</p>
-            <p className="text-[11px] text-[var(--color-brand-muted)]">{member.name} · {member.email}</p>
+            <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Edit permissions</p>
+            <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">{member.name} · {member.email}</p>
           </div>
           <button
             type="button"
@@ -323,8 +323,8 @@ function ConfirmRemoveDialog({
       <div aria-hidden className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="animate-fade-up relative z-10 flex w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_30px_80px_-30px_rgba(180,30,40,0.20)] sm:max-w-[440px] sm:rounded-2xl">
         <div className="px-5 py-5">
-          <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Remove {member.name}?</p>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Remove {member.name}?</p>
+          <p className="mt-1 text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
             They lose access to this farm immediately. Their record & expense history stays on file
             under their name. You can re-invite them later.
           </p>
@@ -368,8 +368,8 @@ function InviteRow({ invite, divider }: { invite: StaffInviteDto; divider: boole
         <Mail className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold text-[var(--color-brand-fg)]">{invite.email}</p>
-        <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="truncate text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">{invite.email}</p>
+        <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
           <span className="uppercase tracking-wider">{invite.role}</span>
           {' · '}
           {invite.expiresAt ? (
@@ -380,7 +380,7 @@ function InviteRow({ invite, divider }: { invite: StaffInviteDto; divider: boole
           ) : 'No expiry'}
         </p>
       </div>
-      <span className="hidden rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 sm:inline-flex sm:items-center sm:gap-1">
+      <span className="hidden rounded-full bg-amber-50 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider text-amber-700 sm:inline-flex sm:items-center sm:gap-1">
         <Clock className="h-2.5 w-2.5" />
         Pending
       </span>
@@ -416,8 +416,8 @@ function EmptyState({ title, body }: { title: string; body: string }) {
       <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]">
         <Users2 className="h-4 w-4" />
       </span>
-      <p className="mt-3 text-[13px] font-bold text-[var(--color-brand-fg)]">{title}</p>
-      <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">{body}</p>
+      <p className="mt-3 text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
+      <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">{body}</p>
     </div>
   );
 }
@@ -464,8 +464,8 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
               <ShieldCheck className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-[14px] font-bold text-[var(--color-brand-fg)]">Invite a member</p>
-              <p className="text-[11px] text-[var(--color-brand-muted)]">They&rsquo;ll get an email with a 7-day join link.</p>
+              <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Invite a member</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">They&rsquo;ll get an email with a 7-day join link.</p>
             </div>
           </div>
           <button
@@ -510,8 +510,8 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
                       : 'border-[var(--color-brand-input-border)] bg-white hover:border-[var(--color-brand-primary)]/40',
                   )}
                 >
-                  <p className="text-[13px] font-bold capitalize text-[var(--color-brand-fg)]">{r}</p>
-                  <p className="mt-0.5 text-[11px] text-[var(--color-brand-muted)]">
+                  <p className="text-[0.8125rem] font-bold capitalize text-[var(--color-brand-fg)]">{r}</p>
+                  <p className="mt-0.5 text-[0.6875rem] text-[var(--color-brand-muted)]">
                     {r === 'owner'
                       ? 'Full access incl. billing + members.'
                       : r === 'manager'
@@ -531,7 +531,7 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
           )}
 
           {role !== 'staff' && (
-            <div className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3.5 text-[12px] text-[var(--color-brand-muted)]">
+            <div className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3.5 text-[0.75rem] text-[var(--color-brand-muted)]">
               {role === 'owner'
                 ? 'Owners can do everything on the farm, including billing, removing members, and managing other owners. Grant carefully.'
                 : 'Managers can do everything except transferring ownership and certain billing limits. They cannot grant the owner role.'}

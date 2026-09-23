@@ -280,7 +280,7 @@ function WeightForm({
           )}
 
           <div>
-            <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Do you want to record bird weight today?
             </p>
             <YesNoPills value={answer} onChange={setAnswer} primary={schedulingNow ? 'yes' : 'no'} />
@@ -321,7 +321,7 @@ function WeightForm({
 
           {answer === 'yes' && autoAverage && (
             <>
-              <p className="text-[11.5px] text-[var(--color-brand-muted)]">
+              <p className="text-[0.71875rem] text-[var(--color-brand-muted)]">
                 Select <strong>five birds at random</strong> and enter their weight. We&rsquo;ll
                 calculate the average weight as you go.
               </p>
@@ -347,15 +347,15 @@ function WeightForm({
               {/* Live computed average */}
               <div className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+                  <p className="text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
                     Average weight
                   </p>
-                  <p className="text-[15px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+                  <p className="text-[0.9375rem] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
                     {fiveBirdAvg !== null ? `${fmtKg(fiveBirdAvg)} kg` : '—'}
                   </p>
                 </div>
                 {fiveBirdSamples.length > 0 && fiveBirdSamples.length < 5 && (
-                  <p className="mt-1 text-[11px] text-[var(--color-brand-muted)]">
+                  <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">
                     Computed from {fiveBirdSamples.length} of 5 entries. Fill all five for the best estimate.
                   </p>
                 )}
@@ -408,7 +408,7 @@ function BirdRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <p className="w-20 shrink-0 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+      <p className="w-20 shrink-0 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
         {label}
       </p>
       <div className={cn(
@@ -421,9 +421,9 @@ function BirdRow({
           value={value}
           onChange={(e) => onChange(sanitiseDecimal(e.target.value))}
           placeholder="0"
-          className="min-w-0 flex-1 bg-transparent text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+          className="min-w-0 flex-1 bg-transparent text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
         />
-        <span className="shrink-0 text-[12.5px] font-semibold text-[var(--color-brand-muted)]">
+        <span className="shrink-0 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)]">
           kg
         </span>
       </div>

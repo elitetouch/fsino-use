@@ -18,7 +18,7 @@ export default function AboutPage() {
       />
 
       <section className="rounded-2xl border border-[var(--color-brand-border)] bg-gradient-to-br from-[var(--color-brand-accent)] to-white p-6 sm:p-8">
-        <p className="text-[15px] leading-relaxed text-[var(--color-brand-fg)]">
+        <p className="text-[0.9375rem] leading-relaxed text-[var(--color-brand-fg)]">
           Over 60% of Africa&apos;s protein comes from smallholder
           poultry farmers running flocks of five hundred to twenty thousand
           birds. They compete with commercial operations that use continuous
@@ -26,7 +26,7 @@ export default function AboutPage() {
           record-keeping and bank-grade reporting. Tools priced for
           multi-million-dollar operations, not the family compound in Nigeria.
         </p>
-        <p className="mt-3 text-[15px] leading-relaxed text-[var(--color-brand-fg)]">
+        <p className="mt-3 text-[0.9375rem] leading-relaxed text-[var(--color-brand-fg)]">
           <strong>We build those tools for the 90%.</strong>
         </p>
       </section>
@@ -60,10 +60,10 @@ export default function AboutPage() {
             <Sparkles className="h-4 w-4" strokeWidth={2.2} />
           </span>
           <div>
-            <h2 className="text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 className="text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               What we&apos;re building next
             </h2>
-            <ul className="mt-3 space-y-2 text-[13.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+            <ul className="mt-3 space-y-2 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
               <li>
                 <strong className="text-[var(--color-brand-fg)]">Compare with other farms.</strong>{' '}
                 See how this cycle&apos;s feed use and bird weight is doing against your own past cycles and against other farms raising the same breed in the same weather.
@@ -92,27 +92,27 @@ export default function AboutPage() {
       </section>
 
       <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-6 sm:p-8">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
           Building for a continent
         </p>
-        <h2 className="mt-2 text-[18px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <h2 className="mt-2 text-[1.125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           A hardware and software advantage aimed at a continent-scale market
         </h2>
-        <p className="mt-3 text-[14px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+        <p className="mt-3 text-[0.875rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
           Africa raises over 2.4 billion birds a year, most of them by
           farmers with fewer than 20,000 head. Nothing built for that scale
           exists at that price. We build both the sensor that sees inside
           the pen and the app that turns the reading into a decision.
           A competitor would have to build both to catch up.
         </p>
-        <p className="mt-3 text-[14px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+        <p className="mt-3 text-[0.875rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
           Every cycle you log teaches the system a little more. Every alert
           you mark helpful or false alarm makes it smarter. The longer a
           farm uses us, the more accurate the advice becomes for that
           farm&apos;s breed, climate and way of working. That advantage grows
           every year, and it would take a new competitor years to catch up.
         </p>
-        <p className="mt-4 text-[13px] italic text-[var(--color-brand-muted)]">
+        <p className="mt-4 text-[0.8125rem] italic text-[var(--color-brand-muted)]">
           Talk to us:{' '}
           <a
             href="mailto:hello@fsinnovation.net"
@@ -127,10 +127,10 @@ export default function AboutPage() {
         <div className="flex items-start gap-3">
           <Bird className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-brand-primary-deep)]" />
           <div>
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
               FS Innovation is registered in Nigeria
             </p>
-            <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+            <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
               Built in Ogun and Lagos. Serving farmers from the Sahel to the
               Guinea coast.
             </p>
@@ -152,13 +152,13 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5 text-center">
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+      <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
         {label}
       </p>
-      <p className="mt-2 text-[26px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+      <p className="mt-2 text-[1.625rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
         {value}
       </p>
-      <p className="mt-1 text-[11.5px] text-[var(--color-brand-muted)]">
+      <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">
         {hint}
       </p>
     </div>
@@ -181,10 +181,10 @@ function FeatureCard({
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div>
-          <h3 className="text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <h3 className="text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             {title}
           </h3>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <p className="mt-1.5 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             {body}
           </p>
         </div>

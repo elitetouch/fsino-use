@@ -72,11 +72,11 @@ export function VetConsultation({
             <UserRound className="h-3.5 w-3.5" />
           </span>
           <div>
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
               Our vet&rsquo;s reply
             </p>
             {initial.vetRepliedAt ? (
-              <p className="text-[11px] text-[var(--color-brand-muted)]">
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">
                 {new Date(initial.vetRepliedAt).toLocaleDateString(undefined, {
                   day: 'numeric',
                   month: 'short',
@@ -89,7 +89,7 @@ export function VetConsultation({
         {/* whitespace-pre-line: a vet writing clinical advice uses line
             breaks for steps, and collapsing them turns a treatment plan
             into a paragraph. */}
-        <p className="mt-3 whitespace-pre-line text-[13.5px] leading-relaxed text-[var(--color-brand-fg)]">
+        <p className="mt-3 whitespace-pre-line text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg)]">
           {initial.vetReply}
         </p>
       </div>
@@ -108,12 +108,12 @@ export function VetConsultation({
             <Check className="h-3.5 w-3.5" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[13.5px] font-bold text-[var(--color-brand-fg)]">
+            <p className="text-[0.84375rem] font-bold text-[var(--color-brand-fg)]">
               A vet will review this
             </p>
             {/* No promised turnaround time. There is one part-time vet,
                 and a missed "within 24 hours" is worse than no number. */}
-            <p className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-brand-muted)]">
+            <p className="mt-0.5 text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
               We&rsquo;ve sent your photo and this cycle&rsquo;s records to our vet.
               You&rsquo;ll get a notification when they reply.
             </p>
@@ -122,7 +122,7 @@ export function VetConsultation({
               type="button"
               onClick={() => mutation.mutate(false)}
               disabled={mutation.isPending}
-              className="mt-2 text-[12px] font-semibold text-[var(--color-brand-muted)] underline underline-offset-2 disabled:opacity-50"
+              className="mt-2 text-[0.75rem] font-semibold text-[var(--color-brand-muted)] underline underline-offset-2 disabled:opacity-50"
             >
               Cancel this request
             </button>
@@ -139,10 +139,10 @@ export function VetConsultation({
           <Stethoscope className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-bold text-[var(--color-brand-fg)]">
+          <p className="text-[0.84375rem] font-bold text-[var(--color-brand-fg)]">
             Want a vet to check this?
           </p>
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
             One of our vets will look at your photo alongside this cycle&rsquo;s
             records and reply. No extra charge.
           </p>

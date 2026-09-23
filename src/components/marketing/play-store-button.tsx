@@ -34,10 +34,10 @@ export function PlayStoreButton({
     >
       <PlayBadge />
       <span className="flex flex-col items-start leading-tight">
-        <span className={cn('text-[10px] font-medium uppercase tracking-wider', isDark ? 'text-white/70' : 'text-white/70')}>
+        <span className={cn('text-[0.625rem] font-medium uppercase tracking-wider', isDark ? 'text-white/70' : 'text-white/70')}>
           Get it on
         </span>
-        <span className="text-[16px] font-semibold tracking-tight">Google Play</span>
+        <span className="text-[1rem] font-semibold tracking-tight">Google Play</span>
       </span>
     </Link>
   );

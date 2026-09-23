@@ -185,8 +185,8 @@ function FarmCeilingExplainer() {
           <Building2 className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-[13.5px] font-bold text-[var(--color-brand-fg)]">Farm-wide defaults</h2>
-          <p className="mt-1 text-[12px] leading-snug text-[var(--color-brand-muted)]">
+          <h2 className="text-[0.84375rem] font-bold text-[var(--color-brand-fg)]">Farm-wide defaults</h2>
+          <p className="mt-1 text-[0.75rem] leading-snug text-[var(--color-brand-muted)]">
             Owners and managers configure what data the whole team captures and how the farm
             is notified. Ask them to grant you the Settings permission if you need to change these.
           </p>

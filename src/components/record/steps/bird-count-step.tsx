@@ -302,7 +302,7 @@ function BirdCountForm({
 
           {!editing && (
             <div>
-              <p className="mb-1.5 text-[12.5px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+              <p className="mb-1.5 text-[0.78125rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
                 Any dead, culled, sold or lost birds today?
               </p>
               <YesNoPills value={answer} onChange={setAnswer} primary="no" />
@@ -368,18 +368,18 @@ function BirdCountForm({
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+                  <p className="text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
                     Total bird count
                   </p>
                   <p className={cn(
-                    'text-[15px] font-extrabold tracking-tight',
+                    'text-[0.9375rem] font-extrabold tracking-tight',
                     overBudget ? 'text-rose-700' : 'text-[var(--color-brand-fg)]',
                   )}>
                     {Math.max(totalAfter, 0).toLocaleString()}
                   </p>
                 </div>
                 {overBudget && (
-                  <p className="mt-1 text-[11.5px] leading-snug text-rose-700">
+                  <p className="mt-1 text-[0.71875rem] leading-snug text-rose-700">
                     You only have <strong>{livingBirds.toLocaleString()}</strong> birds available
                     but you entered <strong>{totalOut.toLocaleString()}</strong> total reductions.
                     Please give the accurate numbers.
@@ -447,10 +447,10 @@ function SoldAmountField({
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <label className="text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           Total sale amount <span className="font-normal text-[var(--color-brand-muted)]">(optional)</span>
         </label>
-        <span className="text-[11px] text-[var(--color-brand-muted)]">
+        <span className="text-[0.6875rem] text-[var(--color-brand-muted)]">
           What you were paid for {birds.toLocaleString()} {birds === 1 ? 'bird' : 'birds'}
         </span>
       </div>
@@ -458,7 +458,7 @@ function SoldAmountField({
         'flex h-11 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3',
         FOCUS_WRAPPER,
       )}>
-        <span className="shrink-0 text-[13px] font-semibold text-[var(--color-brand-muted)]">₦</span>
+        <span className="shrink-0 text-[0.8125rem] font-semibold text-[var(--color-brand-muted)]">₦</span>
         <input
           type="text"
           inputMode="decimal"
@@ -467,10 +467,10 @@ function SoldAmountField({
           // parseable server-side without a validation round-trip.
           onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))}
           placeholder="0"
-          className="min-w-0 flex-1 bg-transparent text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+          className="min-w-0 flex-1 bg-transparent text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
         />
       </div>
-      <p className="mt-1 text-[11px] leading-snug text-[var(--color-brand-muted)]">
+      <p className="mt-1 text-[0.6875rem] leading-snug text-[var(--color-brand-muted)]">
         {perBird !== null ? (
           <>
             About <strong>₦{perBird.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> per bird.
@@ -494,10 +494,10 @@ function CountField({
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+        <label className="text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
           {label}
         </label>
-        <span className="text-[11px] text-[var(--color-brand-muted)]">{desc}</span>
+        <span className="text-[0.6875rem] text-[var(--color-brand-muted)]">{desc}</span>
       </div>
       <div className={cn(
         'flex h-11 items-center gap-2 rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3',
@@ -509,9 +509,9 @@ function CountField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"
-          className="min-w-0 flex-1 bg-transparent text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
+          className="min-w-0 flex-1 bg-transparent text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)] outline-none placeholder:font-normal placeholder:text-[var(--color-brand-muted-soft)]"
         />
-        <span className="shrink-0 text-[12.5px] font-semibold text-[var(--color-brand-muted)]">
+        <span className="shrink-0 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)]">
           birds
         </span>
       </div>
@@ -645,14 +645,14 @@ function BirdCountEditView({
     <div className="space-y-3">
       <div className="rounded-xl border border-[var(--color-brand-border)] bg-white">
         <div className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-4 py-2.5">
-          <p className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+          <p className="text-[0.75rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
             Logged for this day
           </p>
           {onSwitchEntry && !editing && (
             <button
               type="button"
               onClick={onSwitchEntry}
-              className="text-[11px] font-bold tracking-tight text-[var(--color-brand-primary-deep)] underline-offset-2 hover:underline"
+              className="text-[0.6875rem] font-bold tracking-tight text-[var(--color-brand-primary-deep)] underline-offset-2 hover:underline"
             >
               Pick a different entry
             </button>
@@ -684,9 +684,9 @@ function BirdCountEditView({
                 someone to hit Edit. */}
             {originalCounts.sold > 0 && (
               <div className="flex items-center justify-between py-2.5">
-                <dt className="text-[12.5px] text-[var(--color-brand-muted)]">Sale amount</dt>
+                <dt className="text-[0.78125rem] text-[var(--color-brand-muted)]">Sale amount</dt>
                 <dd className={cn(
-                  'text-[13px] font-bold tracking-tight',
+                  'text-[0.8125rem] font-bold tracking-tight',
                   originalAmount === null
                     ? 'text-amber-700'
                     : 'text-[var(--color-brand-fg)]',
@@ -736,13 +736,13 @@ function BirdCountEditView({
                 Discard
               </Button>
             </div>
-            <p className="text-[11px] leading-relaxed text-[var(--color-brand-muted)]">
+            <p className="text-[0.6875rem] leading-relaxed text-[var(--color-brand-muted)]">
               Your edit is logged in the audit trail (who + when + which fields), and the running flock count is reconciled from the new total. This action is only available to owners and managers.
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[12px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.75rem] text-[var(--color-brand-muted)]">
               As an owner / manager you can correct these counts if they were entered incorrectly. The edit is captured in the audit trail.
             </p>
             <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
@@ -769,7 +769,7 @@ function CountInput({
 }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-      <label htmlFor={`bc-${label}`} className="text-[12.5px] text-[var(--color-brand-fg-soft)]">
+      <label htmlFor={`bc-${label}`} className="text-[0.78125rem] text-[var(--color-brand-fg-soft)]">
         {label}
       </label>
       <input
@@ -777,7 +777,7 @@ function CountInput({
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ''))}
         inputMode="numeric"
-        className="w-24 rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-1.5 text-right text-[13.5px] font-semibold tabular-nums focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+        className="w-24 rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-1.5 text-right text-[0.84375rem] font-semibold tabular-nums focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
       />
     </div>
   );
@@ -789,14 +789,14 @@ function Stat({
   return (
     <div className="flex items-center justify-between px-4 py-3">
       <dt className={cn(
-        'text-[12.5px] text-[var(--color-brand-fg-soft)]',
+        'text-[0.78125rem] text-[var(--color-brand-fg-soft)]',
         bold && 'font-bold text-[var(--color-brand-fg)]',
       )}>
         {label}
       </dt>
       <dd className={cn(
-        'text-[13.5px] font-semibold tracking-tight text-[var(--color-brand-fg)]',
-        bold && 'text-[15px] font-extrabold',
+        'text-[0.84375rem] font-semibold tracking-tight text-[var(--color-brand-fg)]',
+        bold && 'text-[0.9375rem] font-extrabold',
       )}>
         {value.toLocaleString()}
       </dd>
@@ -818,7 +818,7 @@ function AmountInput({
   return (
     <div className="px-4 py-2.5">
       <div className="flex items-center justify-between gap-3">
-        <label htmlFor={`bc-${label}`} className="text-[12.5px] text-[var(--color-brand-fg-soft)]">
+        <label htmlFor={`bc-${label}`} className="text-[0.78125rem] text-[var(--color-brand-fg-soft)]">
           {label} <span className="text-[var(--color-brand-muted)]">(₦)</span>
         </label>
         <input
@@ -828,11 +828,11 @@ function AmountInput({
           onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))}
           inputMode="decimal"
           placeholder="0"
-          className="w-32 rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-1.5 text-right text-[13.5px] font-semibold tabular-nums focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+          className="w-32 rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-1.5 text-right text-[0.84375rem] font-semibold tabular-nums focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
         />
       </div>
       {perBird !== null && (
-        <p className="mt-1 text-right text-[11px] text-[var(--color-brand-muted)]">
+        <p className="mt-1 text-right text-[0.6875rem] text-[var(--color-brand-muted)]">
           ≈ ₦{perBird.toLocaleString(undefined, { maximumFractionDigits: 0 })} per bird
         </p>
       )}

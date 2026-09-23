@@ -156,10 +156,10 @@ export function PushDeviceCard() {
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-semibold text-[var(--color-brand-fg)]">
+          <p className="text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">
             {on ? 'Notifications are on for this device' : 'Turn on notifications for this device'}
           </p>
-          <p className="mt-0.5 text-[12px] text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-muted)]">
             {on
               ? 'Alerts will reach this device even when the app is closed. Choose which ones below.'
               : 'Your alert choices below only reach you once this device is switched on.'}
@@ -180,10 +180,10 @@ export function PushDeviceCard() {
           </div>
 
           {error && (
-            <p className="mt-2.5 text-[12px] font-medium text-[var(--color-brand-danger)]">{error}</p>
+            <p className="mt-2.5 text-[0.75rem] font-medium text-[var(--color-brand-danger)]">{error}</p>
           )}
           {notice && !error && (
-            <p className="mt-2.5 text-[12px] font-medium text-[var(--color-brand-primary-deep)]">{notice}</p>
+            <p className="mt-2.5 text-[0.75rem] font-medium text-[var(--color-brand-primary-deep)]">{notice}</p>
           )}
         </div>
       </div>
@@ -207,8 +207,8 @@ function Notice({
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-semibold text-[var(--color-brand-fg)]">{title}</p>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--color-brand-muted)]">{body}</p>
+          <p className="text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">{title}</p>
+          <p className="mt-0.5 text-[0.75rem] leading-relaxed text-[var(--color-brand-muted)]">{body}</p>
         </div>
       </div>
     </div>

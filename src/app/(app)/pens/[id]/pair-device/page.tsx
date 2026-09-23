@@ -106,7 +106,7 @@ export default function PairDevicePage({ params }: { params: Promise<{ id: strin
     <div className="w-full max-w-full space-y-4 overflow-x-hidden sm:space-y-5">
       <Link
         href="/pens"
-        className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary-deep)]"
+        className="inline-flex items-center gap-1 text-[0.78125rem] font-semibold text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary-deep)]"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to pens
@@ -194,7 +194,7 @@ function LookupResult({
     return (
       <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-brand-border)] bg-white p-4">
         <Loader2 className="h-4 w-4 animate-spin text-[var(--color-brand-primary-deep)]" />
-        <p className="text-[12.5px] text-[var(--color-brand-fg-soft)]">
+        <p className="text-[0.78125rem] text-[var(--color-brand-fg-soft)]">
           Checking <span className="font-mono text-[var(--color-brand-fg)]">{state.deviceId}</span>…
         </p>
       </div>
@@ -207,8 +207,8 @@ function LookupResult({
         <div className="flex items-start gap-3">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-rose-700" />
           <div className="min-w-0 flex-1">
-            <p className="text-[12.5px] font-bold text-rose-900">Could not pair</p>
-            <p className="mt-0.5 break-words text-[12px] leading-snug text-rose-900">{state.message}</p>
+            <p className="text-[0.78125rem] font-bold text-rose-900">Could not pair</p>
+            <p className="mt-0.5 break-words text-[0.75rem] leading-snug text-rose-900">{state.message}</p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -231,15 +231,15 @@ function LookupResult({
       <div className="flex items-start gap-3">
         <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 fill-[var(--color-brand-primary)] text-white" strokeWidth={2.4} />
         <div className="min-w-0 flex-1">
-          <p className="text-[12.5px] font-bold text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.78125rem] font-bold text-[var(--color-brand-primary-deep)]">
             Device verified — ready to pair
           </p>
-          <p className="mt-0.5 break-all text-[12px] text-[var(--color-brand-fg-soft)]">
+          <p className="mt-0.5 break-all text-[0.75rem] text-[var(--color-brand-fg-soft)]">
             <span className="font-mono">{state.device.device_id}</span>
             {state.device.label ? <> · {state.device.label}</> : null}
           </p>
           {alreadyPaired && (
-            <p className="mt-1.5 text-[11.5px] leading-snug text-amber-800">
+            <p className="mt-1.5 text-[0.71875rem] leading-snug text-amber-800">
               This device is currently paired to another pen on your farm. Pairing here will move it.
             </p>
           )}
@@ -250,7 +250,7 @@ function LookupResult({
           than one unit is installed. Leaving it blank keeps the pen in
           single-station mode and the climate page looks unchanged. */}
       <div className="mt-3">
-        <label className="block text-[11.5px] font-semibold text-[var(--color-brand-fg-soft)]" htmlFor="pair-station-label">
+        <label className="block text-[0.71875rem] font-semibold text-[var(--color-brand-fg-soft)]" htmlFor="pair-station-label">
           Station name <span className="font-normal text-[var(--color-brand-muted)]">(optional — name this spot in the pen)</span>
         </label>
         <input
@@ -260,9 +260,9 @@ function LookupResult({
           onChange={(e) => onStationLabelChange(e.target.value.slice(0, 40))}
           placeholder="e.g. Front, Middle, Back, Aisle A"
           maxLength={40}
-          className="mt-1 block h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 text-[13.5px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+          className="mt-1 block h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 text-[0.84375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
         />
-        <p className="mt-1 text-[11px] leading-snug text-[var(--color-brand-muted)]">
+        <p className="mt-1 text-[0.6875rem] leading-snug text-[var(--color-brand-muted)]">
           Useful when a pen has more than one PENKEEP — you&rsquo;ll see this label on the climate tab so you know which corner each reading came from.
         </p>
       </div>
@@ -382,8 +382,8 @@ function ScannerCard({ onDecode }: { onDecode: (text: string) => void }) {
   if (error) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-        <p className="text-[12.5px] font-bold text-amber-900">Camera unavailable</p>
-        <p className="mt-0.5 text-[12px] leading-snug text-amber-900">
+        <p className="text-[0.78125rem] font-bold text-amber-900">Camera unavailable</p>
+        <p className="mt-0.5 text-[0.75rem] leading-snug text-amber-900">
           {error}. Use the <strong>Type id</strong> tab instead.
         </p>
       </div>
@@ -411,7 +411,7 @@ function ScannerCard({ onDecode }: { onDecode: (text: string) => void }) {
         {/* Helper line */}
         <div className="absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 px-4">
           <span className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider backdrop-blur',
             running ? 'bg-[var(--color-brand-primary)]/85 text-white' : 'bg-white/70 text-[var(--color-brand-fg)]',
           )}>
             <Camera className="h-3.5 w-3.5" />
@@ -421,7 +421,7 @@ function ScannerCard({ onDecode }: { onDecode: (text: string) => void }) {
             <button
               type="button"
               onClick={toggleFlash}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-brand-fg)] backdrop-blur"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 text-[0.6875rem] font-semibold text-[var(--color-brand-fg)] backdrop-blur"
             >
               <Sparkles className="h-3.5 w-3.5" />
               {flashOn ? 'Flash off' : 'Flash on'}
@@ -462,7 +462,7 @@ function ManualCard({
             className="font-mono uppercase tracking-tight"
           />
           <FieldError message={undefined} />
-          <p className="mt-1 text-[11px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">
             Look on the back of the unit. The id starts with <code className="font-mono">PENKEEP-</code> followed by a 12-character hex string.
           </p>
         </div>
@@ -488,7 +488,7 @@ function ModeTab({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold transition',
+        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.75rem] font-semibold transition',
         active
           ? 'bg-white text-[var(--color-brand-primary-deep)] shadow-sm'
           : 'text-[var(--color-brand-muted)] hover:text-[var(--color-brand-fg)]',
@@ -510,10 +510,10 @@ function HelpPanel() {
           <Cpu className="h-4 w-4" strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             Before you pair
           </p>
-          <h2 className="mt-1 text-[14px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <h2 className="mt-1 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             Check three things
           </h2>
         </div>
@@ -534,7 +534,7 @@ function HelpPanel() {
       <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
         <div className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
-          <p className="text-[11.5px] leading-snug text-amber-900">
+          <p className="text-[0.71875rem] leading-snug text-amber-900">
             One device per pen. Pairing here will move the unit if it&rsquo;s currently on a different pen on your farm.
           </p>
         </div>
@@ -546,12 +546,12 @@ function HelpPanel() {
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-3 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 p-3">
-      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-[11px] font-bold text-white">
+      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-[0.6875rem] font-bold text-white">
         {n}
       </span>
       <div className="min-w-0">
-        <p className="text-[12.5px] font-bold text-[var(--color-brand-fg)]">{title}</p>
-        <p className="mt-0.5 break-words text-[11.5px] leading-snug text-[var(--color-brand-fg-soft)]">{children}</p>
+        <p className="text-[0.78125rem] font-bold text-[var(--color-brand-fg)]">{title}</p>
+        <p className="mt-0.5 break-words text-[0.71875rem] leading-snug text-[var(--color-brand-fg-soft)]">{children}</p>
       </div>
     </li>
   );

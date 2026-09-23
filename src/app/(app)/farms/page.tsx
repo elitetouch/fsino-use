@@ -72,7 +72,7 @@ function FarmCard({ farm, active }: { farm: FarmDto; active: boolean }) {
           <Tractor className="h-5 w-5" strokeWidth={2.2} />
         </span>
         {active && (
-          <span className="rounded-full bg-[var(--color-brand-primary)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+          <span className="rounded-full bg-[var(--color-brand-primary)] px-2.5 py-1 text-[0.625rem] font-bold uppercase tracking-wider text-white">
             Current
           </span>
         )}
@@ -85,15 +85,15 @@ function FarmCard({ farm, active }: { farm: FarmDto; active: boolean }) {
       <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--color-brand-border)] pt-4 text-center">
         <div>
           <p className="text-base font-bold text-[var(--color-brand-fg)]">{farm.farmStat?.activePensCount ?? 0}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Pens</p>
+          <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Pens</p>
         </div>
         <div>
           <p className="text-base font-bold text-[var(--color-brand-fg)]">{farm.farmStat?.activeFlocksCount ?? 0}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Flocks</p>
+          <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Flocks</p>
         </div>
         <div>
           <p className="text-base font-bold text-[var(--color-brand-fg)]">{farm.estimatedCapacity?.toLocaleString() ?? '—'}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Capacity</p>
+          <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Capacity</p>
         </div>
       </div>
       {/* Manage link — escape hatch to the farm-detail / edit page.
@@ -115,7 +115,7 @@ function FarmCard({ farm, active }: { farm: FarmDto; active: boolean }) {
             window.location.href = `/farms/${farm.id}`;
           }
         }}
-        className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
+        className="mt-3 inline-flex items-center gap-1 text-[0.71875rem] font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
       >
         <Settings className="h-3 w-3" />
         Manage farm

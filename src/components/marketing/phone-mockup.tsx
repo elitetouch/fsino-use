@@ -14,7 +14,7 @@ export function PhoneMockup() {
         {/* Inner screen */}
         <div className="relative overflow-hidden rounded-[36px] bg-[var(--color-brand-surface-soft)]">
           {/* Status bar */}
-          <div className="flex items-center justify-between px-6 pt-2.5 pb-1 text-[10px] font-semibold text-[var(--color-brand-fg)]">
+          <div className="flex items-center justify-between px-6 pt-2.5 pb-1 text-[0.625rem] font-semibold text-[var(--color-brand-fg)]">
             <span>9:41</span>
             <div className="absolute left-1/2 top-1 h-5 w-24 -translate-x-1/2 rounded-full bg-black" />
             <div className="flex items-center gap-1">
@@ -28,10 +28,10 @@ export function PhoneMockup() {
           <div className="px-5 pt-4 pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-muted)]">
+                <p className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-muted)]">
                   Good morning
                 </p>
-                <p className="text-[18px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+                <p className="text-[1.125rem] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
                   Samuel 👋
                 </p>
               </div>
@@ -45,24 +45,24 @@ export function PhoneMockup() {
           {/* Today summary card */}
           <div className="mx-4 mt-2 rounded-[20px] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] p-4 text-white">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-white/75">
                 Today
               </p>
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider">
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-wider">
                 4 tasks
               </span>
             </div>
-            <p className="mt-2 text-[22px] font-extrabold leading-tight">
+            <p className="mt-2 text-[1.375rem] font-extrabold leading-tight">
               2 vaccines, 1 weigh-in, 1 feed top-up
             </p>
-            <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-white/90">
+            <div className="mt-3 inline-flex items-center gap-1 text-[0.6875rem] font-semibold text-white/90">
               See plan <ChevronRight className="h-3 w-3" />
             </div>
           </div>
 
           {/* Quick log row */}
           <div className="mx-4 mt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-muted)]">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-muted)]">
               Quick log
             </p>
             <div className="mt-2 grid grid-cols-4 gap-2">
@@ -78,7 +78,7 @@ export function PhoneMockup() {
                   className="flex flex-col items-center gap-1.5 rounded-2xl border border-[var(--color-brand-border)] bg-white py-2.5 transition-transform active:scale-95"
                 >
                   <q.icon className="h-4 w-4 text-[var(--color-brand-primary-deep)]" />
-                  <span className="text-[10px] font-semibold text-[var(--color-brand-fg)]">{q.label}</span>
+                  <span className="text-[0.625rem] font-semibold text-[var(--color-brand-fg)]">{q.label}</span>
                 </button>
               ))}
             </div>
@@ -88,17 +88,17 @@ export function PhoneMockup() {
           <div className="mx-4 mb-5 mt-4 rounded-[20px] border border-[var(--color-brand-border)] bg-white p-3.5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-muted)]">
+                <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-muted)]">
                   Flock · Pen 4
                 </p>
-                <p className="mt-0.5 text-[14px] font-bold text-[var(--color-brand-fg)]">
+                <p className="mt-0.5 text-[0.875rem] font-bold text-[var(--color-brand-fg)]">
                   Broiler · Cobb 500
                 </p>
-                <p className="text-[10px] text-[var(--color-brand-muted)]">
+                <p className="text-[0.625rem] text-[var(--color-brand-muted)]">
                   Day 21/42 · 1,485 birds
                 </p>
               </div>
-              <span className="rounded-full bg-[var(--color-brand-accent)] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+              <span className="rounded-full bg-[var(--color-brand-accent)] px-2 py-0.5 text-[0.5rem] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
                 Healthy
               </span>
             </div>
@@ -114,8 +114,8 @@ export function PhoneMockup() {
                 ['FCR', '1.68'],
               ].map(([l, v]) => (
                 <div key={l} className="rounded-xl bg-[var(--color-brand-surface-soft)] px-2.5 py-1.5">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">{l}</p>
-                  <p className="mt-0.5 text-[12px] font-bold text-[var(--color-brand-fg)]">{v}</p>
+                  <p className="text-[0.5rem] font-semibold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">{l}</p>
+                  <p className="mt-0.5 text-[0.75rem] font-bold text-[var(--color-brand-fg)]">{v}</p>
                 </div>
               ))}
             </div>

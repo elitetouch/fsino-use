@@ -95,7 +95,7 @@ export default function PenDetailPage({ params }: { params: Promise<{ id: string
       {/* Active cycle */}
       {active && (
         <section>
-          <h2 className="mb-2 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+          <h2 className="mb-2 text-[0.75rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
             Active cycle
           </h2>
           <CycleRow cycle={active} ordinal={cycles.length - past.length} />
@@ -104,11 +104,11 @@ export default function PenDetailPage({ params }: { params: Promise<{ id: string
 
       {/* History */}
       <section>
-        <h2 className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+        <h2 className="mb-2 flex items-center gap-1.5 text-[0.75rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
           <History className="h-3.5 w-3.5" />
           Cycle history
           {past.length > 0 && (
-            <span className="ml-1 rounded-full bg-[var(--color-brand-surface-soft)] px-1.5 text-[10px] font-bold text-[var(--color-brand-muted)]">
+            <span className="ml-1 rounded-full bg-[var(--color-brand-surface-soft)] px-1.5 text-[0.625rem] font-bold text-[var(--color-brand-muted)]">
               {past.length}
             </span>
           )}
@@ -122,8 +122,8 @@ export default function PenDetailPage({ params }: { params: Promise<{ id: string
           </div>
         ) : past.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-8 text-center">
-            <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">No completed cycles yet</p>
-            <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">No completed cycles yet</p>
+            <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
               Once a cycle here is archived it&rsquo;ll show up below — newest first.
             </p>
           </div>
@@ -155,7 +155,7 @@ function PenStatusCard({ pen, active }: { pen: PenDto; active?: FlockDto }) {
         </span>
         <span
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.625rem] font-bold uppercase tracking-wider',
             occupied
               ? 'bg-amber-50 text-amber-700'
               : 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]',
@@ -167,7 +167,7 @@ function PenStatusCard({ pen, active }: { pen: PenDto; active?: FlockDto }) {
       </div>
 
       {active ? (
-        <p className="mt-4 text-[13px] text-[var(--color-brand-muted)]">
+        <p className="mt-4 text-[0.8125rem] text-[var(--color-brand-muted)]">
           Currently housing{' '}
           <strong className="text-[var(--color-brand-fg)]">
             {active.breed} · {active.placedBirds.toLocaleString()} birds
@@ -175,7 +175,7 @@ function PenStatusCard({ pen, active }: { pen: PenDto; active?: FlockDto }) {
           {' '}— day {active.ageDays ?? 0} of cycle.
         </p>
       ) : (
-        <p className="mt-4 text-[13px] text-[var(--color-brand-muted)]">
+        <p className="mt-4 text-[0.8125rem] text-[var(--color-brand-muted)]">
           This pen is free. Place a flock to start a new cycle here.
         </p>
       )}
@@ -217,10 +217,10 @@ function CycleRow({
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-semibold text-[var(--color-brand-fg)]">
+        <p className="truncate text-[0.84375rem] font-semibold text-[var(--color-brand-fg)]">
           Cycle {ordinal} · {cycle.breed}
         </p>
-        <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
           {labelForProduction(cycle.productionType)} · {birds.toLocaleString()} birds
         </p>
       </div>
@@ -228,17 +228,17 @@ function CycleRow({
       <div className="hidden text-right sm:block">
         {completed ? (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
               Completed
             </p>
-            <p className="text-[12.5px] text-[var(--color-brand-fg-soft)]">{fmtDate(completedDate)}</p>
+            <p className="text-[0.78125rem] text-[var(--color-brand-fg-soft)]">{fmtDate(completedDate)}</p>
           </>
         ) : (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
               Day {cycle.ageDays ?? 0}
             </p>
-            <p className="text-[12.5px] text-[var(--color-brand-fg-soft)]">started {fmtDate(cycle.startDate)}</p>
+            <p className="text-[0.78125rem] text-[var(--color-brand-fg-soft)]">started {fmtDate(cycle.startDate)}</p>
           </>
         )}
       </div>

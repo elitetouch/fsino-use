@@ -76,10 +76,10 @@ export function ResultCard({
           </span>
 
           <div className="min-w-0 flex-1">
-            <h2 className="text-[19px] font-extrabold leading-tight text-[var(--color-brand-fg)]">
+            <h2 className="text-[1.1875rem] font-extrabold leading-tight text-[var(--color-brand-fg)]">
               {result.disease}
             </h2>
-            <p className="mt-0.5 text-[12.5px] text-[var(--color-brand-muted)]">
+            <p className="mt-0.5 text-[0.78125rem] text-[var(--color-brand-muted)]">
               {band.label} · {band.note}
             </p>
           </div>
@@ -92,7 +92,7 @@ export function ResultCard({
         {framing.leadWith && (
           <p
             className={[
-              'mt-3.5 text-[13.5px] font-medium leading-relaxed',
+              'mt-3.5 text-[0.84375rem] font-medium leading-relaxed',
               critical ? 'text-[var(--color-brand-danger)]' : 'text-[var(--color-brand-fg)]',
             ].join(' ')}
           >
@@ -104,7 +104,7 @@ export function ResultCard({
       {/* ---- What to do ---- */}
       {!healthy && (info.treatment || info.next_action || info.dosage) && (
         <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
-          <h3 className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
+          <h3 className="text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
             {framing.headline}
           </h3>
 
@@ -114,7 +114,7 @@ export function ResultCard({
             {info.next_action && <Field label="Next step" value={info.next_action} />}
           </dl>
 
-          <p className="mt-3.5 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-3.5 flex items-start gap-1.5 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             <Info className="mt-0.5 h-3 w-3 shrink-0" />
             <span>
               This is guidance, not a prescription. Confirm dosages with a vet before treating —
@@ -127,13 +127,13 @@ export function ResultCard({
       {/* ---- Symptoms, to sanity-check against the actual birds ---- */}
       {info.symptoms && (
         <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
-          <h3 className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
+          <h3 className="text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
             Does this match what you are seeing?
           </h3>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--color-brand-fg)]">
+          <p className="mt-2 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg)]">
             {info.symptoms}
           </p>
-          <p className="mt-2 text-[11.5px] text-[var(--color-brand-muted)]">
+          <p className="mt-2 text-[0.71875rem] text-[var(--color-brand-muted)]">
             If your birds show none of these, treat the result with caution.
           </p>
         </section>
@@ -165,8 +165,8 @@ export function ResultCard({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11.5px] font-semibold text-[var(--color-brand-muted)]">{label}</dt>
-      <dd className="mt-0.5 text-[13.5px] leading-relaxed text-[var(--color-brand-fg)]">{value}</dd>
+      <dt className="text-[0.71875rem] font-semibold text-[var(--color-brand-muted)]">{label}</dt>
+      <dd className="mt-0.5 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg)]">{value}</dd>
     </div>
   );
 }
@@ -191,10 +191,10 @@ function WhatItLookedAt({ image }: { image: string }) {
         aria-expanded={open}
       >
         <Eye className="h-4 w-4 text-[var(--color-brand-muted)]" />
-        <span className="flex-1 text-[13px] font-semibold text-[var(--color-brand-fg)]">
+        <span className="flex-1 text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
           See what the app looked at
         </span>
-        <span className="text-[12px] text-[var(--color-brand-muted)]">{open ? 'Hide' : 'Show'}</span>
+        <span className="text-[0.75rem] text-[var(--color-brand-muted)]">{open ? 'Hide' : 'Show'}</span>
       </button>
 
       {open && (
@@ -205,7 +205,7 @@ function WhatItLookedAt({ image }: { image: string }) {
             alt="Your photo with the areas the app focused on highlighted"
             className="w-full rounded-lg border border-[var(--color-brand-border)]"
           />
-          <p className="mt-2 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-2 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             The bright areas are what the app paid most attention to. If those areas are not on the
             droppings, the result is less trustworthy — take another photo closer in.
           </p>
@@ -239,7 +239,7 @@ function Feedback({ diagnosisId }: { diagnosisId: string }) {
 
   if (sent === 'agreed' || sent === 'disagreed') {
     return (
-      <p className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3 text-center text-[12.5px] text-[var(--color-brand-muted)]">
+      <p className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3 text-center text-[0.78125rem] text-[var(--color-brand-muted)]">
         Thank you — this makes the tool better for every farmer using it.
       </p>
     );
@@ -247,10 +247,10 @@ function Feedback({ diagnosisId }: { diagnosisId: string }) {
 
   return (
     <section className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-4">
-      <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+      <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
         Does this match what you found?
       </p>
-      <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+      <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
         Your answer trains the tool on real Nigerian farms.
       </p>
       <div className="mt-3 flex gap-2">
@@ -309,10 +309,10 @@ function AddToReport({ diagnosisId, initial }: { diagnosisId: string; initial: b
       <div className="flex items-start gap-2.5">
         <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-brand-muted)]" />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+          <p className="text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]">
             {included ? 'Added to this cycle\u2019s report' : 'Add to this cycle\u2019s report'}
           </p>
-          <p className="mt-0.5 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-0.5 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             {included
               ? 'It will appear alongside your treatment and mortality records.'
               : 'Your cycle report is shared with buyers and lenders. Only add a result you are confident in.'}
@@ -330,7 +330,7 @@ function AddToReport({ diagnosisId, initial }: { diagnosisId: string; initial: b
           </Button>
 
           {error && (
-            <p className="mt-2 text-[12px] font-medium text-[var(--color-brand-danger)]">{error}</p>
+            <p className="mt-2 text-[0.75rem] font-medium text-[var(--color-brand-danger)]">{error}</p>
           )}
         </div>
       </div>
@@ -357,10 +357,10 @@ function RefusalCard({ result, onRetake }: { result: DiagnosisDto; onRetake: () 
             <Camera className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[17px] font-extrabold leading-tight text-[var(--color-brand-fg)]">
+            <h2 className="text-[1.0625rem] font-extrabold leading-tight text-[var(--color-brand-fg)]">
               {copy.title}
             </h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-brand-muted)]">
+            <p className="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-brand-muted)]">
               {copy.body}
             </p>
           </div>
@@ -368,7 +368,7 @@ function RefusalCard({ result, onRetake }: { result: DiagnosisDto; onRetake: () 
 
         <ul className="mt-4 space-y-2">
           {copy.fixes.map((fix) => (
-            <li key={fix} className="flex items-start gap-2 text-[13px] text-[var(--color-brand-fg)]">
+            <li key={fix} className="flex items-start gap-2 text-[0.8125rem] text-[var(--color-brand-fg)]">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brand-primary)]" />
               {fix}
             </li>

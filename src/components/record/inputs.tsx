@@ -65,7 +65,7 @@ export function PillTiles<T extends string>({
             disabled={disabled}
             onClick={() => onChange(opt.value)}
             className={cn(
-              'h-11 rounded-lg border text-[13px] font-bold tracking-tight transition-colors',
+              'h-11 rounded-lg border text-[0.8125rem] font-bold tracking-tight transition-colors',
               active
                 ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-primary-deep)]'
                 : 'border-[var(--color-brand-input-border)] bg-white text-[var(--color-brand-fg)] hover:border-[var(--color-brand-primary)]/40',
@@ -114,10 +114,10 @@ export function Dropdown<T extends string>({
     <div>
       {label && (
         <div className="mb-1.5 flex items-center justify-between">
-          <label htmlFor={id} className="text-[12px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <label htmlFor={id} className="text-[0.75rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             {label}
           </label>
-          {hint && <span className="text-[11px] text-[var(--color-brand-muted)]">{hint}</span>}
+          {hint && <span className="text-[0.6875rem] text-[var(--color-brand-muted)]">{hint}</span>}
         </div>
       )}
       <div className="relative">
@@ -127,7 +127,7 @@ export function Dropdown<T extends string>({
           disabled={disabled}
           onChange={(e) => onChange(e.target.value as T)}
           className={cn(
-            'h-11 w-full appearance-none rounded-lg border border-[var(--color-brand-input-border)] bg-white pl-3.5 pr-9 text-[13px] font-semibold text-[var(--color-brand-fg)]',
+            'h-11 w-full appearance-none rounded-lg border border-[var(--color-brand-input-border)] bg-white pl-3.5 pr-9 text-[0.8125rem] font-semibold text-[var(--color-brand-fg)]',
             FOCUS_INPUT,
             value === '' && 'text-[var(--color-brand-muted-soft)] font-normal',
             disabled && 'cursor-not-allowed opacity-60',
@@ -166,11 +166,11 @@ export function ScheduleAlert({
   return (
     <div className="rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-3">
       {eyebrow && (
-        <p className="mb-0.5 text-[10.5px] font-bold uppercase tracking-wider text-amber-700">
+        <p className="mb-0.5 text-[0.65625rem] font-bold uppercase tracking-wider text-amber-700">
           {eyebrow}
         </p>
       )}
-      <p className="text-[12.5px] leading-snug text-amber-900">{children}</p>
+      <p className="text-[0.78125rem] leading-snug text-amber-900">{children}</p>
     </div>
   );
 }
@@ -198,7 +198,7 @@ export function FieldStack({ children }: { children: React.ReactNode }) {
  */
 export function CheckmarkPill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-accent)] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-accent)] px-2 py-0.5 text-[0.65625rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">
       <Check className="h-3 w-3" strokeWidth={3} />
       {children}
     </span>

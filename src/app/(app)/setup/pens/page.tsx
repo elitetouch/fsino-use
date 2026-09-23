@@ -183,7 +183,7 @@ export default function SetupPensPage() {
               <select
                 id="pen_type"
                 {...form.register('pen_type')}
-                className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[15px] text-[var(--color-brand-fg)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+                className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.9375rem] text-[var(--color-brand-fg)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               >
                 <option value="">Select…</option>
                 {PEN_TYPES.map((t) => (

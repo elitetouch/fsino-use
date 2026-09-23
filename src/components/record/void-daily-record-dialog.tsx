@@ -108,10 +108,10 @@ export function VoidDailyRecordDialog({
       <div className="w-full max-w-md overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
         <header className="flex items-start justify-between gap-3 border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-rose-700">
+            <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-rose-700">
               Void entry
             </p>
-            <h2 id="void-dialog-title" className="mt-0.5 text-[16px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+            <h2 id="void-dialog-title" className="mt-0.5 text-[1rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
               Remove this {prettyType(record.eventType)} entry?
             </h2>
           </div>
@@ -130,8 +130,8 @@ export function VoidDailyRecordDialog({
             <div className="flex items-start gap-3 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-4">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-brand-muted)]" />
               <div>
-                <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">This entry is already voided</p>
-                <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+                <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">This entry is already voided</p>
+                <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
                   Voided at {new Date(record.voidedAt!).toLocaleString()}. The row remains in the ledger for audit.
                 </p>
               </div>
@@ -140,8 +140,8 @@ export function VoidDailyRecordDialog({
         ) : (
           <div className="space-y-4 p-4 sm:p-5">
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5">
-              <p className="text-[12.5px] font-bold text-amber-900">The row stays in the ledger</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-amber-900">
+              <p className="text-[0.78125rem] font-bold text-amber-900">The row stays in the ledger</p>
+              <p className="mt-1 text-[0.75rem] leading-relaxed text-amber-900">
                 Voiding is not a delete. The entry stays in your records CSV export next to your reason so a bank or co-op can trust the audit trail. Aggregations and the wizard just stop counting it.
                 {shiftsBirds && (
                   <>
@@ -152,7 +152,7 @@ export function VoidDailyRecordDialog({
             </div>
 
             <div>
-              <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]" htmlFor="void-reason">
+              <label className="block text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]" htmlFor="void-reason">
                 Reason (required)
               </label>
               <textarea
@@ -165,9 +165,9 @@ export function VoidDailyRecordDialog({
                     ? 'e.g. Duplicate entry — vaccine already logged earlier that day.'
                     : 'e.g. Duplicate entry — logged twice by mistake.'
                 }
-                className="mt-1 block w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[13.5px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+                className="mt-1 block w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.84375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               />
-              <p className={'mt-1 text-[11px] ' + (reasonOk ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
+              <p className={'mt-1 text-[0.6875rem] ' + (reasonOk ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
                 {reasonOk
                   ? `Saved with the void and shown in the records CSV export. ${reason.length}/500 chars.`
                   : `At least 3 characters — bank readers rely on this to trust the audit. ${reason.length}/500 chars.`}

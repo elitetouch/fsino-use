@@ -82,10 +82,10 @@ export default function ContactPage() {
               <MessageCircle className="h-4 w-4" strokeWidth={2.2} />
             </span>
             <div>
-              <p className="text-[13.5px] font-bold text-[var(--color-brand-fg)]">
+              <p className="text-[0.84375rem] font-bold text-[var(--color-brand-fg)]">
                 Or join the WhatsApp community
               </p>
-              <p className="mt-0.5 text-[12px] text-[var(--color-brand-fg-soft)]">
+              <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-fg-soft)]">
                 Talk to other farmers using FS Innovation across the region.
               </p>
             </div>
@@ -133,10 +133,10 @@ function ChannelCard({
           <Icon className="h-5 w-5" strokeWidth={2.2} />
         </span>
         <div className="flex-1">
-          <h3 className="text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <h3 className="text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             {title}
           </h3>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <p className="mt-1 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             {hint}
           </p>
         </div>
@@ -144,7 +144,7 @@ function ChannelCard({
 
       <div className="mt-4">
         {disabled ? (
-          <span className="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--color-brand-surface-soft)] px-4 text-[13px] text-[var(--color-brand-muted)]">
+          <span className="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--color-brand-surface-soft)] px-4 text-[0.8125rem] text-[var(--color-brand-muted)]">
             {cta}
           </span>
         ) : (
@@ -153,7 +153,7 @@ function ChannelCard({
             target={external ? '_blank' : undefined}
             rel={external ? 'noopener noreferrer' : undefined}
             className={cn(
-              'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-[13px] font-bold transition-colors',
+              'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-[0.8125rem] font-bold transition-colors',
               ctaClasses,
             )}
           >
@@ -203,10 +203,10 @@ function SupportInbox() {
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="flex items-center justify-between border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
         <div>
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
             Message support
           </p>
-          <h2 className="mt-0.5 text-[15px] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          <h2 className="mt-0.5 text-[0.9375rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
             Your conversations with our team
           </h2>
         </div>
@@ -222,7 +222,7 @@ function SupportInbox() {
         <div className="border-b border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/40 p-4 sm:p-5">
           <div className="space-y-3">
             <div>
-              <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+              <label className="block text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
                 Subject
               </label>
               <input
@@ -230,11 +230,11 @@ function SupportInbox() {
                 value={subject}
                 onChange={(e) => setSubject(e.target.value.slice(0, 200))}
                 placeholder="e.g. Wrong flock count after voiding a mortality record"
-                className="mt-1 h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2.5 text-[13px]"
+                className="mt-1 h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2.5 text-[0.8125rem]"
               />
             </div>
             <div>
-              <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+              <label className="block text-[0.65625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
                 Describe the issue
               </label>
               <textarea
@@ -242,9 +242,9 @@ function SupportInbox() {
                 onChange={(e) => setBody(e.target.value.slice(0, 5000))}
                 rows={5}
                 placeholder="Give as much detail as you can — which flock, which page, what you expected, what happened. Screenshots welcome via WhatsApp."
-                className="mt-1 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[13px]"
+                className="mt-1 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.8125rem]"
               />
-              <p className="mt-1 text-[11px] text-[var(--color-brand-muted)]">
+              <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">
                 {body.length}/5000 · we usually reply within a working day.
               </p>
             </div>
@@ -268,15 +268,15 @@ function SupportInbox() {
       )}
 
       {threads.isLoading ? (
-        <div className="flex items-center justify-center p-8 text-[13px] text-[var(--color-brand-muted)]">
+        <div className="flex items-center justify-center p-8 text-[0.8125rem] text-[var(--color-brand-muted)]">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading your messages…
         </div>
       ) : rows.length === 0 ? (
         <div className="p-8 text-center">
-          <p className="text-[13px] text-[var(--color-brand-fg-soft)]">
+          <p className="text-[0.8125rem] text-[var(--color-brand-fg-soft)]">
             You haven&apos;t opened any support threads yet.
           </p>
-          <p className="mt-1 text-[12px] text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
             Anything you send here reaches our support inbox — enquiries, complaints, feature ideas, bugs.
           </p>
         </div>
@@ -296,10 +296,10 @@ function ThreadRow({ thread }: { thread: SupportThreadDto }) {
     <li className="flex items-start gap-3 px-4 py-3 sm:px-5">
       <StatusPill status={thread.status} />
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-bold text-[var(--color-brand-fg)]">
+        <p className="text-[0.84375rem] font-bold text-[var(--color-brand-fg)]">
           {thread.subject}
         </p>
-        <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+        <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
           {thread.messagesCount ?? 0} message{(thread.messagesCount ?? 0) === 1 ? '' : 's'}
           {thread.lastMessageAt ? ` · last activity ${new Date(thread.lastMessageAt).toLocaleDateString()}` : ''}
         </p>
@@ -318,7 +318,7 @@ function StatusPill({ status }: { status: SupportThreadStatus }) {
   const conf = map[status] ?? map.open;
   return (
     <span className={cn(
-      'inline-block shrink-0 rounded-md px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.12em]',
+      'inline-block shrink-0 rounded-md px-2 py-0.5 text-[0.65625rem] font-bold uppercase tracking-[0.12em]',
       conf.cls,
     )}>
       {conf.label}

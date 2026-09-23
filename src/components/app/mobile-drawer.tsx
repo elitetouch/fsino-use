@@ -56,7 +56,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
           {visibleGroups.map((group, gi) => (
             <div key={group.heading ?? `g-${gi}`} className={gi > 0 ? 'mt-5' : ''}>
               {group.heading && (
-                <p className="mb-1 px-3 text-[12px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+                <p className="mb-1 px-3 text-[0.75rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
                   {group.heading}
                 </p>
               )}
@@ -68,7 +68,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
                     href={item.href}
                     onClick={onClose}
                     className={cn(
-                      'flex h-11 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-colors',
+                      'flex h-11 items-center gap-2.5 rounded-lg px-3 text-[0.8125rem] font-medium transition-colors',
                       active
                         ? 'bg-[var(--color-brand-accent)] text-[var(--color-brand-primary-deep)]'
                         : 'text-[var(--color-brand-fg-soft)] hover:bg-[var(--color-brand-surface-soft)]',
@@ -85,7 +85,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
                         standing in the pen with the camera — the beta
                         caveat has to reach them, not just desktop. */}
                     {item.beta && (
-                      <span className="shrink-0 rounded-full border border-[var(--color-brand-primary)]/35 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-[var(--color-brand-primary-deep)]">
+                      <span className="shrink-0 rounded-full border border-[var(--color-brand-primary)]/35 px-1.5 py-px text-[0.59375rem] font-bold uppercase tracking-wide text-[var(--color-brand-primary-deep)]">
                         Beta
                       </span>
                     )}

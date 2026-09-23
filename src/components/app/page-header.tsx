@@ -18,17 +18,17 @@ export function PageHeader({ title, description, eyebrow, actions, className }: 
     <header className={cn('flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
         {eyebrow && (
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
+          <p className="text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
             {eyebrow}
           </p>
         )}
         <h1
-          className="mt-1 text-[18px] font-bold leading-tight tracking-tight text-[var(--color-brand-fg)] sm:text-[20px]"
+          className="mt-1 text-[1.125rem] font-bold leading-tight tracking-tight text-[var(--color-brand-fg)] sm:text-[1.25rem]"
         >
           {title}
         </h1>
         {description && (
-          <p className="mt-1.5 max-w-[60ch] text-[13px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-1.5 max-w-[60ch] text-[0.8125rem] leading-relaxed text-[var(--color-brand-muted)]">
             {description}
           </p>
         )}

@@ -326,7 +326,7 @@ export default function SetupFlocksPage() {
                 <select
                   id="pen_id"
                   {...form.register('pen_id')}
-                  className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[15px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+                  className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.9375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
                 >
                   <option value="">{freePens.length === 0 ? 'No free pens yet — create one below' : 'Pick a pen…'}</option>
                   {freePens.map((p: PenDto) => (
@@ -390,7 +390,7 @@ export default function SetupFlocksPage() {
                       if (found) form.setValue('breed', found.name);
                     },
                   })}
-                  className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[15px] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+                  className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.9375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
                 >
                   <option value="">{breeds.isLoading ? 'Loading…' : 'Pick a breed'}</option>
                   {(breeds.data?.breeds ?? []).map((b: BreedDto) => (
@@ -460,30 +460,30 @@ export default function SetupFlocksPage() {
                   <div className="min-w-0 flex-1">
                     {blocked ? (
                       <>
-                        <p className="text-[13px] font-bold text-amber-900">
+                        <p className="text-[0.8125rem] font-bold text-amber-900">
                           {balance === 0
                             ? `You have no ${tokenType} / ${selectedTier} tokens yet`
                             : `You're ${shortBy.toLocaleString()} tokens short`}
                         </p>
-                        <p className="mt-0.5 text-[11.5px] text-amber-800">
+                        <p className="mt-0.5 text-[0.71875rem] text-amber-800">
                           One token = one bird. Top up to place {placedBirds.toLocaleString()} birds.
                         </p>
                       </>
                     ) : freemiumLeft ? (
                       <>
-                        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+                        <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
                           Free first flock available
                         </p>
-                        <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+                        <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
                           We&rsquo;ll cover this placement up to 100 birds — no tokens needed.
                         </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-[13px] font-bold text-[var(--color-brand-fg)]">
+                        <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
                           {balance.toLocaleString()} {tokenType} / {selectedTier} tokens available
                         </p>
-                        <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">
+                        <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
                           Placing {placedBirds.toLocaleString()} birds will leave you with{' '}
                           {(balance - placedBirds).toLocaleString()}.
                         </p>
@@ -653,30 +653,30 @@ function TokenRulesNote() {
           <p className="text-sm font-bold text-[var(--color-brand-fg)]">
             How tokens work — one token, one bird, one tracked cycle
           </p>
-          <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-brand-muted)]">
+          <p className="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-brand-muted)]">
             Tokens are how you buy access to flock tracking. Each placed bird debits one token from the matching{' '}
             <strong className="text-[var(--color-brand-fg)]">token type × tier</strong> bucket, and that single debit keeps the cycle live for the full production window — no daily fees, no recurring charges per record.
           </p>
 
           <ul className="mt-3 grid gap-2 sm:grid-cols-3">
             <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Broiler</p>
+              <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Broiler</p>
               <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">7 weeks per token</p>
-              <p className="text-[11px] text-[var(--color-brand-muted)]">Full meat-bird cycle window.</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Full meat-bird cycle window.</p>
             </li>
             <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Layer</p>
+              <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Layer</p>
               <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">18 months per token</p>
-              <p className="text-[11px] text-[var(--color-brand-muted)]">Covers brood → onset of lay → peak.</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Covers brood → onset of lay → peak.</p>
             </li>
             <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Dual-purpose</p>
+              <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Dual-purpose</p>
               <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">18 months per token</p>
-              <p className="text-[11px] text-[var(--color-brand-muted)]">Priced and timed on the layer policy.</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Priced and timed on the layer policy.</p>
             </li>
           </ul>
 
-          <ul className="mt-4 space-y-1.5 text-[12.5px] leading-relaxed text-[var(--color-brand-fg-soft)]">
+          <ul className="mt-4 space-y-1.5 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             <li>
               <strong className="text-[var(--color-brand-fg)]">Pen exclusivity:</strong> a pen can only hold one active flock at a time — new placements are blocked until the current cycle is archived.
             </li>

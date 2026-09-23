@@ -26,7 +26,7 @@ export function MenuList({ groups }: { groups: MenuGroup[] }) {
     <div className="space-y-5">
       {groups.map((g) => (
         <section key={g.heading}>
-          <p className="mb-1.5 px-1 text-[13px] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
+          <p className="mb-1.5 px-1 text-[0.8125rem] font-semibold tracking-tight text-[var(--color-brand-primary-deep)]">
             {g.heading}
           </p>
           <ul className="overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-white">
@@ -42,9 +42,9 @@ export function MenuList({ groups }: { groups: MenuGroup[] }) {
                     <item.icon className="h-4 w-4" strokeWidth={2.2} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13.5px] font-medium text-[var(--color-brand-fg)]">{item.label}</p>
+                    <p className="truncate text-[0.84375rem] font-medium text-[var(--color-brand-fg)]">{item.label}</p>
                     {item.hint && (
-                      <p className="truncate text-[11.5px] text-[var(--color-brand-muted)]">{item.hint}</p>
+                      <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">{item.hint}</p>
                     )}
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-brand-muted-soft)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-brand-primary-deep)]" />

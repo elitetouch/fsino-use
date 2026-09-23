@@ -39,10 +39,10 @@ export function FlockCard({ flock, className }: { flock: FlockDto; className?: s
               <Bird className="h-4 w-4" strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-bold text-[var(--color-brand-fg)]">
+              <p className="truncate text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
                 {flock.breed}
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-[var(--color-brand-muted)]">
                 {labelForProduction(flock.productionType)}
               </p>
             </div>
@@ -56,7 +56,7 @@ export function FlockCard({ flock, className }: { flock: FlockDto; className?: s
         </div>
 
         <div className="mt-3">
-          <div className="flex items-center justify-between text-[10px] font-semibold text-[var(--color-brand-muted)]">
+          <div className="flex items-center justify-between text-[0.625rem] font-semibold text-[var(--color-brand-muted)]">
             <span>Cycle</span>
             <span>{pct}%</span>
           </div>
@@ -67,7 +67,7 @@ export function FlockCard({ flock, className }: { flock: FlockDto; className?: s
             />
           </div>
           {remaining > 0 && (
-            <p className="mt-1.5 text-[10px] text-[var(--color-brand-muted)]">
+            <p className="mt-1.5 text-[0.625rem] text-[var(--color-brand-muted)]">
               {remaining} days to go
             </p>
           )}
@@ -80,8 +80,8 @@ export function FlockCard({ flock, className }: { flock: FlockDto; className?: s
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted-soft)]">{label}</p>
-      <p className="mt-0.5 text-[14px] font-bold text-[var(--color-brand-fg)]">{value}</p>
+      <p className="text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted-soft)]">{label}</p>
+      <p className="mt-0.5 text-[0.875rem] font-bold text-[var(--color-brand-fg)]">{value}</p>
     </div>
   );
 }

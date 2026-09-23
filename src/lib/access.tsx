@@ -354,10 +354,10 @@ function NotAuthorisedPanel({ role }: { role: FarmRole | null }) {
         <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
           <ShieldOff className="h-5 w-5" />
         </span>
-        <h1 className="mt-4 text-[18px] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
+        <h1 className="mt-4 text-[1.125rem] font-extrabold tracking-tight text-[var(--color-brand-fg)]">
           You don&rsquo;t have access to this page
         </h1>
-        <p className="mt-1.5 text-[13px] text-[var(--color-brand-muted)]">
+        <p className="mt-1.5 text-[0.8125rem] text-[var(--color-brand-muted)]">
           {role === 'staff'
             ? 'Your current permissions on this farm don’t include this section. Ask the farm owner to grant you access if you need it.'
             : 'You don’t have permission to view this page on this farm.'}

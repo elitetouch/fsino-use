@@ -176,10 +176,10 @@ function Diagnose() {
 function BetaNotice() {
   return (
     <div className="rounded-xl border border-[var(--color-brand-primary)]/25 bg-[var(--color-brand-accent)]/25 p-3.5">
-      <p className="text-[12.5px] font-semibold text-[var(--color-brand-fg)]">
+      <p className="text-[0.78125rem] font-semibold text-[var(--color-brand-fg)]">
         This is an early version
       </p>
-      <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--color-brand-muted)]">
+      <p className="mt-0.5 text-[0.75rem] leading-relaxed text-[var(--color-brand-muted)]">
         It was trained on a limited set of photos, so it will sometimes say it cannot read a
         perfectly good picture — and it can be wrong. Treat every answer as a second opinion,
         never as a replacement for a vet. Telling us whether it got it right is what improves it.
@@ -200,8 +200,8 @@ function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () =>
         <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)] text-white">
           <Camera className="h-6 w-6" />
         </span>
-        <span className="mt-1 text-[15px] font-bold text-[var(--color-brand-fg)]">Take a photo</span>
-        <span className="text-[12px] text-[var(--color-brand-muted)]">
+        <span className="mt-1 text-[0.9375rem] font-bold text-[var(--color-brand-fg)]">Take a photo</span>
+        <span className="text-[0.75rem] text-[var(--color-brand-muted)]">
           Opens your camera
         </span>
       </button>
@@ -209,7 +209,7 @@ function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () =>
       <button
         type="button"
         onClick={onGallery}
-        className="flex w-full items-center justify-center gap-2 text-[12.5px] font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
+        className="flex w-full items-center justify-center gap-2 text-[0.78125rem] font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
       >
         <ImageUp className="h-3.5 w-3.5" />
         Choose a photo you already took
@@ -232,7 +232,7 @@ function Start({ onCamera, onGallery }: { onCamera: () => void; onGallery: () =>
 function PhotoGuide() {
   return (
     <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
-      <h2 className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
+      <h2 className="text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
         For the best result
       </h2>
       <ul className="mt-2.5 space-y-2">
@@ -249,13 +249,13 @@ function PhotoGuide() {
           'Photograph fresh droppings, one patch at a time',
           'Keep birds, hands and feet out of the frame',
         ].map((tip) => (
-          <li key={tip} className="flex items-start gap-2 text-[13px] text-[var(--color-brand-fg)]">
+          <li key={tip} className="flex items-start gap-2 text-[0.8125rem] text-[var(--color-brand-fg)]">
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brand-primary)]" />
             {tip}
           </li>
         ))}
       </ul>
-      <p className="mt-3 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+      <p className="mt-3 flex items-start gap-1.5 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
         <WifiOff className="mt-0.5 h-3 w-3 shrink-0" />
         <span>
           This check needs internet. The rest of the app keeps working offline.
@@ -295,12 +295,12 @@ function Confirm({
         </button>
       </div>
 
-      <p className="text-center text-[12.5px] text-[var(--color-brand-muted)]">
+      <p className="text-center text-[0.78125rem] text-[var(--color-brand-muted)]">
         Can you see the droppings clearly? If not, take it again.
       </p>
 
       {error && (
-        <p className="rounded-lg border border-[var(--color-brand-danger)]/30 bg-[var(--color-brand-danger)]/[0.06] p-3 text-[12.5px] font-medium text-[var(--color-brand-danger)]">
+        <p className="rounded-lg border border-[var(--color-brand-danger)]/30 bg-[var(--color-brand-danger)]/[0.06] p-3 text-[0.78125rem] font-medium text-[var(--color-brand-danger)]">
           {error}
         </p>
       )}
