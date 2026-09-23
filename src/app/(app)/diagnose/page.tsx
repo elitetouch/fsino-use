@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { Camera, ImageUp, WifiOff, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { Analysing } from '@/components/diagnose/analysing';
 import { ResultCard } from '@/components/diagnose/result-card';
 import { CyclePicker } from '@/components/diagnose/cycle-picker';
+import { PastChecks } from '@/components/diagnose/past-checks';
 import { endpoints, apiErrorMessage, type DiagnosisDto } from '@/lib/api';
 
 /**
@@ -27,6 +29,20 @@ import { endpoints, apiErrorMessage, type DiagnosisDto } from '@/lib/api';
  * amount of error handling after the fact.
  */
 export default function DiagnosePage() {
+  // useSearchParams() forces client rendering of everything beneath it,
+  // so the boundary lives here rather than around the whole route.
+  return (
+    <Suspense fallback={null}>
+      <Diagnose />
+    </Suspense>
+  );
+}
+
+function Diagnose() {
+  // Set by the push notification a vet's reply sends:
+  // /diagnose?check=<id>. Opens that check in Past checks below.
+  const highlightId = useSearchParams().get('check');
+
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<DiagnosisDto | null>(null);
@@ -135,6 +151,11 @@ export default function DiagnosePage() {
           onGallery={() => galleryRef.current?.click()}
         />
       )}
+
+      {/* Below the camera on purpose — someone opening this page usually
+          has sick birds and wants to take a photo, not read an archive.
+          It is also the screen a vet's reply notification lands on. */}
+      <PastChecks highlightId={highlightId} />
     </div>
   );
 }
