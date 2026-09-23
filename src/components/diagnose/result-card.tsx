@@ -6,6 +6,7 @@ import {
   AlertTriangle, Camera, CheckCircle2, Eye, FileText, Info, Loader2,
   ShieldAlert, ThumbsDown, ThumbsUp,
 } from 'lucide-react';
+import { ReferenceImages } from '@/components/diagnose/reference-images';
 import { VetConsultation } from '@/components/diagnose/vet-consultation';
 import { Button } from '@/components/ui/button';
 import { endpoints, apiErrorMessage, type DiagnosisDto } from '@/lib/api';
@@ -124,15 +125,22 @@ export function ResultCard({
         </section>
       )}
 
-      {/* ---- Symptoms, to sanity-check against the actual birds ---- */}
-      {info.symptoms && (
+      {/* ---- Symptoms, to sanity-check against the actual birds ----
+           The section shows if EITHER the text or the photographs are
+           available. Gating the whole thing on `symptoms` would hide a
+           full reference gallery because one CSV cell was blank. */}
+      {(info.symptoms || (result.referenceImages ?? []).length > 0) && (
         <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
           <h3 className="text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
             Does this match what you are seeing?
           </h3>
-          <p className="mt-2 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg)]">
-            {info.symptoms}
-          </p>
+          {info.symptoms && (
+            <p className="mt-2 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg)]">
+              {info.symptoms}
+            </p>
+          )}
+          <ReferenceImages images={result.referenceImages ?? []} />
+
           <p className="mt-2 text-[0.71875rem] text-[var(--color-brand-muted)]">
             If your birds show none of these, treat the result with caution.
           </p>
