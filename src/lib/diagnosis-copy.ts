@@ -67,8 +67,12 @@ export function refusalCopy(reason: string | null): RefusalCopy {
       title: "This doesn't look like droppings",
       body: 'The photo does not resemble the chicken droppings this tool was trained on, so no guess was made.',
       fixes: [
-        'Photograph the droppings themselves, filling most of the frame',
-        'Avoid photographing feeders, birds or the pen floor generally',
+        // NOT "fill the frame" — that advice was measured to push
+        // genuine droppings out of the model's distribution. It learned
+        // small droppings within a wider field of ground.
+        'Stand over the droppings and shoot downwards',
+        'Include some ground around them rather than filling the frame',
+        'Avoid photographing feeders, birds or bare floor',
       ],
     };
   }
@@ -79,7 +83,7 @@ export function refusalCopy(reason: string | null): RefusalCopy {
     title: 'Not clear enough to be sure',
     body: 'The photo was examined but the result was not confident enough to report. Showing you a guess here could cost you a flock, so it is withheld deliberately.',
     fixes: [
-      'Move closer so the droppings fill the frame',
+      'Shoot from standing height, with some ground visible around the droppings',
       'Take it in daylight, or use the torch — avoid deep shadow',
       'Photograph a single fresh dropping rather than a mixed patch',
     ],

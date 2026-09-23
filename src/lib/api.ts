@@ -172,6 +172,10 @@ export type DiagnosisDto = {
   /** Base64 JPEG showing where the model looked. */
   gradcamOverlay: string | null;
   createdAt: string;
+  /** The cycle this check was attached to, if any. */
+  flockId: string | null;
+  /** Whether the farmer has put it in that cycle's report. */
+  includeInReport: boolean;
 };
 
 export type DiagnosisHistoryDto = {
@@ -218,6 +222,17 @@ export const endpoints = {
   listDiagnoses: (flockId?: string) =>
     unwrap<{ diagnoses: DiagnosisHistoryDto[] }>(
       api.get('/diagnoses', { params: flockId ? { flock_id: flockId } : {} }),
+    ),
+
+  /**
+   * Put a check into its cycle's report, or take it back out.
+   *
+   * Separate from feedback deliberately — agreeing with a diagnosis and
+   * wanting it on a document a bank reads are different decisions.
+   */
+  setDiagnosisInReport: (id: string, include: boolean) =>
+    unwrap<{ diagnosis: DiagnosisHistoryDto }>(
+      api.patch(`/diagnoses/${id}/report`, { include }),
     ),
 
   submitDiagnosisFeedback: (

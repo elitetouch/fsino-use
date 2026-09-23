@@ -2,15 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, Info, Phone, MessageCircle, ChevronRight, Wallet,
-  Receipt,
-  TrendingUp, Stethoscope,
-} from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
 import { cn } from '@/lib/utils';
+import { NAV_GROUPS, type NavItem } from '@/lib/nav';
 
 /**
  * Sidebar — mirrors the mobile Menu screen sections so the IA
@@ -18,57 +14,6 @@ import { cn } from '@/lib/utils';
  * surfaces. Desktop only — phones use the mobile drawer with the same
  * grouping flattened.
  */
-
-type Item = { href: string; label: string; icon: React.ElementType };
-type Group = { heading?: string; items: Item[] };
-
-const GROUPS: Group[] = [
-  {
-    // First group has no heading — the brand block above the nav
-    // already identifies the workspace, so a "Farm Support Innovation"
-    // label here just sits awkwardly close to the logo wordmark.
-    items: [
-      { href: '/home',    label: 'Dashboard', icon: LayoutDashboard },
-      // Sits in the first group deliberately. Someone opening this has
-      // already seen something wrong with their birds; burying a health
-      // check under "Account" costs minutes that matter.
-      { href: '/diagnose', label: 'Check droppings', icon: Stethoscope },
-      { href: '/reports', label: 'Reports',   icon: BarChart3 },
-    ],
-  },
-  {
-    heading: 'Account',
-    items: [
-      { href: '/farms',         label: 'Farms',          icon: Tractor },
-      { href: '/profile',       label: 'Profile',        icon: User },
-      { href: '/pens-flocks',   label: 'Pens and flocks', icon: Bird },
-      { href: '/users',         label: 'Users',          icon: Users2 },
-      { href: '/settings',      label: 'Settings',       icon: Settings },
-      { href: '/wallet',        label: 'Wallet',          icon: Wallet },
-      { href: '/expenses',      label: 'Expenses',        icon: Receipt },
-      { href: '/sales',         label: 'Sales',           icon: TrendingUp },
-      { href: '/subscription',  label: 'Subscription',   icon: CreditCard },
-    ],
-  },
-  // Shop / Pen accessories — temporarily hidden until the storefront
-  // is ready to fulfil orders. Route + page are still live so anyone
-  // deep-linking there gets the same UI; only the sidebar entry is
-  // suppressed so we don't advertise something we can't yet ship.
-  // {
-  //   heading: 'Shop',
-  //   items: [
-  //     { href: '/shop',  label: 'Pen accessories', icon: ShoppingBag },
-  //   ],
-  // },
-  {
-    heading: 'Customer support',
-    items: [
-      { href: '/about',     label: 'About this app',    icon: Info },
-      { href: '/contact',   label: 'Contact us',        icon: Phone },
-      { href: '/community', label: 'WhatsApp community', icon: MessageCircle },
-    ],
-  },
-];
 
 export function Sidebar() {
   const p = usePermissions();
@@ -80,8 +25,8 @@ export function Sidebar() {
   // because hiding everything during the initial fetch would jitter
   // the layout. The route guards on each page are the safety net.
   const visibleGroups = p.loading
-    ? GROUPS
-    : GROUPS
+    ? NAV_GROUPS
+    : NAV_GROUPS
         .map((g) => ({
           ...g,
           items: g.items.filter((it) => p.satisfies(ruleForPath(it.href) ?? { openToMembers: true })),
@@ -127,7 +72,7 @@ export function Sidebar() {
   );
 }
 
-function SidebarLink({ href, label, icon: Icon }: Item) {
+function SidebarLink({ href, label, icon: Icon, beta }: NavItem) {
   const pathname = usePathname();
   const active = pathname === href || (href !== '/home' && pathname?.startsWith(href));
   return (
@@ -151,6 +96,11 @@ function SidebarLink({ href, label, icon: Icon }: Item) {
         <Icon className="h-3.5 w-3.5" strokeWidth={2.2} />
       </span>
       <span className="flex-1 truncate">{label}</span>
+      {beta && (
+        <span className="shrink-0 rounded-full border border-[var(--color-brand-primary)]/35 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-[var(--color-brand-primary-deep)]">
+          Beta
+        </span>
+      )}
       <ChevronRight
         className={cn(
           'h-3.5 w-3.5 shrink-0 transition-opacity',
