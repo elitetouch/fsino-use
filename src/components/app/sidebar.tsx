@@ -19,7 +19,22 @@ import { cn } from '@/lib/utils';
  * grouping flattened.
  */
 
-type Item = { href: string; label: string; icon: React.ElementType };
+type Item = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  /**
+   * Marks a feature that is live but not finished. Shown as a small
+   * pill beside the label.
+   *
+   * Not decoration: disease diagnosis has been observed both refusing
+   * genuine droppings and, before the guards were fixed, confidently
+   * diagnosing a photo of groceries. Farmers need to know the answer is
+   * provisional BEFORE they act on it — the badge is what makes the
+   * in-app caveats read as honesty rather than boilerplate.
+   */
+  beta?: boolean;
+};
 type Group = { heading?: string; items: Item[] };
 
 const GROUPS: Group[] = [
@@ -32,7 +47,7 @@ const GROUPS: Group[] = [
       // Sits in the first group deliberately. Someone opening this has
       // already seen something wrong with their birds; burying a health
       // check under "Account" costs minutes that matter.
-      { href: '/diagnose', label: 'Check droppings', icon: Stethoscope },
+      { href: '/diagnose', label: 'Check droppings', icon: Stethoscope, beta: true },
       { href: '/reports', label: 'Reports',   icon: BarChart3 },
     ],
   },
@@ -127,7 +142,7 @@ export function Sidebar() {
   );
 }
 
-function SidebarLink({ href, label, icon: Icon }: Item) {
+function SidebarLink({ href, label, icon: Icon, beta }: Item) {
   const pathname = usePathname();
   const active = pathname === href || (href !== '/home' && pathname?.startsWith(href));
   return (
@@ -151,6 +166,11 @@ function SidebarLink({ href, label, icon: Icon }: Item) {
         <Icon className="h-3.5 w-3.5" strokeWidth={2.2} />
       </span>
       <span className="flex-1 truncate">{label}</span>
+      {beta && (
+        <span className="shrink-0 rounded-full border border-[var(--color-brand-primary)]/35 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-[var(--color-brand-primary-deep)]">
+          Beta
+        </span>
+      )}
       <ChevronRight
         className={cn(
           'h-3.5 w-3.5 shrink-0 transition-opacity',

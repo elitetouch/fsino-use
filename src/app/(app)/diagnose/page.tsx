@@ -79,10 +79,12 @@ export default function DiagnosePage() {
   return (
     <div className="mx-auto max-w-[560px] space-y-5 pb-8">
       <PageHeader
-        eyebrow="Health check"
+        eyebrow="Health check · Beta"
         title="Check droppings"
         description="Photograph droppings from the pen and get a likely diagnosis in about ten seconds."
       />
+
+      <BetaNotice />
 
       {/* Hidden inputs. `capture="environment"` opens the REAR camera
           directly on a phone rather than a file browser — one tap
@@ -121,6 +123,34 @@ export default function DiagnosePage() {
           onGallery={() => galleryRef.current?.click()}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * Says plainly that this is not finished.
+ *
+ * Shown on every state, not tucked into the result card, because the
+ * farmer needs the caveat BEFORE they act — and because both failure
+ * directions have been seen on real photos: genuine droppings refused,
+ * and (before the guards were fixed) a photograph of groceries
+ * diagnosed as Coccidiosis at 100% confidence.
+ *
+ * The honest framing is also what makes the feedback prompt work. People
+ * tell you when a tool is wrong if you have admitted it might be; they
+ * quietly stop using one that claims to be certain.
+ */
+function BetaNotice() {
+  return (
+    <div className="rounded-xl border border-[var(--color-brand-primary)]/25 bg-[var(--color-brand-accent)]/25 p-3.5">
+      <p className="text-[12.5px] font-semibold text-[var(--color-brand-fg)]">
+        This is an early version
+      </p>
+      <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--color-brand-muted)]">
+        It was trained on a limited set of photos, so it will sometimes say it cannot read a
+        perfectly good picture — and it can be wrong. Treat every answer as a second opinion,
+        never as a replacement for a vet. Telling us whether it got it right is what improves it.
+      </p>
     </div>
   );
 }
@@ -174,7 +204,14 @@ function PhotoGuide() {
       </h2>
       <ul className="mt-2.5 space-y-2">
         {[
-          'Get close — the droppings should fill most of the picture',
+          // "Get close, fill the frame" used to be the first rule here.
+          // Measured against the model, that advice was actively
+          // harmful: cropping a TRAINING image to a close-up pushed it
+          // from 0.248 to 0.572 in feature distance — past its own class
+          // threshold. The model learned small droppings within a wider
+          // field of ground, so the guidance now matches that.
+          'Stand over the droppings and shoot downwards, as you normally would',
+          'Include some of the ground around them — do not fill the whole frame',
           'Use daylight if you can, or your torch in a dark pen',
           'Photograph fresh droppings, one patch at a time',
           'Keep birds, hands and feet out of the frame',
