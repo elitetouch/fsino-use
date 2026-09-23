@@ -147,17 +147,51 @@ function Diagnose() {
       ) : result ? (
         <ResultCard result={result} onRetake={reset} />
       ) : preview ? (
-        <div className="mx-auto w-full max-w-[35rem] space-y-5">
-          {/* On the confirm step, not the start screen: asking which
-              cycle before they have even taken a photo is a question
-              standing between the farmer and the camera. */}
-          <CyclePicker value={flockId} onChange={setFlockId} />
+        /*
+         * PHOTO LEFT, DECISION RIGHT.
+         *
+         * An earlier cut kept this narrow on the reasoning that there
+         * was "nothing to put beside the photograph". There is: the
+         * cycle picker and both buttons. Stacked, "Check this photo"
+         * sat below a 380px image and on a laptop could fall under the
+         * fold — the primary action of the screen, out of sight.
+         *
+         * Side by side the photograph also gets more room, which is the
+         * thing the farmer is actually being asked to judge.
+         */
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start">
           <Confirm
             preview={preview}
             error={error}
             onDiagnose={() => file && diagnose.mutate(file)}
             onRetake={reset}
           />
+
+          <div className="space-y-4">
+            {/* On the confirm step, not the start screen: asking which
+                cycle before they have even taken a photo is a question
+                standing between the farmer and the camera. */}
+            <CyclePicker value={flockId} onChange={setFlockId} />
+
+            <p className="text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
+              Can you see the droppings clearly? If not, take it again.
+            </p>
+
+            {error && (
+              <p className="rounded-lg border border-[var(--color-brand-danger)]/30 bg-[var(--color-brand-danger)]/[0.06] p-3 text-[0.78125rem] font-medium text-[var(--color-brand-danger)]">
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1" onClick={reset}>
+                Retake
+              </Button>
+              <Button size="sm" className="flex-1" onClick={() => file && diagnose.mutate(file)}>
+                Check this photo
+              </Button>
+            </div>
+          </div>
         </div>
       ) : (
         <Start
@@ -306,8 +340,17 @@ function PhotoGuide() {
  * model until it has finished. Letting someone see their own photo
  * large, before committing, catches most bad captures for free.
  */
+/**
+ * The photograph, for checking before it is sent.
+ *
+ * Just the image now — the cycle picker, the prompt and the buttons
+ * live in the column beside it on wide screens, and stack underneath on
+ * a phone. Taller here than the old 380px cap: this is the one thing
+ * the farmer is being asked to judge, and on a desktop there is room to
+ * let them actually see it.
+ */
 function Confirm({
-  preview, error, onDiagnose, onRetake,
+  preview, onRetake,
 }: {
   preview: string;
   error: string | null;
@@ -315,38 +358,21 @@ function Confirm({
   onRetake: () => void;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-black">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={preview} alt="The photo you took" className="max-h-[380px] w-full object-contain" />
-        <button
-          type="button"
-          onClick={onRetake}
-          aria-label="Remove this photo"
-          className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <p className="text-center text-[0.78125rem] text-[var(--color-brand-muted)]">
-        Can you see the droppings clearly? If not, take it again.
-      </p>
-
-      {error && (
-        <p className="rounded-lg border border-[var(--color-brand-danger)]/30 bg-[var(--color-brand-danger)]/[0.06] p-3 text-[0.78125rem] font-medium text-[var(--color-brand-danger)]">
-          {error}
-        </p>
-      )}
-
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1" onClick={onRetake}>
-          Retake
-        </Button>
-        <Button size="sm" className="flex-1" onClick={onDiagnose}>
-          Check this photo
-        </Button>
-      </div>
+    <div className="relative overflow-hidden rounded-xl border border-[var(--color-brand-border)] bg-black">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={preview}
+        alt="The photo you took"
+        className="max-h-[23.75rem] w-full object-contain lg:max-h-[32rem]"
+      />
+      <button
+        type="button"
+        onClick={onRetake}
+        aria-label="Remove this photo"
+        className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white"
+      >
+        <X className="h-4 w-4" />
+      </button>
     </div>
   );
 }
