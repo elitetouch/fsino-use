@@ -186,6 +186,27 @@ export type DiagnosisHistoryDto = {
   inconclusive_reason: string | null;
   user_feedback: 'agreed' | 'disagreed' | 'unsure' | null;
   created_at: string;
+  /** Whether the farmer asked for a vet, and what came back. */
+  vet_consultation_requested_at: string | null;
+  vet_reply: string | null;
+  vet_replied_at: string | null;
+};
+
+/**
+ * The state of a vet consultation on one check.
+ *
+ * Deliberately narrow. The vet also records an internal label and candid
+ * notes for retraining ("photo unreadable, model latched onto the
+ * bucket") — the API hides both. What a farmer sees is `vetReply`, which
+ * a person wrote to them.
+ */
+export type ConsultationDto = {
+  id: string;
+  consultationRequested: boolean;
+  consultationRequestedAt: string | null;
+  awaitingVetReply: boolean;
+  vetReply: string | null;
+  vetRepliedAt: string | null;
 };
 
 export const endpoints = {
@@ -233,6 +254,18 @@ export const endpoints = {
   setDiagnosisInReport: (id: string, include: boolean) =>
     unwrap<{ diagnosis: DiagnosisHistoryDto }>(
       api.patch(`/diagnoses/${id}/report`, { include }),
+    ),
+
+  /**
+   * Ask a vet to look at this check, or withdraw the request.
+   *
+   * Reversible on purpose: a farmer who works the problem out themselves
+   * can take it back, which keeps the vet's queue honest. A queue padded
+   * with requests nobody still wants stops being worked.
+   */
+  setDiagnosisConsultation: (id: string, requested: boolean) =>
+    unwrap<{ diagnosis: ConsultationDto }>(
+      api.patch(`/diagnoses/${id}/consultation`, { requested }),
     ),
 
   submitDiagnosisFeedback: (

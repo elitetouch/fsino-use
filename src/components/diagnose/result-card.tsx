@@ -6,6 +6,7 @@ import {
   AlertTriangle, Camera, CheckCircle2, Eye, FileText, Info, Loader2,
   ShieldAlert, ThumbsDown, ThumbsUp,
 } from 'lucide-react';
+import { VetConsultation } from '@/components/diagnose/vet-consultation';
 import { Button } from '@/components/ui/button';
 import { endpoints, apiErrorMessage, type DiagnosisDto } from '@/lib/api';
 import { confidenceBand, diseaseFraming, refusalCopy } from '@/lib/diagnosis-copy';
@@ -141,6 +142,11 @@ export function ResultCard({
       {result.gradcamOverlay && <WhatItLookedAt image={result.gradcamOverlay} />}
 
       <Feedback diagnosisId={result.id} />
+
+      {/* Offered after the answer, not instead of it. A farmer who
+          trusts this result skips it; one who doesn't now has somewhere
+          to go other than away. */}
+      <VetConsultation diagnosisId={result.id} />
 
       {/* Only offered when the check is attached to a cycle — there is
           no report for one that is not. */}
@@ -370,7 +376,13 @@ function RefusalCard({ result, onRetake }: { result: DiagnosisDto; onRetake: () 
         </ul>
       </div>
 
-      <Button size="sm" className="w-full" onClick={onRetake}>
+      {/* THE most important placement of this prompt. A refusal is a
+          dead end: the farmer still has sick birds and now has no
+          answer at all. Retaking the photo is the first suggestion;
+          a person is the one that always works. */}
+      <VetConsultation diagnosisId={result.id} />
+
+      <Button size="sm" variant="outline" className="w-full" onClick={onRetake}>
         <Camera className="h-3.5 w-3.5" />
         Take another photo
       </Button>
