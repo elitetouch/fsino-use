@@ -1100,6 +1100,57 @@ export const endpoints = {
 export type TokenType = 'broiler' | 'layer';
 export type TokenTier = 'basic' | 'premium';
 
+/**
+ * A renewal that failed because the wallet is short of tokens.
+ *
+ * Returned by POST /flocks/{id}/renew as a 422 carrying numbers rather
+ * than only a sentence, so a client can send the farmer somewhere
+ * instead of printing the problem in red and stopping.
+ */
+export type InsufficientTokens = {
+  tokenType: TokenType;
+  tier: TokenTier;
+  /** Total cost of the renewal — one token per live bird. */
+  required: number;
+  available: number;
+  /** required − available. The number to buy. */
+  shortfall: number;
+};
+
+/**
+ * Read the structured shortfall out of a failed renewal, if that is why
+ * it failed.
+ *
+ * Returns null for every other error, so callers branch on it without
+ * knowing anything about axios. Every field is checked rather than
+ * cast: this drives a purchase amount, and a wrong number here asks a
+ * farmer to buy the wrong thing.
+ */
+export function insufficientTokens(err: unknown): InsufficientTokens | null {
+  if (!axios.isAxiosError(err)) return null;
+
+  const errors = (err.response?.data as Record<string, unknown> | undefined)?.['errors'] as
+    | Record<string, unknown>
+    | undefined;
+
+  const raw = errors?.['insufficientTokens'] as Record<string, unknown> | undefined;
+  if (!raw) return null;
+
+  const { tokenType, tier, required, available, shortfall } = raw;
+
+  if (
+    (tokenType !== 'broiler' && tokenType !== 'layer') ||
+    (tier !== 'basic' && tier !== 'premium') ||
+    typeof required !== 'number' ||
+    typeof available !== 'number' ||
+    typeof shortfall !== 'number'
+  ) {
+    return null;
+  }
+
+  return { tokenType, tier, required, available, shortfall };
+}
+
 export type TokenBalanceDto = {
   tokenType: TokenType;
   tier: TokenTier;
