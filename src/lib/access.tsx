@@ -81,6 +81,13 @@ export const ROUTE_ACCESS: Array<{ path: string; rule: AccessRule }> = [
   { path: '/pens',         rule: { perm: 'pens.view' } },
   { path: '/flocks',       rule: { perm: 'flocks.view' } },
   { path: '/cycles',       rule: { perm: 'flocks.view' } },
+
+  // Disease diagnosis. Matches the backend's farm.perm:flocks.view on
+  // POST /diagnoses — without this entry the matcher defaults to
+  // openToMembers, so a member lacking flocks.view would see "Check
+  // droppings" in the nav, take a photo, wait, and only then be
+  // refused by the API.
+  { path: '/diagnose',     rule: { perm: 'flocks.view' } },
   // NB: /cycles/<id>/record (the add-record wizard) inherits the
   // /cycles flocks.view rule above via the longest-prefix matcher,
   // since the matcher doesn't expand `[id]` slugs. That's fine in

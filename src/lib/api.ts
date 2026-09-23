@@ -140,6 +140,50 @@ export type PushDeviceDto = {
   created_at: string;
 };
 
+/**
+ * A disease diagnosis result.
+ *
+ * `conclusive` is the field that matters. The model deliberately
+ * declines to answer when its safety guards fire — a person in frame, a
+ * blurry photo, or confidence below its per-class threshold — and that
+ * refusal is a SUCCESS, not an error. Treating it as a failure would
+ * mean showing a farmer a disease name for a photo of a bucket, and a
+ * farmer may medicate a whole flock on that.
+ */
+export type DiagnosisDto = {
+  id: string;
+  conclusive: boolean;
+  /** Disease name when conclusive, else null. */
+  disease: string | null;
+  /** Percentage, e.g. 94.21. Null when inconclusive. */
+  confidence: number | null;
+  /** Why the model declined. Null when conclusive. */
+  reason: string | null;
+  /** Per-class probabilities as formatted strings, e.g. "94.21%". */
+  scores: Record<string, string>;
+  diseaseInfo: {
+    definition?: string;
+    symptoms?: string;
+    treatment?: string;
+    dosage?: string;
+    next_action?: string;
+    photos?: string[];
+  };
+  /** Base64 JPEG showing where the model looked. */
+  gradcamOverlay: string | null;
+  createdAt: string;
+};
+
+export type DiagnosisHistoryDto = {
+  id: string;
+  flock_id: string | null;
+  predicted_class: string | null;
+  confidence: number | null;
+  inconclusive_reason: string | null;
+  user_feedback: 'agreed' | 'disagreed' | 'unsure' | null;
+  created_at: string;
+};
+
 export const endpoints = {
   register: (payload: RegisterPayload) =>
     unwrap<AuthSession>(
@@ -150,6 +194,43 @@ export const endpoints = {
     unwrap<AuthSession>(api.post('/login', { email, password })),
 
   logout: () => api.post('/logout'),
+
+  /* ---------------------------------------------------------------- */
+  /*  Disease diagnosis                                               */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * Inference runs on CPU and takes roughly 9 seconds, so this overrides
+   * the client's default timeout. Without that the request aborts at
+   * the usual limit and the farmer is told it failed when the model was
+   * still working.
+   */
+  diagnose: (image: File, flockId?: string) => {
+    const form = new FormData();
+    form.append('image', image);
+    if (flockId) form.append('flock_id', flockId);
+
+    return unwrap<{ diagnosis: DiagnosisDto }>(
+      api.post('/diagnoses', form, { timeout: 90_000 }),
+    );
+  },
+
+  listDiagnoses: (flockId?: string) =>
+    unwrap<{ diagnoses: DiagnosisHistoryDto[] }>(
+      api.get('/diagnoses', { params: flockId ? { flock_id: flockId } : {} }),
+    ),
+
+  submitDiagnosisFeedback: (
+    id: string,
+    feedback: 'agreed' | 'disagreed' | 'unsure',
+    actualDisease?: string,
+  ) =>
+    unwrap<{ diagnosis: DiagnosisHistoryDto }>(
+      api.patch(`/diagnoses/${id}/feedback`, {
+        feedback,
+        ...(actualDisease ? { actual_disease: actualDisease } : {}),
+      }),
+    ),
 
   /* ---------------------------------------------------------------- */
   /*  Push notifications                                              */

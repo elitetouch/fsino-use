@@ -6,7 +6,7 @@ import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
   CreditCard, Info, Phone, MessageCircle, ChevronRight, Wallet,
   Receipt,
-  TrendingUp,
+  TrendingUp, Stethoscope,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
@@ -29,6 +29,10 @@ const GROUPS: Group[] = [
     // label here just sits awkwardly close to the logo wordmark.
     items: [
       { href: '/home',    label: 'Dashboard', icon: LayoutDashboard },
+      // Sits in the first group deliberately. Someone opening this has
+      // already seen something wrong with their birds; burying a health
+      // check under "Account" costs minutes that matter.
+      { href: '/diagnose', label: 'Check droppings', icon: Stethoscope },
       { href: '/reports', label: 'Reports',   icon: BarChart3 },
     ],
   },
