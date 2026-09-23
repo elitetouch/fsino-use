@@ -52,6 +52,15 @@ export default function WalletPage() {
           this so client-only hooks don't break static prerender. The
           poller runs invisibly inside it. */}
       <Suspense fallback={null}>
+        <TopUpIntent
+          onIntent={(d) => {
+            setBuyDefaults(d);
+            setOpenBuy(true);
+          }}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
         <PurchasePoller
           onSuccess={() => {
             qc.invalidateQueries({ queryKey: ['token-balances'] });
@@ -224,6 +233,53 @@ function PurchaseRow({ purchase, divider }: { purchase: TokenPurchaseDto; divide
  * static prerender otherwise errors with "should be wrapped in a
  * suspense boundary".
  */
+/**
+ * Opens the buy dialog prefilled when arrived at from a renewal.
+ *
+ * The cycle banner links here as
+ * `/wallet?buy=broiler&tier=basic&qty=180` when a renewal fails for
+ * want of tokens. Landing on a generic wallet page would undo the point
+ * of that link: the farmer would have to remember the amount, the token
+ * type and the tier, all of which the server already worked out.
+ *
+ * The params are cleared once read, so a refresh or a back-navigation
+ * does not reopen a dialog the farmer already dealt with.
+ *
+ * Wrapped in Suspense by the caller — useSearchParams opts the subtree
+ * out of static prerendering.
+ */
+function TopUpIntent({
+  onIntent,
+}: {
+  onIntent: (d: { tokenType: TokenType; tier: TokenTier; quantity: number }) => void;
+}) {
+  const search = useSearchParams();
+  const router = useRouter();
+  const handled = useRef(false);
+
+  useEffect(() => {
+    if (handled.current) return;
+
+    const buy = search.get('buy');
+    const tier = search.get('tier');
+    const qty = Number(search.get('qty'));
+
+    // Validated, not trusted. These arrive in a URL that anyone can
+    // edit, and they set the quantity on a purchase.
+    const validType = buy === 'broiler' || buy === 'layer';
+    const validTier = tier === 'basic' || tier === 'premium';
+    const validQty = Number.isFinite(qty) && qty > 0 && qty <= 1_000_000;
+
+    if (!validType || !validTier || !validQty) return;
+
+    handled.current = true;
+    onIntent({ tokenType: buy, tier, quantity: Math.ceil(qty) });
+    router.replace('/wallet');
+  }, [search, router, onIntent]);
+
+  return null;
+}
+
 function PurchasePoller({ onSuccess }: { onSuccess?: () => void }) {
   const search = useSearchParams();
   const router = useRouter();
