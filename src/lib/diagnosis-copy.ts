@@ -52,7 +52,17 @@ export function refusalCopy(reason: string | null): RefusalCopy {
     };
   }
 
-  if (r.includes('do not match') || r.includes('not poultry')) {
+  // Matches the backend's energy and feature-space guards, whose reason
+  // reads "Image does not resemble poultry droppings". Kept loose on
+  // purpose — these strings come from a separate Python codebase, and an
+  // exact-match table silently falls through to the generic case the
+  // first time someone rewords one.
+  if (
+    r.includes('do not match') ||
+    r.includes('not poultry') ||
+    r.includes('resemble') ||
+    r.includes('poultry droppings')
+  ) {
     return {
       title: "This doesn't look like droppings",
       body: 'The photo does not resemble the chicken droppings this tool was trained on, so no guess was made.',
