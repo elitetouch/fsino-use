@@ -26,7 +26,12 @@ export function FlockCard({ flock, className }: { flock: FlockDto; className?: s
 
   return (
     <Link
-      href={`/flocks/${flock.id}`}
+      // /cycles/{id}, not /flocks/{id}. There is no /flocks/[id] route —
+      // the cycle detail page has always lived under /cycles, which is
+      // where the cycles list links. This card was the one place still
+      // pointing at the old path, so every flock on /pens-flocks and
+      // /flocks opened a 404.
+      href={`/cycles/${flock.id}`}
       className={cn(
         'group block overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--color-brand-primary)]/40 hover:shadow-[0_20px_50px_-25px_rgba(15,80,30,0.20)]',
         className,
