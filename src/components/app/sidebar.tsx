@@ -47,7 +47,7 @@ const GROUPS: Group[] = [
       // Sits in the first group deliberately. Someone opening this has
       // already seen something wrong with their birds; burying a health
       // check under "Account" costs minutes that matter.
-      { href: '/diagnose', label: 'Check droppings', icon: Stethoscope, beta: true },
+      { href: '/diagnose', label: 'Disease check', icon: Stethoscope, beta: true },
       { href: '/reports', label: 'Reports',   icon: BarChart3 },
     ],
   },

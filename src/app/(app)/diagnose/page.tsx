@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
 import { Analysing } from '@/components/diagnose/analysing';
 import { ResultCard } from '@/components/diagnose/result-card';
+import { CyclePicker } from '@/components/diagnose/cycle-picker';
 import { endpoints, apiErrorMessage, type DiagnosisDto } from '@/lib/api';
 
 /**
@@ -31,11 +32,16 @@ export default function DiagnosePage() {
   const [result, setResult] = useState<DiagnosisDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Which cycle this check belongs to. Optional — droppings turn up
+  // outside tracked pens — but it is what makes the result eligible for
+  // the cycle report.
+  const [flockId, setFlockId] = useState<string | null>(null);
+
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
   const diagnose = useMutation({
-    mutationFn: (f: File) => endpoints.diagnose(f),
+    mutationFn: (f: File) => endpoints.diagnose(f, flockId ?? undefined),
     onSuccess: (d) => {
       setResult(d.diagnosis);
       setError(null);
@@ -80,7 +86,7 @@ export default function DiagnosePage() {
     <div className="mx-auto max-w-[560px] space-y-5 pb-8">
       <PageHeader
         eyebrow="Health check · Beta"
-        title="Check droppings"
+        title="Disease check"
         description="Photograph droppings from the pen and get a likely diagnosis in about ten seconds."
       />
 
@@ -111,12 +117,18 @@ export default function DiagnosePage() {
       ) : result ? (
         <ResultCard result={result} onRetake={reset} />
       ) : preview ? (
-        <Confirm
-          preview={preview}
-          error={error}
-          onDiagnose={() => file && diagnose.mutate(file)}
-          onRetake={reset}
-        />
+        <>
+          {/* On the confirm step, not the start screen: asking which
+              cycle before they have even taken a photo is a question
+              standing between the farmer and the camera. */}
+          <CyclePicker value={flockId} onChange={setFlockId} />
+          <Confirm
+            preview={preview}
+            error={error}
+            onDiagnose={() => file && diagnose.mutate(file)}
+            onRetake={reset}
+          />
+        </>
       ) : (
         <Start
           onCamera={() => cameraRef.current?.click()}

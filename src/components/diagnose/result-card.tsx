@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import {
-  AlertTriangle, Camera, CheckCircle2, Eye, Info, ShieldAlert, ThumbsDown, ThumbsUp,
+  AlertTriangle, Camera, CheckCircle2, Eye, FileText, Info, Loader2,
+  ShieldAlert, ThumbsDown, ThumbsUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { endpoints, apiErrorMessage, type DiagnosisDto } from '@/lib/api';
@@ -141,6 +142,12 @@ export function ResultCard({
 
       <Feedback diagnosisId={result.id} />
 
+      {/* Only offered when the check is attached to a cycle — there is
+          no report for one that is not. */}
+      {result.flockId && (
+        <AddToReport diagnosisId={result.id} initial={result.includeInReport} />
+      )}
+
       <Button variant="outline" size="sm" className="w-full" onClick={onRetake}>
         <Camera className="h-3.5 w-3.5" />
         Check another photo
@@ -261,6 +268,65 @@ function Feedback({ diagnosisId }: { diagnosisId: string }) {
           <ThumbsDown className="h-3.5 w-3.5" />
           No
         </Button>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Put this result into the cycle report.
+ *
+ * SEPARATE FROM THE FEEDBACK ABOVE, and deliberately worded to make the
+ * consequence clear. The cycle report goes to lenders, buyers and
+ * insurers, who read every line as the farmer's own statement — so a
+ * beta model's output belongs there only if the farmer decides it does,
+ * having compared it against the birds in front of them.
+ *
+ * Defaults to off and stays off unless acted on. Nothing about running
+ * a check implies wanting it on a bank document.
+ */
+function AddToReport({ diagnosisId, initial }: { diagnosisId: string; initial: boolean }) {
+  const [included, setIncluded] = useState(initial);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutate = useMutation({
+    mutationFn: (next: boolean) => endpoints.setDiagnosisInReport(diagnosisId, next),
+    onSuccess: (_d, next) => {
+      setIncluded(next);
+      setError(null);
+    },
+    onError: (e) => setError(apiErrorMessage(e, "Couldn't update the report.")),
+  });
+
+  return (
+    <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
+      <div className="flex items-start gap-2.5">
+        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-brand-muted)]" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-[var(--color-brand-fg)]">
+            {included ? 'Added to this cycle\u2019s report' : 'Add to this cycle\u2019s report'}
+          </p>
+          <p className="mt-0.5 text-[11.5px] leading-relaxed text-[var(--color-brand-muted)]">
+            {included
+              ? 'It will appear alongside your treatment and mortality records.'
+              : 'Your cycle report is shared with buyers and lenders. Only add a result you are confident in.'}
+          </p>
+
+          <Button
+            size="sm"
+            variant={included ? 'outline' : 'primary'}
+            className="mt-3"
+            disabled={mutate.isPending}
+            onClick={() => mutate.mutate(!included)}
+          >
+            {mutate.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {included ? 'Remove from report' : 'Add to report'}
+          </Button>
+
+          {error && (
+            <p className="mt-2 text-[12px] font-medium text-[var(--color-brand-danger)]">{error}</p>
+          )}
+        </div>
       </div>
     </section>
   );
