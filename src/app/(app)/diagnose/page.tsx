@@ -99,7 +99,23 @@ function Diagnose() {
   const busy = diagnose.isPending;
 
   return (
-    <div className="mx-auto max-w-[560px] space-y-5 pb-8">
+    /*
+     * Width is chosen per STATE, not once for the page.
+     *
+     * The camera-first screens (start, confirm, analysing) stay narrow
+     * and centred: each is a single focal action, and stretching "take
+     * a photo" across a 27-inch monitor makes it harder to use, not
+     * easier.
+     *
+     * The result view earns the full width — it has enough distinct
+     * content to fill a second column. See ResultCard.
+     */
+    <div
+      className={[
+        'mx-auto w-full space-y-5 pb-8',
+        result ? 'max-w-[68.75rem]' : 'max-w-[35rem]',
+      ].join(' ')}
+    >
       <PageHeader
         eyebrow="Health check · Beta"
         title="Disease check"

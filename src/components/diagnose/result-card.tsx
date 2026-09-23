@@ -44,11 +44,35 @@ export function ResultCard({
   const info = result.diseaseInfo ?? {};
 
   return (
-    <div className="space-y-4">
-      {/* ---- The verdict ---- */}
+    /*
+     * TWO COLUMNS ON WIDE SCREENS, ONE ON A PHONE.
+     *
+     * The single 560px column left roughly half a desktop window empty.
+     * The fix is NOT to stretch it: body copy at 1100px runs to ~140
+     * characters a line, well past the ~65-75 where reading stays
+     * comfortable — a farmer on a laptop would get the whitespace
+     * filled and a harder page to read.
+     *
+     * So the empty space becomes a second column, split by ROLE rather
+     * than by length:
+     *
+     *   left   what is wrong and what to do about it — read top to
+     *          bottom, sized to keep line length sane
+     *   right  what to do NEXT: was it right, do you want a vet, put
+     *          it in the report
+     *
+     * The payoff is more than tidiness. On a phone those actions sit
+     * below a screenful of treatment detail and most people never
+     * scroll that far; beside the result they are simply visible, which
+     * is the difference between a feedback loop that works and one that
+     * technically exists.
+     */
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
+      {/* ---- The verdict. Spans both columns: it is the answer, and
+           nothing should sit beside it competing for attention. ---- */}
       <div
         className={[
-          'rounded-xl border p-5',
+          'rounded-xl border p-5 lg:col-span-2',
           healthy
             ? 'border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-accent)]/40'
             : critical
@@ -102,8 +126,10 @@ export function ResultCard({
         )}
       </div>
 
-      {/* ---- What to do ---- */}
-      {!healthy && (info.treatment || info.next_action || info.dosage) && (
+      {/* ---- Primary column: what is wrong, and what to do ---- */}
+      <div className="space-y-4">
+        {/* ---- What to do ---- */}
+        {!healthy && (info.treatment || info.next_action || info.dosage) && (
         <section className="rounded-xl border border-[var(--color-brand-border)] bg-white p-4">
           <h3 className="text-[0.6875rem] font-bold uppercase tracking-wide text-[var(--color-brand-muted)]">
             {framing.headline}
@@ -147,9 +173,15 @@ export function ResultCard({
         </section>
       )}
 
-      {result.gradcamOverlay && <WhatItLookedAt image={result.gradcamOverlay} />}
+      </div>
 
-      <Feedback diagnosisId={result.id} />
+      {/* ---- Secondary column: what to do next.
+           Sticky on desktop so the actions stay in view while a long
+           treatment section scrolls beside them. ---- */}
+      <div className="space-y-4 lg:sticky lg:top-4">
+        {result.gradcamOverlay && <WhatItLookedAt image={result.gradcamOverlay} />}
+
+        <Feedback diagnosisId={result.id} />
 
       {/* Offered after the answer, not instead of it. A farmer who
           trusts this result skips it; one who doesn't now has somewhere
@@ -162,10 +194,11 @@ export function ResultCard({
         <AddToReport diagnosisId={result.id} initial={result.includeInReport} />
       )}
 
-      <Button variant="outline" size="sm" className="w-full" onClick={onRetake}>
-        <Camera className="h-3.5 w-3.5" />
-        Check another photo
-      </Button>
+        <Button variant="outline" size="sm" className="w-full" onClick={onRetake}>
+          <Camera className="h-3.5 w-3.5" />
+          Check another photo
+        </Button>
+      </div>
     </div>
   );
 }
