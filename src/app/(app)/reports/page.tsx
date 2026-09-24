@@ -158,6 +158,7 @@ function CycleReport({ flockId, pens }: { flockId: string; pens: PenDto[] }) {
       <ClimateCard climate={d.climate} />
       <VaccinationLog rows={d.vaccinations ?? []} currency={currency} />
       <TreatmentLog rows={d.treatments ?? []} currency={currency} />
+      <DiseaseCheckLog rows={d.diagnoses ?? []} />
       <BreakdownCard breakdown={d.breakdown} currency={currency} />
       <RecommendationsBlock recommendations={d.recommendations ?? []} />
       <ExportsRow flockId={flockId} />
@@ -782,6 +783,97 @@ function TreatmentLog({
       showBirdsColumn={true}
       itemColumnLabel="Treatment"
     />
+  );
+}
+
+/**
+ * Disease checks the farmer chose to put in this report.
+ *
+ * Its own table rather than reusing DetailedEntryTable, because a check
+ * is not a purchased item: there is no brand, no dose and no cost, and
+ * forcing it into those columns would render a row of dashes.
+ *
+ * TWO THINGS THIS TABLE MUST DO, both about honesty rather than layout.
+ *
+ * The farmer's verdict sits in its own column, beside the prediction and
+ * never below it. A lender reading "Coccidiosis" where the farmer had
+ * already recorded that the tool got it wrong would be reading the
+ * opposite of what happened.
+ *
+ * And the caveat under the heading is load-bearing. Whoever reads this
+ * document has no way to know the tool producing these lines is in
+ * beta, refuses valid photographs, and has confidently misread a
+ * photograph of groceries. Putting a machine's guess beside audited
+ * mortality figures without saying so misrepresents it.
+ */
+function DiseaseCheckLog({
+  rows,
+}: {
+  rows: NonNullable<FlockReportSummary['diagnoses']>;
+}) {
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
+      <header className="border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
+        <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
+          Disease checks
+        </p>
+        <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">
+          Photo checks you added to this report
+        </h2>
+        <p className="mt-1 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
+          Produced by an automated tool that is still in development and can be wrong. These are
+          your record of what you observed and acted on — not a veterinary diagnosis.
+        </p>
+      </header>
+
+      <div className="max-w-full overflow-x-auto">
+        <table className="w-full min-w-[560px] border-collapse text-[0.75rem]">
+          <thead>
+            <tr className="bg-[var(--color-brand-surface-soft)] text-left text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-primary-deep)]">
+              <th className="px-4 py-2 sm:px-5">Date</th>
+              <th className="px-4 py-2 sm:px-5">Tool suggested</th>
+              <th className="px-4 py-2 text-right sm:px-5">Confidence</th>
+              <th className="px-4 py-2 sm:px-5">Your view</th>
+              <th className="px-4 py-2 sm:px-5">Action taken</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-[var(--color-brand-border)]">
+                <td className="whitespace-nowrap px-4 py-2 text-[var(--color-brand-fg-soft)] sm:px-5">
+                  {r.date ? fmtDate(r.date) : '—'}
+                </td>
+                <td className="px-4 py-2 font-semibold text-[var(--color-brand-fg)] sm:px-5">
+                  {r.disease ?? '—'}
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums text-[var(--color-brand-fg-soft)] sm:px-5">
+                  {r.confidence !== null ? `${r.confidence.toFixed(1)}%` : '—'}
+                </td>
+                <td className="px-4 py-2 text-[var(--color-brand-fg-soft)] sm:px-5">
+                  {r.farmerVerdict === 'agreed' ? (
+                    'Agreed'
+                  ) : r.farmerVerdict === 'disagreed' ? (
+                    <span className="font-semibold text-[var(--color-brand-fg)]">
+                      Disagreed
+                      {r.actualDisease ? ` — said it was ${r.actualDisease}` : ''}
+                    </span>
+                  ) : r.farmerVerdict === 'unsure' ? (
+                    'Unsure'
+                  ) : (
+                    <span className="text-[var(--color-brand-muted)]">Not reviewed</span>
+                  )}
+                </td>
+                <td className="px-4 py-2 text-[var(--color-brand-fg-soft)] sm:px-5">
+                  {r.treatment ?? '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
