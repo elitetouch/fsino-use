@@ -2343,6 +2343,31 @@ export type FlockReportSummary = {
   /** Per-treatment log — antibiotics, coccidiostats, supplements. */
   treatments?: Array<FlockReportDetailedEntry>;
   /**
+   * Disease checks the farmer explicitly approved for this report.
+   *
+   * OPT-IN PER CHECK. Nothing from the disease checker appears in a
+   * report unless the farmer looked at the result, judged it against
+   * their own birds, and chose to include it — this is a document a
+   * lender reads as the farmer's own statement. Inconclusive results
+   * are excluded by the server regardless of the flag.
+   *
+   * Undefined on older API builds; treat as empty.
+   */
+  diagnoses?: Array<{
+    id: string;
+    /** ISO timestamp of the check. */
+    date: string | null;
+    /** What the tool suggested. Never null here — refusals are filtered out. */
+    disease: string | null;
+    /** Percentage, e.g. 96.4. */
+    confidence: number | null;
+    /** The farmer's own verdict, which travels WITH the prediction. */
+    farmerVerdict: 'agreed' | 'disagreed' | 'unsure' | null;
+    /** What the farmer said it actually was, when they disagreed. */
+    actualDisease: string | null;
+    treatment: string | null;
+  }>;
+  /**
    * Punch list generated from the cycle's actual numbers. Each entry
    * names a specific problem, what to do about it, and whether the
    * fix is still actionable in the current cycle or a lesson for the
