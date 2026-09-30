@@ -28,6 +28,19 @@ export const metadata: Metadata = {
  * be able to start this from inside the app as well as from here, and
  * the bundle currently has no such screen. Until it does, the email
  * route below is the only one, and it must actually be monitored.
+ *
+ * WHY A GMAIL ADDRESS AND NOT privacy@fsinnovation.net — the domain has
+ * no MX record, and the A-record fallback host refuses port 25, so
+ * anything sent to privacy@ or support@ there bounces. A published
+ * contact that bounces is worse than an unglamorous one that works:
+ * under the NDPA a data subject must be able to reach the controller,
+ * and Play may test the instructions on this page.
+ *
+ * Once MX is configured, move back to role addresses — privacy@ for
+ * data requests, support@ for everything else — so the contact survives
+ * whoever currently holds the inbox. Change it in every file at once;
+ * before this commit three different addresses were published across
+ * six files and none of them could receive mail.
  */
 export default function DeleteAccountPage() {
   return (
@@ -53,10 +66,10 @@ export default function DeleteAccountPage() {
             <>
               <strong>Email{' '}
               <a
-                href="mailto:privacy@fsinnovation.net"
+                href="mailto:fsinnovationafrica@gmail.com"
                 className="font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
               >
-                privacy@fsinnovation.net
+                fsinnovationafrica@gmail.com
               </a>{' '}
               from the address your account uses</strong>, with the subject{' '}
               <span className="font-medium">Delete my account</span>. Sending from that address is

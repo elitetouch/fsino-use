@@ -31,7 +31,7 @@ export function MarketingFooter() {
             heading: 'Company',
             links: [
               ['About', '/about'],
-              ['Contact', 'mailto:support@fsinnovation.net'],
+              ['Contact', 'mailto:fsinnovationafrica@gmail.com'],
               ['Careers', '/careers'],
             ],
           },

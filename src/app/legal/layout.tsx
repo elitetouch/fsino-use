@@ -48,7 +48,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               Delete account
             </Link>
             <a
-              href="mailto:support@fsinnovation.net"
+              href="mailto:fsinnovationafrica@gmail.com"
               className="hover:text-[var(--color-brand-fg)]"
             >
               Contact
