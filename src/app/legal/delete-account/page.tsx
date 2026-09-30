@@ -5,7 +5,7 @@ import { Bullets, Defs, DocTitle, Important, Section } from '@/components/legal/
 export const metadata: Metadata = {
   title: 'Delete your account',
   description:
-    'How to ask Farm Support Innovation to delete your FSI Farm Manager account, what gets deleted, and what we are required to keep.',
+    'How to ask Farm Support Innovation to delete your FSI Farm Manager account, or only your disease-check photographs — what gets deleted, and what we are required to keep.',
 };
 
 /**
@@ -48,7 +48,7 @@ export default function DeleteAccountPage() {
       <DocTitle
         title="Delete your account"
         updated="2026-09-30"
-        summary="You can ask us to delete your FSI Farm Manager account at any time, and we do not charge for it. Write to us from the email address on the account and we will confirm within 7 days and finish within 30. Your farm records go with it — so export anything you still need first."
+        summary="You can ask us to delete your FSI Farm Manager account at any time — or, if you would rather keep the account, just your disease-check photographs. Either way it is free: write from the email address on the account and we will confirm within 7 days and finish within 30. Deleting the account takes your farm records with it, so export anything you still need first."
       />
 
       <Section n={1} title="Which app this is about">
@@ -60,7 +60,11 @@ export default function DeleteAccountPage() {
         </p>
       </Section>
 
-      <Section n={2} title="How to ask us to delete your account">
+      {/* Heading names both routes on purpose: this one page is the URL
+          in Play Console for account deletion AND for data deletion, so
+          a reviewer arriving for either must find their answer without
+          reading the whole page. */}
+      <Section n={2} title="How to ask us to delete your account, or just your photographs">
         <Bullets
           items={[
             <>
