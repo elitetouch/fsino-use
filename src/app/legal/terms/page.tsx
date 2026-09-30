@@ -313,10 +313,10 @@ export default function TermsPage() {
         <p>
           Before you go, export what you want to keep. We will help if you ask — write to{' '}
           <a
-            href="mailto:support@fsinnovation.net"
+            href="mailto:fsinnovationafrica@gmail.com"
             className="font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
           >
-            support@fsinnovation.net
+            fsinnovationafrica@gmail.com
           </a>
           .
         </p>
