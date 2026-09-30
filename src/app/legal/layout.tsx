@@ -42,6 +42,11 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
             <Link href="/legal/privacy" className="hover:text-[var(--color-brand-fg)]">
               Privacy
             </Link>
+            {/* Google Play requires the deletion route to be readily
+                discoverable, not just reachable by direct link. */}
+            <Link href="/legal/delete-account" className="hover:text-[var(--color-brand-fg)]">
+              Delete account
+            </Link>
             <a
               href="mailto:support@fsinnovation.net"
               className="hover:text-[var(--color-brand-fg)]"
