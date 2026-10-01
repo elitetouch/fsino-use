@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.farmsupportinnovation.fsino",
+      "sha256_cert_fingerprints": [
+        "18:2C:56:AE:46:87:FC:93:34:E3:CA:67:29:DF:C9:73:49:59:11:48:F6:16:20:72:00:4B:90:CE:06:F1:DE:27"
+      ]
+    }
+  }
+]

@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Check, Bird } from 'lucide-react';
+import { productionTypeLabel } from '@/lib/api';
 import type { FlockDto, PenDto } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -201,5 +202,5 @@ function cycleOrdinal(c: FlockDto, items: FlockDto[], i: number): number {
 }
 
 function labelForProduction(t: FlockDto['productionType']): string {
-  return t === 'broiler' ? 'Broiler' : t === 'layer' ? 'Layer' : 'Dual-purpose';
+  return productionTypeLabel(t);
 }

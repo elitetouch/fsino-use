@@ -9,6 +9,7 @@ import {
   CheckCircle2, AlertTriangle, Loader2, ShieldCheck, Mail, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { OpenInApp } from '@/components/app/open-in-app';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { Logo } from '@/components/brand/logo';
 import {
@@ -167,6 +168,14 @@ function InviteHeader({ data }: { data: InvitePreviewDto }) {
       <p className="mt-1.5 text-[0.8125rem] text-[var(--color-brand-muted)]">
         Sent to <strong className="text-[var(--color-brand-fg)]">{invite.email}</strong>.
       </p>
+
+      {/* Android only, and only when the OS did not already hand this
+          link to the app. See components/app/open-in-app.tsx — this is
+          the fallback for in-app browsers and for users who once told
+          Chrome to always keep these links. */}
+      <div className="mt-4">
+        <OpenInApp path="invite" />
+      </div>
 
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
         <Pill icon={ShieldCheck} label="Role" value={invite.role} />

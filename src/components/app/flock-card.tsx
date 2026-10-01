@@ -7,12 +7,19 @@ import { cn } from '@/lib/utils';
  * Active flock summary card — used in the dashboard grid + flocks list.
  *
  * Computes cycle progress from age vs production-type baseline:
- *   broiler   → 42 days
- *   layer     → 72 weeks → 504 days
+ *   broiler      → 42 days
+ *   cockerel     → 112 days  (16 weeks, middle of the 12-20 week trade)
+ *   layer        → 72 weeks → 504 days
  *   dual_purpose → 120 days
+ *
+ * Cockerel is deliberately not 42: a male layer chick takes roughly
+ * three times as long to reach sale weight as a broiler, so sharing the
+ * broiler baseline would show every cockerel batch as 200%+ complete
+ * within its first month.
  */
 const CYCLE_BASELINES: Record<FlockDto['productionType'], number> = {
   broiler: 42,
+  cockerel: 112,
   layer: 504,
   dual_purpose: 120,
 };

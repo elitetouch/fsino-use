@@ -2493,7 +2493,16 @@ function DailyBars({
 // ────────────── HELPERS ──────────────
 
 function labelForProduction(t: FlockDto['productionType']): string {
-  return t === 'broiler' ? 'Broilers for meat production' : t === 'layer' ? 'Layers for egg production' : 'Dual-purpose';
+  switch (t) {
+    case 'broiler':
+      return 'Broilers for meat production';
+    case 'cockerel':
+      return 'Cockerels for meat production';
+    case 'layer':
+      return 'Layers for egg production';
+    default:
+      return 'Dual-purpose';
+  }
 }
 
 /**
