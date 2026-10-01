@@ -13,6 +13,7 @@ import { Gate } from '@/lib/access';
 import {
   endpoints,
   type DeviceOfferDto, type TokenPriceDto, type TokenType, type TokenTier,
+  productionTypeLabel,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -314,7 +315,7 @@ function PriceRow({ price }: { price: TokenPriceDto }) {
     currency: price.currency,
     maximumFractionDigits: 0,
   }).format(majorUnits);
-  const label = price.tokenType === 'broiler' ? 'Broiler' : 'Layer';
+  const label = productionTypeLabel(price.tokenType);
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/50 px-3.5 py-2.5">

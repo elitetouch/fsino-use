@@ -11,6 +11,7 @@ import { Input, Label } from '@/components/ui/input';
 import {
   apiErrorMessage, endpoints,
   type TokenType, type TokenTier, type TokenPriceDto,
+  TOKEN_TYPES,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,20 @@ import { cn } from '@/lib/utils';
  * flock placement defaults to the right type/tier and the bird count
  * the user is trying to place.
  */
+/**
+ * What each token buys, in the farmer's terms.
+ *
+ * Cockerel is its own token rather than a broiler one because the bird
+ * is held four times as long: 20 weeks against 7. Selling it at the
+ * broiler price would be selling five months of cycle for seven weeks'
+ * money.
+ */
+const TOKEN_TYPE_COPY: Record<TokenType, { title: string; sub: string }> = {
+  broiler: { title: 'Broiler', sub: 'Meat birds, 7 weeks' },
+  cockerel: { title: 'Cockerel', sub: 'Meat birds, 20 weeks' },
+  layer: { title: 'Layer', sub: 'Egg birds, 18 months' },
+};
+
 export function BuyTokensDialog({
   open,
   onClose,
@@ -159,18 +174,24 @@ export function BuyTokensDialog({
           {/* Token type */}
           <div>
             <Label>Token type</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['broiler', 'layer'] as const).map((t) => (
+            <div className="grid grid-cols-3 gap-2">
+              {TOKEN_TYPES.map((t) => (
                 <PickerTile
                   key={t}
                   active={tokenType === t}
                   onClick={() => setTokenType(t)}
-                  title={t === 'broiler' ? 'Broiler' : 'Layer'}
-                  sub={t === 'broiler' ? 'Meat birds' : 'Egg birds'}
+                  title={TOKEN_TYPE_COPY[t].title}
+                  sub={TOKEN_TYPE_COPY[t].sub}
                   icon={<Bird className="h-3.5 w-3.5" />}
                 />
               ))}
             </div>
+            {tokenType === 'layer' ? (
+              <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-[var(--color-brand-muted)]">
+                Dual-purpose flocks spend layer tokens too — they share the
+                18-month cycle.
+              </p>
+            ) : null}
           </div>
 
           {/* Tier */}

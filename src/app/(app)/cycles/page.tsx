@@ -7,7 +7,7 @@ import { Bird, Search, Plus, ChevronRight, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/app/page-header';
-import { endpoints, type FlockDto, type PenDto } from '@/lib/api';
+import { endpoints, productionTypeLabel, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
@@ -245,5 +245,5 @@ function Empty({ filtered = false }: { filtered?: boolean }) {
 }
 
 function labelForProduction(t: FlockDto['productionType']): string {
-  return t === 'broiler' ? 'Broiler' : t === 'layer' ? 'Layer' : 'Dual-purpose';
+  return productionTypeLabel(t);
 }

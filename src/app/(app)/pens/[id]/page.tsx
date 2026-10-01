@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app/page-header';
-import { endpoints, type FlockDto, type PenDto } from '@/lib/api';
+import { endpoints, productionTypeLabel, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { fmtDate } from '@/lib/format';
@@ -249,5 +249,5 @@ function CycleRow({
 }
 
 function labelForProduction(t: FlockDto['productionType']): string {
-  return t === 'broiler' ? 'Broiler' : t === 'layer' ? 'Layer' : 'Dual-purpose';
+  return productionTypeLabel(t);
 }

@@ -334,7 +334,7 @@ function FinancialsCard({
       matters. Layers and dual-purpose keep the caveat. */
   productionType: string;
 }) {
-  const revenueNote = productionType === 'broiler'
+  const revenueNote = productionType === 'broiler' || productionType === 'cockerel'
     ? 'Sale records only.'
     : 'Sale records only. Eggs not priced until you log a sale.';
 

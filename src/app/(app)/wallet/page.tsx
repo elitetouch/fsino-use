@@ -14,6 +14,7 @@ import { Gate } from '@/lib/access';
 import {
   apiErrorMessage, endpoints,
   type TokenBalanceDto, type TokenPurchaseDto, type TokenType, type TokenTier,
+  TOKEN_TYPES,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -266,14 +267,14 @@ function TopUpIntent({
 
     // Validated, not trusted. These arrive in a URL that anyone can
     // edit, and they set the quantity on a purchase.
-    const validType = buy === 'broiler' || buy === 'layer';
+    const validType = buy !== null && (TOKEN_TYPES as readonly string[]).includes(buy);
     const validTier = tier === 'basic' || tier === 'premium';
     const validQty = Number.isFinite(qty) && qty > 0 && qty <= 1_000_000;
 
     if (!validType || !validTier || !validQty) return;
 
     handled.current = true;
-    onIntent({ tokenType: buy, tier, quantity: Math.ceil(qty) });
+    onIntent({ tokenType: buy as TokenType, tier, quantity: Math.ceil(qty) });
     router.replace('/wallet');
   }, [search, router, onIntent]);
 

@@ -1097,7 +1097,17 @@ export const endpoints = {
 
 // ────────────── Billing DTOs ──────────────
 
-export type TokenType = 'broiler' | 'layer';
+/**
+ * Token types that can actually be bought and spent.
+ *
+ * SHORTER THAN ProductionType on purpose: dual-purpose flocks have no
+ * token of their own and are billed on the layer tier, so offering a
+ * "dual_purpose" token in the wallet would sell something nobody can
+ * spend. The backend's FlockType::TOKEN_TYPES is the authority; this
+ * mirrors it.
+ */
+export const TOKEN_TYPES = ['broiler', 'cockerel', 'layer'] as const;
+export type TokenType = (typeof TOKEN_TYPES)[number];
 export type TokenTier = 'basic' | 'premium';
 
 /**
@@ -1139,7 +1149,8 @@ export function insufficientTokens(err: unknown): InsufficientTokens | null {
   const { tokenType, tier, required, available, shortfall } = raw;
 
   if (
-    (tokenType !== 'broiler' && tokenType !== 'layer') ||
+    typeof tokenType !== 'string' ||
+    !(TOKEN_TYPES as readonly string[]).includes(tokenType) ||
     (tier !== 'basic' && tier !== 'premium') ||
     typeof required !== 'number' ||
     typeof available !== 'number' ||
@@ -1148,7 +1159,7 @@ export function insufficientTokens(err: unknown): InsufficientTokens | null {
     return null;
   }
 
-  return { tokenType, tier, required, available, shortfall };
+  return { tokenType: tokenType as TokenType, tier, required, available, shortfall };
 }
 
 export type TokenBalanceDto = {
@@ -1317,12 +1328,69 @@ export type CreatePenPayload = {
   notes?: string;
 };
 
+/**
+ * How a flock is farmed. Mirrors FlockType::TYPES on the backend.
+ *
+ * `cockerel` is a male layer-strain chick grown for meat — a separate
+ * type rather than a broiler because he grows roughly three times more
+ * slowly, and rating him against a broiler curve would tell every
+ * cockerel farmer his birds are failing.
+ */
+export type ProductionType = 'broiler' | 'cockerel' | 'layer' | 'dual_purpose';
+
+/**
+ * Which token a flock of this type actually spends.
+ *
+ * Mirrors FlockType::tokenType() on the backend, and exists because
+ * three parts of this system used to disagree about dual-purpose: this
+ * client debited broiler tokens, a backend comment said layer, and the
+ * backend code looked for a "dual_purpose" token that can never be
+ * bought. Layer is correct — dual-purpose shares the layer's 78-week
+ * window, so billing it at the broiler rate would sell eighteen months
+ * of cycle at seven weeks' price.
+ *
+ * Cockerel has its own token. It must NOT fall through to layer: at the
+ * layer rate a 7,000-bird cockerel batch costs ten times what it should.
+ */
+export function tokenTypeForProduction(productionType: ProductionType): TokenType {
+  switch (productionType) {
+    case 'broiler':
+      return 'broiler';
+    case 'cockerel':
+      return 'cockerel';
+    case 'layer':
+    case 'dual_purpose':
+      return 'layer';
+  }
+}
+
+/** Human label for a production type, used by every picker. */
+export function productionTypeLabel(productionType: ProductionType): string {
+  switch (productionType) {
+    case 'broiler':
+      return 'Broiler';
+    case 'cockerel':
+      return 'Cockerel';
+    case 'layer':
+      return 'Layer';
+    case 'dual_purpose':
+      return 'Dual-purpose';
+  }
+}
+
+export const PRODUCTION_TYPES: readonly ProductionType[] = [
+  'broiler',
+  'cockerel',
+  'layer',
+  'dual_purpose',
+] as const;
+
 export type FlockDto = {
   id: string;
   farmId: string;
   penId?: string | null;
   name?: string | null;
-  productionType: 'broiler' | 'layer' | 'dual_purpose';
+  productionType: ProductionType;
   breed: string;
   placedBirds: number;
   currentBirds: number | null;
@@ -1388,7 +1456,7 @@ export interface ArchiveFlockOpts {
 
 export type CreateFlockPayload = {
   pen_id?: string;
-  production_type: 'broiler' | 'layer' | 'dual_purpose';
+  production_type: ProductionType;
   placed_birds: number;
   breed: string;
   breed_id?: string;
@@ -1402,7 +1470,7 @@ export type CreateFlockPayload = {
 export type BreedDto = {
   id: string;
   name: string;
-  productionType?: 'broiler' | 'layer' | 'dual_purpose';
+  productionType?: ProductionType;
   breederCompany?: string | null;
 };
 
@@ -1936,7 +2004,7 @@ export type FarmExtraVaccinationPayload = {
   disease_target?: string | null;
   method?: string | null;
   dosage?: string | null;
-  production_type?: 'layer' | 'broiler' | 'mixed' | 'all';
+  production_type?: ProductionType | 'mixed' | 'all';
   source_record_id?: string | null;
   notes?: string | null;
 };

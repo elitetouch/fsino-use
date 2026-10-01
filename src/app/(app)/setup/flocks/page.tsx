@@ -22,6 +22,10 @@ import {
   type PenDto,
   type BreedDto,
   type TokenBalanceDto,
+  tokenTypeForProduction,
+  PRODUCTION_TYPES,
+  productionTypeLabel,
+  type ProductionType,
 } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
@@ -36,7 +40,7 @@ import { flocksKey } from '@/lib/query-keys';
  * so progress is preserved without route hops.
  *
  * Backend CreateFlockRequest:
- *   production_type   broiler | layer | dual_purpose      (required)
+ *   production_type   broiler | cockerel | layer | dual_purpose  (required)
  *   placed_birds      int 1-10M                            (required)
  *   breed             string max 255                       (required)
  *   age_when_placed   int days 1-1000                      (required)
@@ -53,7 +57,7 @@ type SubStep = (typeof STEPS)[number];
 
 const schema = z.object({
   // Step 1
-  production_type: z.enum(['broiler', 'layer', 'dual_purpose'], {
+  production_type: z.enum(['broiler', 'cockerel', 'layer', 'dual_purpose'], {
     errorMap: () => ({ message: 'Pick a production type' }),
   }),
   // pen_id is required client-side even though the backend allows
@@ -129,10 +133,13 @@ export default function SetupFlocksPage() {
   const placedBirds = Number(form.watch('placed_birds') || 0);
   const [openBuy, setOpenBuy] = useState(false);
 
-  // Map broiler/layer to backend token_type — dual_purpose flocks debit
-  // broiler tokens by convention (matches backend behaviour).
-  const tokenType: 'broiler' | 'layer' =
-    productionType === 'layer' ? 'layer' : 'broiler';
+  // One helper, shared with the backend's FlockType::tokenType().
+  //
+  // This block used to send dual_purpose flocks to BROILER tokens while
+  // the server looked for layer — and the server itself looked for a
+  // "dual_purpose" token that can never be bought. Three different
+  // answers to one question. Do not inline this mapping again.
+  const tokenType = tokenTypeForProduction(productionType);
 
   const balances = useQuery({
     queryKey: ['token-balances'],
@@ -294,8 +301,8 @@ export default function SetupFlocksPage() {
             <>
               <div>
                 <Label>Production type *</Label>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {(['broiler', 'layer', 'dual_purpose'] as const).map((t) => {
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {PRODUCTION_TYPES.map((t) => {
                     const checked = productionType === t;
                     return (
                       <label
@@ -670,6 +677,11 @@ function TokenRulesNote() {
               <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Covers brood → onset of lay → peak.</p>
             </li>
             <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Cockerel</p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">20 weeks per token</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Cockerels sell from 12 to 20 weeks — the window stays open to the last bird.</p>
+            </li>
+            <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
               <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Dual-purpose</p>
               <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">18 months per token</p>
               <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Priced and timed on the layer policy.</p>
@@ -696,8 +708,8 @@ function TokenRulesNote() {
   );
 }
 
-function labelForProduction(t: 'broiler' | 'layer' | 'dual_purpose'): string {
-  return t === 'broiler' ? 'Broiler' : t === 'layer' ? 'Layer' : 'Dual-purpose';
+function labelForProduction(t: ProductionType): string {
+  return productionTypeLabel(t);
 }
 
 function capitalise(s: string): string {
