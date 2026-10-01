@@ -14,6 +14,7 @@ import {
   endpoints,
   type DeviceOfferDto, type TokenPriceDto, type TokenType, type TokenTier,
   productionTypeLabel,
+  type ProductionType,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +39,36 @@ import { cn } from '@/lib/utils';
  * harvest projections. If a feature isn't live yet, it doesn't
  * appear here — no fabrication.
  */
+/**
+ * Token window per production type, mirroring FlockType::cycleWeeks().
+ *
+ * A list rather than three hand-written cards, because the hand-written
+ * version went stale the day cockerel shipped — the wallet sold a
+ * Cockerel token while this panel still described three kinds of bird.
+ */
+const CYCLE_WINDOWS: ReadonlyArray<{ type: ProductionType; window: string; body: string }> = [
+  {
+    type: 'broiler',
+    window: '7 weeks per token',
+    body: 'Full meat-bird cycle from placement to sale.',
+  },
+  {
+    type: 'cockerel',
+    window: '20 weeks per token',
+    body: 'Cockerels sell from 12 to 20 weeks — the window holds to the last bird.',
+  },
+  {
+    type: 'layer',
+    window: '18 months per token',
+    body: 'Brood, pullet, onset of lay, through peak.',
+  },
+  {
+    type: 'dual_purpose',
+    window: '18 months per token',
+    body: 'Spends layer tokens, on the same 18-month window.',
+  },
+];
+
 export default function SubscriptionPage() {
   const [openBuy, setOpenBuy] = useState(false);
   const [buyDefaults, setBuyDefaults] = useState<{ tokenType?: TokenType; tier?: TokenTier } | undefined>();
@@ -482,10 +513,15 @@ function TokenRulesPanel() {
         </div>
 
         {/* Cycle windows by type. */}
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <CycleTypeCard label="Broiler" window="7 weeks per token" body="Full meat-bird cycle from placement to sale." />
-          <CycleTypeCard label="Layer" window="18 months per token" body="Brood, pullet, onset of lay, through peak." />
-          <CycleTypeCard label="Dual-purpose" window="18 months per token" body="Priced and windowed on the layer policy." />
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {CYCLE_WINDOWS.map((row) => (
+            <CycleTypeCard
+              key={row.type}
+              label={productionTypeLabel(row.type)}
+              window={row.window}
+              body={row.body}
+            />
+          ))}
         </div>
 
         {/* Deduction rules. */}
@@ -524,7 +560,7 @@ function TokenRulesPanel() {
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
-                <strong className="text-[var(--color-brand-fg)]">Cycle window expires.</strong> When the production window (7 weeks broiler / 18 months layer) passes, the flock auto-archives. The pen is freed for the next placement, the cycle&apos;s data stays on file for reports, and the token has done its job.
+                <strong className="text-[var(--color-brand-fg)]">Cycle window expires.</strong> When the production window (7 weeks broiler, 20 weeks cockerel, 18 months layer) passes, the flock auto-archives. The pen is freed for the next placement, the cycle&apos;s data stays on file for reports, and the token has done its job.
               </span>
             </li>
             <li className="flex items-start gap-2">
