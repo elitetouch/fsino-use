@@ -4,7 +4,8 @@ Android App Links. This file is how Android decides whether tapping an
 `https://` link on this domain should open the FSI Farm Manager app
 instead of a browser tab.
 
-It is served statically from `public/`, so the live URL is:
+The file lives at `public/.well-known/assetlinks.json` and is served
+statically, so the live URL is:
 
 ```
 https://web.fsinnovation.net/.well-known/assetlinks.json
@@ -14,6 +15,26 @@ No route, no component, no middleware. If that URL ever stops returning
 HTTP 200 with `content-type: application/json`, App Links break
 silently — the links keep working, they just stop opening the app, and
 nothing logs an error.
+
+## On Vercel specifically
+
+This deploys from git, `public/` is the static root, and there is no
+`.vercelignore`, so the file ships as-is. Verified locally against a
+production build: HTTP 200, `application/json`.
+
+**Android does not follow redirects when it fetches this file.** That is
+not a preference, it is how the verifier works — a 301, 302 or 307 is
+treated as "no statement found" and the domain simply fails to verify.
+
+That is why this file is served from `web.fsinnovation.net` rather than
+the apex. `https://fsinnovation.net/.well-known/assetlinks.json`
+currently 307s to `www.`, and Vercel apex→www redirects are configured
+at the domain level, where a single path cannot be carved out. If the
+apex ever needs to claim the app too, it has to become a real deployment
+target rather than a redirect, and serve its own copy of this file.
+
+This directory holds only `assetlinks.json` on purpose. Anything else
+placed here is publicly fetchable at `/.well-known/<name>`.
 
 ---
 
