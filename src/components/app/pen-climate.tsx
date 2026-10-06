@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PenClimateHistory } from '@/components/app/pen-climate-history';
@@ -877,8 +877,10 @@ function RelayToggle({
     mutationFn: (on: boolean) => endpoints.setPenClimateRelay(penId, relay.id, on, deviceId),
     onMutate: (on) => setPendingOn(on),
     onSuccess: () => {
+      // Ask for fresh data, but do NOT clear the optimistic position
+      // here. A 200 from this endpoint means the MQTT publish
+      // succeeded — not that the device acted on it. See below.
       qc.invalidateQueries({ queryKey: ['pen-climate', penId] });
-      setPendingOn(null);
     },
     onError: (err) => {
       // Rollback the optimistic position so the user can see the
@@ -887,6 +889,42 @@ function RelayToggle({
       toast.error(apiErrorMessage(err, 'Could not toggle that relay.'));
     },
   });
+
+  // Hold the optimistic position until the SERVER agrees with it.
+  //
+  // This used to clear on mutation success, which made the socket
+  // impossible to switch off. The device reports its real relay state
+  // on its own 30-second telemetry cycle and this page polls every 10,
+  // so for up to three polls after a command the server still returns
+  // the OLD state. Clearing early meant: tap on, toggle paints ON, API
+  // returns instantly, next poll reads a stale `false`, toggle snaps
+  // back to OFF. The farmer's next tap then computed !isOn from that
+  // stale false and sent ON a second time — so `off` could never be
+  // sent at all, while `on` always worked.
+  //
+  // The device's own web page never had this bug because it reads
+  // in-memory pumpState every 2s with no telemetry lag.
+  useEffect(() => {
+    if (pendingOn !== null && relay.on === pendingOn) setPendingOn(null);
+  }, [relay.on, pendingOn]);
+
+  // Safety valve: if the device never confirms — offline, command
+  // dropped, relay physically stuck — release the optimistic position
+  // after two telemetry cycles so the farmer sees the truth rather
+  // than a toggle frozen in a state the pen is not actually in.
+  const releaseAt = useRef<number | null>(null);
+  useEffect(() => {
+    if (pendingOn === null) {
+      releaseAt.current = null;
+      return;
+    }
+    releaseAt.current = Date.now();
+    const t = setTimeout(() => {
+      setPendingOn(null);
+      toast.warning('The station has not confirmed that change yet.');
+    }, 70_000);
+    return () => clearTimeout(t);
+  }, [pendingOn]);
 
   return (
     <button
