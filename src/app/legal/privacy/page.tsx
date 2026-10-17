@@ -49,10 +49,10 @@ export default function PrivacyPage() {
           For the purposes of the Nigeria Data Protection Act 2023, we are the data controller for
           the personal data described here. You can reach us at{' '}
           <a
-            href="mailto:fsinnovationafrica@gmail.com"
+            href="mailto:privacy@fsinnovation.net"
             className="font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
           >
-            fsinnovationafrica@gmail.com
+            privacy@fsinnovation.net
           </a>
           .
         </p>
@@ -177,10 +177,10 @@ export default function PrivacyPage() {
         <p>
           If you would rather your photographs were not kept for improving the model, write to{' '}
           <a
-            href="mailto:fsinnovationafrica@gmail.com"
+            href="mailto:privacy@fsinnovation.net"
             className="font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
           >
-            fsinnovationafrica@gmail.com
+            privacy@fsinnovation.net
           </a>{' '}
           and we will remove them. The results stay in your own history.
         </p>
@@ -215,10 +215,10 @@ export default function PrivacyPage() {
         <p>
           Write to{' '}
           <a
-            href="mailto:fsinnovationafrica@gmail.com"
+            href="mailto:privacy@fsinnovation.net"
             className="font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
           >
-            fsinnovationafrica@gmail.com
+            privacy@fsinnovation.net
           </a>
           . We answer within 30 days. There is no charge.
         </p>

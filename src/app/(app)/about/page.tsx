@@ -115,10 +115,10 @@ export default function AboutPage() {
         <p className="mt-4 text-[0.8125rem] italic text-[var(--color-brand-muted)]">
           Talk to us:{' '}
           <a
-            href="mailto:fsinnovationafrica@gmail.com"
+            href="mailto:support@fsinnovation.net"
             className="font-semibold text-[var(--color-brand-primary-deep)] hover:underline"
           >
-            fsinnovationafrica@gmail.com
+            support@fsinnovation.net
           </a>
         </p>
       </section>
