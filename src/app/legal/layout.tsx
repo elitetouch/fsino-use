@@ -1,61 +1,40 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { MarketingNav } from '@/components/marketing/nav';
+import { MarketingFooter } from '@/components/marketing/footer';
 
 /**
- * Shell for the terms and privacy pages.
+ * Shell for the legal documents — terms, privacy, account deletion.
  *
- * PUBLIC, AND IT HAS TO BE. Both are linked from the registration form,
- * which nobody has an account on yet — putting them inside (app) would
- * bounce a prospective user to a login to read the terms they are being
- * asked to accept.
+ * PUBLIC, AND IT HAS TO BE. All three are linked from the registration
+ * form, which nobody has an account on yet — putting them inside (app)
+ * would bounce a prospective user to a login to read the terms they are
+ * being asked to accept.
  *
- * Plain by design: one narrow column, no product chrome, no navigation
- * to get lost in. Somebody reading these is looking for one clause, and
- * anything that competes with the text is in the way.
+ * SAME CHROME AS THE LANDING PAGE, deliberately. These are the pages a
+ * Play reviewer, a prospective customer and a data subject each arrive
+ * on directly, often as their first sight of the company — and a page
+ * carrying no logo reads as a different site than the one that sent
+ * them there. An earlier version used a bare text link for the opposite
+ * reason, that no chrome competes with the text; an unbranded legal
+ * page turned out to cost more trust than a nav bar costs attention.
+ *
+ * The CONTENT column stays at 44rem while the chrome runs full width.
+ * Legal prose set to the marketing container's width runs past 120
+ * characters a line, which is roughly double what these documents are
+ * written for.
  */
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--color-brand-bg)]">
-      <header className="border-b border-[var(--color-brand-border)] bg-white">
-        <div className="mx-auto flex max-w-[44rem] items-center gap-3 px-5 py-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-[0.8125rem] font-semibold text-[var(--color-brand-muted)] hover:text-[var(--color-brand-fg)]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Farm Support Innovation
-          </Link>
-        </div>
-      </header>
+    // flex column + flex-1 on main so the footer sits at the bottom of
+    // the viewport on short pages (delete-account is well under a
+    // screen on desktop) rather than floating mid-page.
+    <div className="flex min-h-screen flex-col bg-[var(--color-brand-bg)]">
+      <MarketingNav />
 
-      {/* prose-ish spacing set here rather than per page, so the two
+      {/* prose-ish spacing set here rather than per page, so the three
           documents cannot drift apart typographically. */}
-      <main className="mx-auto max-w-[44rem] px-5 py-10 pb-20">{children}</main>
+      <main className="mx-auto w-full max-w-[44rem] flex-1 px-5 py-10 pb-20">{children}</main>
 
-      <footer className="border-t border-[var(--color-brand-border)] bg-white">
-        <div className="mx-auto flex max-w-[44rem] flex-wrap items-center justify-between gap-3 px-5 py-5 text-[0.78125rem] text-[var(--color-brand-muted)]">
-          <span>FS Innovation is registered in Nigeria</span>
-          <span className="flex gap-4">
-            <Link href="/legal/terms" className="hover:text-[var(--color-brand-fg)]">
-              Terms
-            </Link>
-            <Link href="/legal/privacy" className="hover:text-[var(--color-brand-fg)]">
-              Privacy
-            </Link>
-            {/* Google Play requires the deletion route to be readily
-                discoverable, not just reachable by direct link. */}
-            <Link href="/legal/delete-account" className="hover:text-[var(--color-brand-fg)]">
-              Delete account
-            </Link>
-            <a
-              href="mailto:support@fsinnovation.net"
-              className="hover:text-[var(--color-brand-fg)]"
-            >
-              Contact
-            </a>
-          </span>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

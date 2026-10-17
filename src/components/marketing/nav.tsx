@@ -2,47 +2,60 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ChevronDown, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /**
- * Marketing nav.
+ * Marketing nav — a mirror of the one on www.fsinnovation.net.
  *
- * Structure mirrors fsinnovation.net (the parent brand site):
- *   Home · Products ▾ · Pricing · About · Contact   [Log in] [Get started]
+ * WHY A MIRROR. Two Vercel projects serve one brand: fsino-landing on
+ * www.fsinnovation.net and this app on web.fsinnovation.net. People
+ * cross between them without noticing the hostname, so the chrome has
+ * to be the same on both. Items, labels and order here match `LINKS`
+ * in `src/components/site-navbar.tsx` over in fsino-landing — change
+ * one, change the other. The same goes for the footer.
+ *
+ * This used to carry a Products dropdown and a Home item that the brand
+ * site does not have. Both are gone: the logo is the route home, and
+ * Products is a page over there, not a menu.
  *
  * Implementation notes:
  *   - Header is h-20 (80px) at small/md, h-[88px] at lg+. The logo
  *     renders at size 72/84 so it sits comfortably inside with
- *     vertical breathing room (the previous h-16 + size-108 setup
+ *     vertical breathing room (an earlier h-16 + size-108 setup
  *     clipped the logo's cloud antenna at the top of the viewport).
- *   - Transparent at the top of the page, becomes a solid white
- *     backdrop-blurred bar after scrolling > 8px.
- *   - Hamburger drawer on phones with the same items as the desktop
- *     nav plus stacked CTAs at the bottom.
- *   - Products is a hover/click dropdown listing what the platform
- *     covers (consistent with the real site).
+ *   - Transparent at the top of the page, solid white backdrop-blurred
+ *     bar after scrolling > 8px.
+ *   - Hamburger drawer on phones with the same items plus stacked CTAs.
  */
 
-const NAV_LINKS: Array<{ label: string; href: string }> = [
-  { label: 'Home', href: '/' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'About', href: '/about' },
-  { label: 'Contact', href: '/contact' },
-];
+type NavLink = { href: string; label: string; external?: boolean };
 
-const PRODUCT_LINKS: Array<{ label: string; href: string; body?: string }> = [
-  { label: 'Web app', href: '/register', body: 'Manage your farm in the browser.' },
-  { label: 'Android app', href: '#platforms', body: 'Get it free on the Play Store.' },
-  { label: 'For cooperatives', href: '#audience', body: 'Onboard members in minutes.' },
+const SITE = 'https://www.fsinnovation.net';
+
+/**
+ * Only /about is relative: both sites have one, so the path resolves
+ * to each site's own page. The rest live only on the brand site —
+ * except /contact, which exists here too but is the authenticated
+ * support-thread UI and would bounce a logged-out visitor to /login,
+ * so it points at www like the others.
+ *
+ * External items navigate in place rather than opening a tab. These are
+ * primary navigation between two halves of one brand, not references.
+ */
+const LINKS: NavLink[] = [
+  { href: `${SITE}/products`, label: 'Products', external: true },
+  { href: `${SITE}/pricing`, label: 'Pricing', external: true },
+  { href: `${SITE}/how-we-build`, label: 'How we build', external: true },
+  { href: '/about', label: 'About' },
+  { href: `${SITE}/contact`, label: 'Contact', external: true },
 ];
 
 export function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [productsOpen, setProductsOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -52,12 +65,9 @@ export function MarketingNav() {
   }, []);
 
   useEffect(() => {
-    // Close drawers on Escape — small QoL.
+    // Close the drawer on Escape — small QoL.
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-        setProductsOpen(false);
-      }
+      if (e.key === 'Escape') setOpen(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -88,52 +98,8 @@ export function MarketingNav() {
 
         {/* Desktop nav */}
         <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
-          <NavLinkInline href="/">Home</NavLinkInline>
-
-          {/* Products dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setProductsOpen(true)}
-            onMouseLeave={() => setProductsOpen(false)}
-          >
-            <button
-              type="button"
-              onClick={() => setProductsOpen((v) => !v)}
-              aria-expanded={productsOpen}
-              className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-[0.9375rem] font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
-            >
-              Products
-              <ChevronDown
-                className={cn(
-                  'h-4 w-4 transition-transform duration-200',
-                  productsOpen && 'rotate-180',
-                )}
-              />
-            </button>
-
-            {productsOpen && (
-              <div className="absolute left-1/2 top-full z-50 w-[320px] -translate-x-1/2 pt-2">
-                <div className="animate-fade-up overflow-hidden rounded-2xl border border-[var(--color-brand-border)] bg-white p-2 shadow-[0_30px_60px_-25px_rgba(15,80,30,0.25)]">
-                  {PRODUCT_LINKS.map((p) => (
-                    <Link
-                      key={p.label}
-                      href={p.href}
-                      className="block rounded-xl px-3 py-2.5 transition-colors hover:bg-[var(--color-brand-accent)]/40"
-                      onClick={() => setProductsOpen(false)}
-                    >
-                      <p className="text-sm font-semibold text-[var(--color-brand-fg)]">{p.label}</p>
-                      {p.body && (
-                        <p className="mt-0.5 text-xs text-[var(--color-brand-muted)]">{p.body}</p>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {NAV_LINKS.slice(1).map((l) => (
-            <NavLinkInline key={l.href} href={l.href}>
+          {LINKS.map((l) => (
+            <NavLinkInline key={l.href} href={l.href} external={l.external}>
               {l.label}
             </NavLinkInline>
           ))}
@@ -168,16 +134,27 @@ export function MarketingNav() {
       {open && (
         <div className="animate-fade-up border-t border-[var(--color-brand-border)] bg-white px-5 py-5 sm:px-8 lg:hidden">
           <nav className="flex flex-col gap-1 pb-2">
-            {[{ label: 'Home', href: '/' }, ...PRODUCT_LINKS, ...NAV_LINKS.slice(1)].map((l) => (
-              <Link
-                key={`${l.label}-${l.href}`}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="rounded-xl px-3 py-3 text-base font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:bg-[var(--color-brand-accent)]/40"
-              >
-                {l.label}
-              </Link>
-            ))}
+            {LINKS.map((l) =>
+              l.external ? (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="rounded-xl px-3 py-3 text-base font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:bg-[var(--color-brand-accent)]/40"
+                >
+                  {l.label}
+                </a>
+              ) : (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="rounded-xl px-3 py-3 text-base font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:bg-[var(--color-brand-accent)]/40"
+                >
+                  {l.label}
+                </Link>
+              ),
+            )}
           </nav>
           <div className="mt-2 flex flex-col gap-2 border-t border-[var(--color-brand-border)] pt-4">
             <Button asChild variant="outline" size="block">
@@ -193,12 +170,28 @@ export function MarketingNav() {
   );
 }
 
-function NavLinkInline({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLinkInline({
+  href,
+  external,
+  children,
+}: {
+  href: string;
+  external?: boolean;
+  children: React.ReactNode;
+}) {
+  const className =
+    'rounded-full px-4 py-2 text-[0.9375rem] font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]';
+
+  if (external) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
+
   return (
-    <Link
-      href={href}
-      className="rounded-full px-4 py-2 text-[0.9375rem] font-medium text-[var(--color-brand-fg-soft)] transition-colors hover:text-[var(--color-brand-primary-deep)]"
-    >
+    <Link href={href} className={className}>
       {children}
     </Link>
   );

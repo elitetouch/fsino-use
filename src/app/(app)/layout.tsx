@@ -24,7 +24,9 @@ const TITLE_BY_PATH: Record<string, string> = {
   '/expenses':    'Expenses',
   '/subscription':'Subscription',
   '/shop':        'Shop',
-  '/about':       'About this app',
+  // No '/about' — that page moved to the (marketing) group so logged-out
+  // visitors can read it. Its URL is unchanged, but it no longer renders
+  // through this layout, so a title here would never be used.
   '/contact':     'Contact us',
   '/community':   'WhatsApp community',
   '/menu':        'Menu',
