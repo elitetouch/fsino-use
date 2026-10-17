@@ -131,7 +131,9 @@ export const ROUTE_ACCESS: Array<{ path: string; rule: AccessRule }> = [
 
   // Storefront / static
   { path: '/shop',         rule: { openToMembers: true } },
-  { path: '/about',        rule: { openToMembers: true } },
+  // '/about' is not here: it left the (app) group for (marketing) so it
+  // can be read without an account. These rules are only consulted by
+  // the (app) layout, so an entry for it would be dead config.
   { path: '/contact',      rule: { openToMembers: true } },
   { path: '/community',    rule: { openToMembers: true } },
 ];
