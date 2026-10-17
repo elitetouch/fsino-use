@@ -29,18 +29,22 @@ export const metadata: Metadata = {
  * the bundle currently has no such screen. Until it does, the email
  * route below is the only one, and it must actually be monitored.
  *
- * WHY A GMAIL ADDRESS AND NOT privacy@fsinnovation.net — the domain has
- * no MX record, and the A-record fallback host refuses port 25, so
- * anything sent to privacy@ or support@ there bounces. A published
- * contact that bounces is worse than an unglamorous one that works:
- * under the NDPA a data subject must be able to reach the controller,
- * and Play may test the instructions on this page.
+ * WHY A ROLE ADDRESS — privacy@ outlives whoever holds the inbox. Hand
+ * data requests to someone else and you change one forwarding rule, not
+ * six published legal pages and a Play listing.
  *
- * Once MX is configured, move back to role addresses — privacy@ for
- * data requests, support@ for everything else — so the contact survives
- * whoever currently holds the inbox. Change it in every file at once;
- * before this commit three different addresses were published across
- * six files and none of them could receive mail.
+ * It did not always work. The domain had no MX record, so privacy@ and
+ * support@ bounced and these pages published a personal Gmail address
+ * instead — under the NDPA a data subject must be able to reach the
+ * controller, and Play tests the instructions on this page, so a
+ * contact that bounces is worse than an unglamorous one that works.
+ * The domain now has MX records pointing at a forwarder and both
+ * addresses deliver.
+ *
+ * The address appears here twice — once in the mailto: and once as the
+ * visible link text — and again in five other files. Change it
+ * everywhere in one commit: a page that displays one address while
+ * linking to another is the failure this comment exists to prevent.
  */
 export default function DeleteAccountPage() {
   return (
@@ -70,10 +74,10 @@ export default function DeleteAccountPage() {
             <>
               <strong>Email{' '}
               <a
-                href="mailto:fsinnovationafrica@gmail.com"
+                href="mailto:privacy@fsinnovation.net"
                 className="font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
               >
-                fsinnovationafrica@gmail.com
+                privacy@fsinnovation.net
               </a>{' '}
               from the address your account uses</strong>, with the subject{' '}
               <span className="font-medium">Delete my account</span>. Sending from that address is
