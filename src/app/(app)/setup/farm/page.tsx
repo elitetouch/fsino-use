@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowRight, Loader2, Beef, Egg } from 'lucide-react';
+import { ArrowRight, Loader2, Beef, Egg, Bird, Snowflake, Leaf, Droplets, Fish } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
@@ -52,10 +52,14 @@ const schema = z.object({
     .refine((v) => v === undefined || v === '' || !isNaN(Number(v)), {
       message: 'Capacity must be a number',
     }),
+  vertical: z.enum(['poultry', 'greenhouse', 'irrigation', 'cold_chain', 'aquaculture']),
   produces_meat: z.boolean().default(false),
   produces_eggs: z.boolean().default(false),
-}).refine((v) => v.produces_meat || v.produces_eggs, {
+}).refine((v) => v.vertical !== 'poultry' || v.produces_meat || v.produces_eggs, {
   path: ['produces_meat'],
+  // Only poultry is asked meat-or-eggs. A cold room produces neither,
+  // and requiring an answer there would block the form on a question
+  // that does not apply.
   message: 'Pick at least one — meat, eggs, or both',
 });
 
@@ -94,6 +98,9 @@ export default function SetupFarmPage() {
       state: '',
       address: '',
       estimated_capacity: '' as unknown as number,
+      // Poultry by default: it is what almost every farm here is, so
+      // the common case needs no decision.
+      vertical: 'poultry',
       produces_meat: false,
       produces_eggs: false,
     },
@@ -110,8 +117,17 @@ export default function SetupFarmPage() {
   });
 
   function onSubmit(v: FormValues) {
-    const primary_production: CreateFarmPayload['primary_production'] =
-      v.produces_meat && v.produces_eggs ? 'mixed' : v.produces_meat ? 'broiler' : 'layer';
+    // primary_production is a poultry concept — it drives the breed
+    // list and the default vaccination schedule. Sending it for a cold
+    // room would seed a farm with a laying programme it can never use.
+    const primary_production: CreateFarmPayload['primary_production'] | undefined =
+      v.vertical !== 'poultry'
+        ? undefined
+        : v.produces_meat && v.produces_eggs
+          ? 'mixed'
+          : v.produces_meat
+            ? 'broiler'
+            : 'layer';
 
     const capacity =
       v.estimated_capacity === '' || v.estimated_capacity === undefined
@@ -124,11 +140,13 @@ export default function SetupFarmPage() {
       address: v.address || undefined,
       estimated_capacity: capacity,
       primary_production,
+      vertical: v.vertical,
     });
   }
 
   const meat = form.watch('produces_meat');
   const eggs = form.watch('produces_eggs');
+  const vertical = form.watch('vertical');
 
   // Don't flash the form while we're deciding whether this user even
   // belongs here. The useEffect above redirects when they can't create.
@@ -204,6 +222,29 @@ export default function SetupFarmPage() {
           <FieldError message={form.formState.errors.address?.message} />
         </div>
 
+        {/* THE question this form was missing. Without it every farm
+            was created as poultry — the column defaulted that way and
+            nothing could change it — which made the other verticals
+            unreachable no matter what was built behind them. */}
+        <div>
+          <Label>What do you manage here? *</Label>
+          <p className="-mt-1 mb-2 text-xs text-[var(--color-brand-muted)]">
+            This sets up the right records and alerts. One thing per farm — add another farm
+            if you run more.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {VERTICAL_OPTIONS.map((o) => (
+              <VerticalChip
+                key={o.value}
+                {...o}
+                checked={vertical === o.value}
+                onSelect={() => form.setValue('vertical', o.value, { shouldValidate: true })}
+              />
+            ))}
+          </div>
+        </div>
+
+        {vertical === 'poultry' && (
         <div>
           <Label>What do you produce? *</Label>
           <p className="-mt-1 mb-2 text-xs text-[var(--color-brand-muted)]">
@@ -227,6 +268,7 @@ export default function SetupFarmPage() {
           </div>
           <FieldError message={form.formState.errors.produces_meat?.message} />
         </div>
+        )}
 
         <Button type="submit" size="block" disabled={create.isPending}>
           {create.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
@@ -243,6 +285,69 @@ export default function SetupFarmPage() {
  * pick-list like Meat / Eggs. Same accessibility surface (real checkbox
  * underneath, keyboard + screen-reader friendly).
  */
+/**
+ * The five things a farm can be.
+ *
+ * Hints are written in the farmer's own words rather than ours — "cold
+ * rooms, reefer trucks" lands where "cold chain logistics" does not.
+ */
+const VERTICAL_OPTIONS: Array<{
+  value: 'poultry' | 'greenhouse' | 'irrigation' | 'cold_chain' | 'aquaculture';
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  hint: string;
+}> = [
+  { value: 'poultry', icon: Bird, label: 'Poultry', hint: 'Broilers, layers, cockerels' },
+  { value: 'cold_chain', icon: Snowflake, label: 'Cold storage', hint: 'Cold rooms, reefer trucks' },
+  { value: 'greenhouse', icon: Leaf, label: 'Greenhouse', hint: 'Tomato, pepper, vegetables' },
+  { value: 'irrigation', icon: Droplets, label: 'Irrigation', hint: 'Field crops, pumps and plots' },
+  { value: 'aquaculture', icon: Fish, label: 'Fish farm', hint: 'Catfish, tilapia, ponds' },
+];
+
+function VerticalChip({
+  icon: Icon,
+  label,
+  hint,
+  checked,
+  onSelect,
+}: {
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  hint: string;
+  checked: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={checked}
+      className={cn(
+        'group flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3.5 text-left transition-all',
+        checked
+          ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-accent)]/40 shadow-[0_8px_18px_-12px_rgba(15,80,30,0.30)]'
+          : 'border-[var(--color-brand-input-border)] bg-white hover:border-[var(--color-brand-primary)]/40',
+      )}
+    >
+      <span
+        className={cn(
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors',
+          checked
+            ? 'bg-[var(--color-brand-primary)] text-white'
+            : 'bg-[var(--color-brand-surface-soft)] text-[var(--color-brand-primary-deep)] group-hover:bg-[var(--color-brand-accent)]/60',
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-bold text-[var(--color-brand-fg)]">{label}</span>
+        <span className="block truncate text-xs text-[var(--color-brand-muted)]">{hint}</span>
+      </span>
+    </button>
+  );
+}
+
 function ProduceChip({
   icon: Icon,
   label,

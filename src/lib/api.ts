@@ -1520,6 +1520,11 @@ export type CreateFarmPayload = {
   primary_production?: 'broiler' | 'layer' | 'mixed';
   estimated_capacity?: number;
   target_market?: string;
+  /**
+   * Which vertical this farm is. Omit and the server defaults to
+   * poultry, which is what every client that predates this meant.
+   */
+  vertical?: 'poultry' | 'greenhouse' | 'irrigation' | 'cold_chain' | 'aquaculture';
 };
 
 export type PenDto = {
