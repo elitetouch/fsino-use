@@ -1,5 +1,6 @@
 import { MarketingNav } from '@/components/marketing/nav';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { AndroidInstallBar } from '@/components/marketing/android-install-bar';
 
 /**
  * Shell for the public marketing pages that are not the landing page.
@@ -28,6 +29,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         {children}
       </main>
       <MarketingFooter />
+      {/* Android phones only, after 600px of scroll, dismissible. */}
+      <AndroidInstallBar />
     </div>
   );
 }

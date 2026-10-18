@@ -11,6 +11,7 @@ import { HowItWorks } from '@/components/marketing/how-it-works';
 import { Audience } from '@/components/marketing/audience';
 import { FinalCTA } from '@/components/marketing/final-cta';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { AndroidInstallBar } from '@/components/marketing/android-install-bar';
 import { RevealOnScroll } from '@/components/util/reveal-on-scroll';
 import { readToken } from '@/lib/auth';
 
@@ -46,6 +47,8 @@ export default function LandingPage() {
         <FinalCTA />
       </main>
       <MarketingFooter />
+      {/* Android phones only, after 600px of scroll, dismissible. */}
+      <AndroidInstallBar />
     </>
   );
 }
