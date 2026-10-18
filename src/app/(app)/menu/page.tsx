@@ -2,11 +2,12 @@
 
 import {
   LayoutDashboard, BarChart3, Tractor, User, Bird, Users2, Settings,
-  CreditCard, Info, Phone, MessageCircle, Receipt,
+  CreditCard, Info, Phone, MessageCircle, Receipt, Snowflake, Package, FileText,
 } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 import { MenuList } from '@/components/app/menu-list';
 import { readUser } from '@/lib/auth';
+import { useVertical } from '@/lib/vertical';
 
 /**
  * Menu — desktop counterpart of the mobile Menu screen. Section-listed
@@ -16,6 +17,13 @@ import { readUser } from '@/lib/auth';
 export default function MenuPage() {
   const user = readUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Farmer';
+
+  // A poultry farmer — which is nearly every user — sees exactly the
+  // menu they have always seen. The cold-chain entries appear only on
+  // a farm that is one, and the flock entries step aside there,
+  // because a cold room has no cycle to manage.
+  const { vertical, unitPlural } = useVertical();
+  const isColdChain = vertical === 'cold_chain';
 
   return (
     <div className="space-y-5">
@@ -30,8 +38,16 @@ export default function MenuPage() {
           {
             heading: 'Farm Support Innovation',
             items: [
-              { href: '/home',    label: 'Dashboard', icon: LayoutDashboard, hint: 'Current cycle results' },
-              { href: '/reports', label: 'Reports',   icon: BarChart3,      hint: 'PDFs and exports for the bank' },
+              ...(isColdChain
+                ? [
+                    { href: '/cold-rooms', label: unitPlural, icon: Snowflake, hint: 'Live temperature and alerts' },
+                    { href: '/cold-chain/batches', label: 'Stock in store', icon: Package, hint: 'What is in each room' },
+                    { href: '/cold-chain/report', label: 'Breach report', icon: FileText, hint: 'Excursions, for an insurer or auditor' },
+                  ]
+                : [
+                    { href: '/home',    label: 'Dashboard', icon: LayoutDashboard, hint: 'Current cycle results' },
+                    { href: '/reports', label: 'Reports',   icon: BarChart3,      hint: 'PDFs and exports for the bank' },
+                  ]),
             ],
           },
           {
@@ -39,7 +55,9 @@ export default function MenuPage() {
             items: [
               { href: '/farms',         label: 'Farms',           icon: Tractor,    hint: 'Switch or add a farm' },
               { href: '/profile',       label: 'Profile',         icon: User },
-              { href: '/pens-flocks',   label: 'Pens and flocks', icon: Bird,       hint: 'Manage pens and active flocks' },
+              ...(isColdChain
+                ? []
+                : [{ href: '/pens-flocks', label: 'Pens and flocks', icon: Bird, hint: 'Manage pens and active flocks' }]),
               { href: '/users',         label: 'Users',           icon: Users2,     hint: 'Invite staff and managers' },
               { href: '/settings',      label: 'Settings',        icon: Settings,   hint: 'Preferences, language and units' },
               { href: '/expenses',      label: 'Expenses',        icon: Receipt,    hint: 'Log feed, drugs, fuel and other costs' },

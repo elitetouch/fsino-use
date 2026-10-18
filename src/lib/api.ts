@@ -455,6 +455,87 @@ export const endpoints = {
   createPen: (payload: CreatePenPayload) =>
     unwrap<{ pen: PenDto }>(api.post('/pens', payload)),
 
+
+  // ───────────── Cold chain (require X-Farm-ID) ─────────────
+  listColdRooms: () =>
+    unwrap<{ rooms: ColdRoomDto[] }>(api.get('/cold-rooms')),
+
+  getColdRoom: (id: string) =>
+    unwrap<{ room: ColdRoomDto; presets: ColdChainPresetDto[] }>(
+      api.get(`/cold-rooms/${id}`),
+    ),
+
+  listColdChainPresets: () =>
+    unwrap<{ presets: ColdChainPresetDto[] }>(api.get('/cold-rooms/presets')),
+
+  /**
+   * Save the band and push it to the device.
+   *
+   * `pushed_to_device` is the field that matters: a band saved but not
+   * acknowledged means the hardware is still enforcing the old one,
+   * and the UI has to say so rather than show a success tick.
+   */
+  setColdRoomBand: (
+    id: string,
+    payload: { preset: ColdChainPresetKey; min_c?: number; max_c?: number },
+  ) =>
+    unwrap<{ room: ColdRoomDto; pushed_to_device: boolean }>(
+      api.put(`/cold-rooms/${id}/band`, payload),
+    ),
+
+  listColdChainBatches: (params?: {
+    pen_id?: string;
+    status?: string;
+    expiring?: boolean;
+    days?: number;
+  }) =>
+    unwrap<{
+      batches: ColdChainBatchDto[];
+      summary: { count: number; value_amount: number | null; expiring_14d: number };
+    }>(api.get('/cold-chain/batches', { params })),
+
+  createColdChainBatch: (payload: CreateBatchPayload) =>
+    unwrap<{ batch: ColdChainBatchDto }>(api.post('/cold-chain/batches', payload)),
+
+  updateColdChainBatch: (id: string, payload: Partial<CreateBatchPayload>) =>
+    unwrap<{ batch: ColdChainBatchDto }>(api.patch(`/cold-chain/batches/${id}`, payload)),
+
+  moveColdChainBatch: (id: string, penId: string) =>
+    unwrap<{ batch: ColdChainBatchDto }>(
+      api.post(`/cold-chain/batches/${id}/move`, { pen_id: penId }),
+    ),
+
+  closeColdChainBatch: (
+    id: string,
+    payload: { status: 'dispatched' | 'discarded'; dispatched_to?: string; notes?: string },
+  ) => unwrap<{ batch: ColdChainBatchDto }>(api.post(`/cold-chain/batches/${id}/close`, payload)),
+
+  coldChainReport: (params?: { from?: string; to?: string }) =>
+    unwrap<{
+      facility: { id: string; name: string };
+      window: { from: string; to: string };
+      summary: {
+        excursions: number;
+        critical: number;
+        total_minutes: number;
+        ongoing: number;
+        batches_affected: number;
+      };
+      excursions: ColdChainExcursionDto[];
+    }>(api.get('/cold-chain/report', { params })),
+
+  coldChainBatchReport: (id: string) =>
+    unwrap<{
+      batch: ColdChainBatchDto & { room: string | null };
+      summary: {
+        excursions: number;
+        total_minutes: number;
+        worst_temp_c: number | null;
+        verdict: string;
+      };
+      exposures: ColdChainExposureDto[];
+    }>(api.get(`/cold-chain/batches/${id}/report`)),
+
   // ───────────── Flocks (require X-Farm-ID) ─────────────
   /**
    * List flocks for the current farm. By default returns active only.
@@ -1232,6 +1313,142 @@ export type InitializePurchasePayload = {
 
 // ─────────────────────── DTOs ───────────────────────
 
+
+/* ───────────────────────── Cold chain ─────────────────────────
+ *
+ * A cold room IS a pen on the server — same table, same pairing, same
+ * telemetry. These types describe the COMPOSITE the cold-chain screens
+ * need (room + latest reading + band + open alerts + what is inside),
+ * which is why they are not just PenDto.
+ */
+
+export type ColdChainPresetKey =
+  | 'vaccine'
+  | 'chilled'
+  | 'frozen'
+  | 'produce'
+  | 'custom';
+
+export type ColdChainPresetDto = {
+  key: ColdChainPresetKey;
+  label: string;
+  hint: string;
+  min_c: number | null;
+  max_c: number | null;
+  low_side_critical: boolean;
+};
+
+export type ColdRoomAlertDto = {
+  id: string;
+  rule_key: string;
+  severity: 'info' | 'medium' | 'high' | 'critical';
+  headline: string;
+  detail: string;
+  fired_at: string | null;
+  minutes_running: number | null;
+};
+
+export type ColdRoomDto = {
+  id: string;
+  name: string;
+  type: string | null;
+  temp_c: number | null;
+  reading_at: string | null;
+  /** A quiet room is a question, not a silence. */
+  minutes_since_reading: number | null;
+  band: {
+    min_c: number | null;
+    max_c: number | null;
+    preset: ColdChainPresetKey | null;
+    configured: boolean;
+    /** Saved AND acknowledged by the device. */
+    in_force: boolean;
+    pushed_at: string | null;
+  };
+  in_band: boolean | null;
+  severity: ColdRoomAlertDto['severity'] | null;
+  severity_rank: number;
+  alerts: ColdRoomAlertDto[];
+  stock: {
+    batches: number;
+    value_amount: number | null;
+    currency: string | null;
+  };
+};
+
+export type ColdChainBatchDto = {
+  id: string;
+  label: string;
+  quantity: number | null;
+  unit: string | null;
+  stored_at: string | null;
+  batch_code: string | null;
+  supplier: string | null;
+  customer: string | null;
+  expires_at: string | null;
+  days_to_expiry: number | null;
+  value_amount: number | null;
+  currency: string | null;
+  status: 'in_store' | 'dispatched' | 'discarded';
+  dispatched_at: string | null;
+  dispatched_to: string | null;
+  notes: string | null;
+  pen: { id: string | null; name: string | null };
+};
+
+export type ColdChainExposureDto = {
+  id: string;
+  room: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  ongoing: boolean;
+  minutes: number | null;
+  peak_temp_c: number | null;
+  direction: 'above' | 'below' | null;
+  headline: string | null;
+  severity: string | null;
+  acknowledged_at: string | null;
+};
+
+export type ColdChainExcursionDto = {
+  id: string;
+  room: string;
+  rule_key: string;
+  severity: string;
+  headline: string;
+  detail: string;
+  started_at: string | null;
+  ended_at: string | null;
+  ongoing: boolean;
+  minutes: number | null;
+  peak_temp_c: number | null;
+  direction: 'above' | 'below' | null;
+  acknowledged_at: string | null;
+  stock_affected: Array<{
+    batch_id: string;
+    label: string | null;
+    batch_code: string | null;
+    minutes: number | null;
+    peak_temp_c: number | null;
+  }>;
+  value_at_risk: number | null;
+};
+
+export type CreateBatchPayload = {
+  pen_id: string;
+  label: string;
+  stored_at?: string;
+  quantity?: number | null;
+  unit?: string | null;
+  batch_code?: string | null;
+  supplier?: string | null;
+  customer?: string | null;
+  expires_at?: string | null;
+  value_amount?: number | null;
+  currency?: string | null;
+  notes?: string | null;
+};
+
 export type FarmDto = {
   id: string;
   accountId: string;
@@ -1243,6 +1460,12 @@ export type FarmDto = {
   timezone?: string | null;
   farmType?: string | null;
   primaryProduction?: 'broiler' | 'layer' | 'mixed' | null;
+  /**
+   * Which vertical this farm is. Optional on the wire so an older
+   * server simply reads as poultry rather than breaking the client —
+   * see src/lib/vertical.ts, which mirrors FarmVertical.php.
+   */
+  vertical?: 'poultry' | 'greenhouse' | 'irrigation' | 'cold_chain' | 'aquaculture' | null;
   estimatedCapacity?: number | null;
   targetMarket?: string | null;
   isActive: boolean;
