@@ -1,7 +1,9 @@
 import {
-  BarChart3, Bird, CreditCard, Info, LayoutDashboard, MessageCircle, Phone,
-  Receipt, Settings, Stethoscope, Tractor, TrendingUp, User, Users2, Wallet,
+  BarChart3, Bird, CreditCard, FileText, Info, LayoutDashboard, MessageCircle,
+  Package, Phone, Receipt, Settings, Snowflake, Stethoscope, Tractor,
+  TrendingUp, User, Users2, Wallet,
 } from 'lucide-react';
+import { DEFAULT_VERTICAL, type Vertical } from '@/lib/vertical';
 
 /**
  * The single navigation definition.
@@ -77,3 +79,58 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/**
+ * Cold chain's navigation.
+ *
+ * Not the poultry list with items hidden — a different list. A cold
+ * store has no flock to place, no bird to diagnose, no breed report to
+ * run, and no token to spend; leaving those greyed out would say the
+ * product is for someone else and this operator is using the cut-down
+ * version. What they do have is rooms, stock and a breach report.
+ *
+ * Expenses stays: diesel for the generator is the operator's largest
+ * controllable cost, and the reason several of them will log anything
+ * at all. Sales and Wallet go: nothing is sold per bird here, and
+ * billing is on device subscription rather than tokens.
+ */
+const COLD_CHAIN_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { href: '/cold-rooms', label: 'Cold rooms', icon: Snowflake },
+      { href: '/cold-chain/batches', label: 'Stock in store', icon: Package },
+      { href: '/cold-chain/report', label: 'Breach report', icon: FileText },
+    ],
+  },
+  {
+    heading: 'Account',
+    items: [
+      { href: '/farms', label: 'Farms', icon: Tractor },
+      { href: '/profile', label: 'Profile', icon: User },
+      { href: '/users', label: 'Users', icon: Users2 },
+      { href: '/settings', label: 'Settings', icon: Settings },
+      { href: '/expenses', label: 'Expenses', icon: Receipt },
+      { href: '/subscription', label: 'Subscription', icon: CreditCard },
+    ],
+  },
+  {
+    heading: 'Customer support',
+    items: [
+      { href: '/about', label: 'About this app', icon: Info },
+      { href: '/contact', label: 'Contact us', icon: Phone },
+      { href: '/community', label: 'WhatsApp community', icon: MessageCircle },
+    ],
+  },
+];
+
+/**
+ * The navigation for a given vertical.
+ *
+ * Only cold chain diverges so far. Greenhouse, irrigation and
+ * aquaculture keep the poultry shape because their screens are not
+ * built yet, and showing a farmer a menu of links that go nowhere is
+ * worse than showing them the one they already know.
+ */
+export function navGroupsFor(vertical: Vertical = DEFAULT_VERTICAL): NavGroup[] {
+  return vertical === 'cold_chain' ? COLD_CHAIN_GROUPS : NAV_GROUPS;
+}

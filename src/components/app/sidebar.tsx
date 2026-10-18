@@ -6,7 +6,8 @@ import { ChevronRight } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
 import { cn } from '@/lib/utils';
-import { NAV_GROUPS, type NavItem } from '@/lib/nav';
+import { navGroupsFor, type NavItem } from '@/lib/nav';
+import { useVertical } from '@/lib/vertical';
 
 /**
  * Sidebar — mirrors the mobile Menu screen sections so the IA
@@ -24,9 +25,14 @@ export function Sidebar() {
   // the original list — we deny on routes, not on the rail itself,
   // because hiding everything during the initial fetch would jitter
   // the layout. The route guards on each page are the safety net.
+  // The nav a cold store needs is a different list, not the poultry
+  // one with items greyed out — see navGroupsFor().
+  const { vertical } = useVertical();
+  const groups = navGroupsFor(vertical);
+
   const visibleGroups = p.loading
-    ? NAV_GROUPS
-    : NAV_GROUPS
+    ? groups
+    : groups
         .map((g) => ({
           ...g,
           items: g.items.filter((it) => p.satisfies(ruleForPath(it.href) ?? { openToMembers: true })),

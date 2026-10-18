@@ -7,7 +7,8 @@ import { ChevronRight, X } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { ruleForPath, usePermissions } from '@/lib/access';
 import { cn } from '@/lib/utils';
-import { NAV_GROUPS } from '@/lib/nav';
+import { navGroupsFor } from '@/lib/nav';
+import { useVertical } from '@/lib/vertical';
 
 export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
@@ -15,9 +16,14 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
 
   // Same filter as the desktop sidebar — see sidebar.tsx for the
   // rationale on keeping all groups visible while loading.
+  // The nav a cold store needs is a different list, not the poultry
+  // one with items greyed out — see navGroupsFor().
+  const { vertical } = useVertical();
+  const groups = navGroupsFor(vertical);
+
   const visibleGroups = p.loading
-    ? NAV_GROUPS
-    : NAV_GROUPS
+    ? groups
+    : groups
         .map((g) => ({
           ...g,
           items: g.items.filter((it) => p.satisfies(ruleForPath(it.href) ?? { openToMembers: true })),
