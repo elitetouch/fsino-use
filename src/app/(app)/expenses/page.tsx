@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import { flocksKey } from '@/lib/query-keys';
 import { useCurrentFarmId } from '@/lib/farm-context';
+import { useVertical } from '@/lib/vertical';
 
 /**
  * Expenses ledger — the finance-only surface.
@@ -46,6 +47,7 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS) as ExpenseCategory[];
 
 export default function ExpensesPage() {
+  const { hasCycles, cyclePlural } = useVertical();
   // Scopes the flocks cache to this farm — without it, switching
   // farms reused the previous farm's cached list.
   const farmId = useCurrentFarmId();
@@ -107,16 +109,20 @@ export default function ExpensesPage() {
       )}
 
       <div className="flex flex-wrap gap-2 rounded-xl border border-[var(--color-brand-border)] bg-white p-3">
+        {/* A cold store has no cycles to filter by — the category
+            filter beside this one is the only one that applies. */}
+        {hasCycles && (
         <select
           value={filterFlockId}
           onChange={(e) => setFilterFlockId(e.target.value)}
           className="h-9 rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.78125rem]"
         >
-          <option value="">All flocks</option>
+          <option value="">All {(cyclePlural ?? 'cycles').toLowerCase()}</option>
           {(flocks.data?.flocks ?? []).map((f) => (
             <option key={f.id} value={f.id}>{f.name}</option>
           ))}
         </select>
+        )}
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value as ExpenseCategory | '')}

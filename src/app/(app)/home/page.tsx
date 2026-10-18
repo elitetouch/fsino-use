@@ -18,7 +18,6 @@ import { AlertsFeed } from '@/components/app/alerts-feed';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
 import { readUser } from '@/lib/auth';
-import { DEFAULT_VERTICAL, isVertical, VERTICALS, type Vertical } from '@/lib/vertical';
 import { readCurrentFarmId, useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 import { readLastCycle, writeLastCycle } from '@/lib/last-cycle';
 import { flocksKey } from '@/lib/query-keys';
@@ -56,21 +55,6 @@ export default function HomePage() {
   const farm: FarmDto | undefined =
     farms.data?.farms.find((f) => f.id === currentFarmId) ?? farms.data?.farms[0];
 
-  // This whole page is a CYCLE dashboard: active birds, FCR, cost per
-  // bird, "place your first flock". None of it means anything in a
-  // cold store, where the equivalent question is which rooms are
-  // holding their band — so send them to the screen that answers it
-  // rather than rendering a poultry dashboard with zeroes in it.
-  //
-  // A redirect rather than a second dashboard because /cold-rooms IS
-  // their dashboard; duplicating it here would be two screens to keep
-  // in step for no gain.
-  const vertical = farm?.vertical;
-  useEffect(() => {
-    if (vertical && !VERTICALS[isVertical(vertical) ? vertical : DEFAULT_VERTICAL].hasCycles) {
-      router.replace(VERTICALS[vertical as Vertical].unitsHref);
-    }
-  }, [vertical, router]);
 
   const pens = useQuery({
     queryKey: ['pens', currentFarmId],
