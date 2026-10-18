@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -231,6 +231,14 @@ function AddBatch({
   onSaved: () => void;
 }) {
   const [penId, setPenId] = useState(rooms[0]?.id ?? '');
+
+  // The rooms query may still be in flight when this dialog opens, and
+  // a useState initialiser runs once — so without this the select
+  // stays empty forever even after the rooms arrive, with Save
+  // disabled and nothing on screen explaining why.
+  useEffect(() => {
+    if (!penId && rooms.length > 0) setPenId(rooms[0].id);
+  }, [rooms, penId]);
   const [label, setLabel] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('');
@@ -262,6 +270,34 @@ function AddBatch({
     onError: () => toast.error('Could not record the stock.'),
   });
 
+  // Stock lives IN a room, so there is nothing to record until one
+  // exists. Saying so beats an empty dropdown and a dead Save button,
+  // which is indistinguishable from the page being broken.
+  if (rooms.length === 0) {
+    return (
+      <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[15px] font-bold">Add stock</h2>
+          <button onClick={onClose} aria-label="Close" className="rounded p-1 hover:bg-[var(--color-brand-surface-soft)]">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <p className="text-[13px] text-[var(--color-brand-muted)]">
+          You need a cold room first — stock is recorded as being inside one, so there is
+          nowhere to put this yet.
+        </p>
+        <div className="mt-4">
+          <Button asChild size="sm">
+            <Link href="/setup/pens">
+              <Plus className="h-4 w-4" />
+              Add a cold room
+            </Link>
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -284,6 +320,7 @@ function AddBatch({
             onChange={(e) => setPenId(e.target.value)}
             className="h-11 w-full rounded-xl border border-[var(--color-brand-input-border)] bg-white px-3 text-[14px]"
           >
+            {penId === '' && <option value="">Choose a room…</option>}
             {rooms.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}

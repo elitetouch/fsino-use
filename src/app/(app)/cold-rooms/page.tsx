@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
+  Plus,
   CheckCircle2,
   DoorOpen,
   Package,
@@ -12,6 +13,8 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
+import { Button } from '@/components/ui/button';
+import { Gate } from '@/lib/access';
 import { endpoints, type ColdRoomDto } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
@@ -53,6 +56,19 @@ export default function ColdRoomsPage() {
         eyebrow="Cold chain"
         title="Cold rooms"
         description="Live temperature, the band each room should hold, and what is inside it."
+        actions={
+          // /pens is the poultry screen and is redirected away from
+          // for this vertical, so without this there is no route to a
+          // SECOND room once setup is done.
+          <Gate perm="pens.create">
+            <Button asChild size="sm" className="h-10">
+              <Link href="/setup/pens">
+                <Plus className="h-4 w-4" />
+                Add cold room
+              </Link>
+            </Button>
+          </Gate>
+        }
       />
 
       {rooms.isLoading ? (
