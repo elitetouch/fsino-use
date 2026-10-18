@@ -1,5 +1,6 @@
 import { MarketingNav } from '@/components/marketing/nav';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { AndroidInstallBar } from '@/components/marketing/android-install-bar';
 
 /**
  * Shell for the legal documents — terms, privacy, account deletion.
@@ -35,6 +36,8 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       <main className="mx-auto w-full max-w-[44rem] flex-1 px-5 py-10 pb-20">{children}</main>
 
       <MarketingFooter />
+      {/* Android phones only, after 600px of scroll, dismissible. */}
+      <AndroidInstallBar />
     </div>
   );
 }
