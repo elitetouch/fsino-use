@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Smartphone } from 'lucide-react';
+import { ANDROID_PACKAGE, PLAY_STORE_URL } from '@/lib/links';
 
 /**
  * "Open in FSI Farm Manager" — the explicit, user-initiated route into
@@ -35,19 +36,19 @@ import { Smartphone } from 'lucide-react';
  * something that cannot work.
  */
 
-const PACKAGE = 'com.farmsupportinnovation.fsino';
+const PACKAGE = ANDROID_PACKAGE;
 
 /**
  * Where a device without the app should land.
  *
- * Deliberately NOT the Play Store listing yet: the app is still in
- * review, and a Play URL for an unpublished app shows "item not found",
- * which reads as a broken product rather than one that is nearly ready.
- * Swap this for
- * `https://play.google.com/store/apps/details?id=com.farmsupportinnovation.fsino`
- * the day it goes live.
+ * The Play listing, now that the app is published. This used to point
+ * at the marketing site because a Play URL for an app still in review
+ * renders "item not found", which reads as a broken product rather than
+ * one that is nearly ready. That is no longer true, and sending someone
+ * who tapped "Open in app" to a marketing page instead of to the
+ * install they just asked for was always the weaker fallback.
  */
-const FALLBACK_URL = 'https://fsinnovation.net/';
+const FALLBACK_URL = PLAY_STORE_URL;
 
 function intentUrl(path: string): string {
   // S.browser_fallback_url must be encoded or Chrome truncates it at

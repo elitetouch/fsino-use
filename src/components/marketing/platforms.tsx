@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Globe, Smartphone, Wifi, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PLAY_STORE_URL } from '@/lib/links';
 import { PhoneMockup } from './phone-mockup';
 
 /**
@@ -100,8 +101,6 @@ export function Platforms() {
  * Play" treatment. Imported here so the file stays self-contained.
  */
 function PlayStoreLink() {
-  const PLAY_STORE_URL =
-    process.env.NEXT_PUBLIC_PLAY_STORE_URL ?? 'https://play.google.com/store';
   return (
     <Link
       href={PLAY_STORE_URL}
