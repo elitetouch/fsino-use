@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -27,6 +27,29 @@ import { money } from '@/lib/cold-chain-format';
  * Get that balance wrong in either direction and you lose one of the
  * two markets entirely.
  */
+/**
+ * The units stock is actually counted in around here.
+ *
+ * Carton, crate, bag and basket come first because that is how a
+ * market trader counts; kg and tonne for anyone selling by weight;
+ * vial and box for pharmaceutical storage, which is the other half of
+ * this market.
+ */
+const UNIT_OPTIONS = [
+  'carton',
+  'crate',
+  'bag',
+  'basket',
+  'kg',
+  'tonne',
+  'box',
+  'pallet',
+  'vial',
+  'piece',
+];
+
+const OTHER_UNIT = '__other__';
+
 export default function BatchesPage() {
   const farmId = useCurrentFarmId();
   const [adding, setAdding] = useState(false);
@@ -45,6 +68,24 @@ export default function BatchesPage() {
 
   const list = batches.data?.batches ?? [];
   const summary = batches.data?.summary;
+
+  // Suppliers and customers cannot be a fixed list — they are
+  // unbounded and different for every facility. But the grouping
+  // problem is the same one the unit dropdown solves: four people
+  // type "NPHCDA", "nphcda", "NPHCDA " and "Nphcda" and nothing can
+  // be totalled by supplier afterwards. Offering what has already
+  // been used makes the existing spelling the easy choice without
+  // preventing a new one.
+  const known = useMemo(() => {
+    const uniq = (xs: Array<string | null>) =>
+      Array.from(new Set(xs.filter((x): x is string => !!x && x.trim() !== ''))).sort();
+
+    return {
+      suppliers: uniq(list.map((b) => b.supplier)),
+      customers: uniq(list.map((b) => b.customer)),
+      units: uniq(list.map((b) => b.unit)),
+    };
+  }, [list]);
 
   return (
     <div className="space-y-6">
@@ -80,6 +121,7 @@ export default function BatchesPage() {
       {adding && (
         <AddBatch
           rooms={rooms.data?.rooms ?? []}
+          known={known}
           onClose={() => setAdding(false)}
           onSaved={() => {
             batches.refetch();
@@ -223,10 +265,12 @@ function BatchRow({ batch, onChanged }: { batch: ColdChainBatchDto; onChanged: (
 
 function AddBatch({
   rooms,
+  known,
   onClose,
   onSaved,
 }: {
   rooms: ColdRoomDto[];
+  known: { suppliers: string[]; customers: string[]; units: string[] };
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -241,7 +285,22 @@ function AddBatch({
   }, [rooms, penId]);
   const [label, setLabel] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState('');
+  // Two pieces of state for one field: the dropdown choice, and the
+  // free text that only matters when that choice is "Other". Keeping
+  // them separate means switching away from Other and back does not
+  // silently resurrect what was typed before.
+  const [unitChoice, setUnitChoice] = useState('');
+  const [unitOther, setUnitOther] = useState('');
+  const unit = unitChoice === OTHER_UNIT ? unitOther.trim() : unitChoice;
+
+  // A unit somebody typed under "Other" becomes a normal choice next
+  // time. Without this the list never learns, and the second person
+  // to store drums types "drum" again from scratch — and spells it
+  // differently.
+  const unitOptions = useMemo(
+    () => Array.from(new Set([...UNIT_OPTIONS, ...known.units])).sort(),
+    [known.units],
+  );
   const [more, setMore] = useState(false);
   const [batchCode, setBatchCode] = useState('');
   const [supplier, setSupplier] = useState('');
@@ -351,9 +410,40 @@ function AddBatch({
             <span className="mb-1 block text-[11.5px] font-semibold text-[var(--color-brand-fg-soft)]">
               Unit
             </span>
-            <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="carton" />
+            {/* A list rather than free text: typed units arrive as
+                "carton", "Cartons", "ctn" and "CARTON" from four
+                people in the same store, and nothing can then be
+                grouped or totalled. Other stays, because no list
+                survives contact with a real warehouse. */}
+            <select
+              value={unitChoice}
+              onChange={(e) => setUnitChoice(e.target.value)}
+              className="h-11 w-full rounded-xl border border-[var(--color-brand-input-border)] bg-white px-3 text-[14px]"
+            >
+              <option value="">Choose…</option>
+              {unitOptions.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+              <option value={OTHER_UNIT}>Other…</option>
+            </select>
           </label>
         </div>
+
+        {unitChoice === OTHER_UNIT && (
+          <label className="block">
+            <span className="mb-1 block text-[11.5px] font-semibold text-[var(--color-brand-fg-soft)]">
+              What unit?
+            </span>
+            <Input
+              value={unitOther}
+              onChange={(e) => setUnitOther(e.target.value)}
+              placeholder="e.g. drum, sack, pallet"
+              autoFocus
+            />
+          </label>
+        )}
       </div>
 
       <button
@@ -369,8 +459,18 @@ function AddBatch({
         <div className="mt-3 space-y-3 border-t border-[var(--color-brand-border)] pt-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Lot / batch code" value={batchCode} onChange={setBatchCode} placeholder="LOT-4471" />
-            <Field label="Supplier" value={supplier} onChange={setSupplier} />
-            <Field label="Customer / destination" value={customer} onChange={setCustomer} />
+            <Field
+              label="Supplier"
+              value={supplier}
+              onChange={setSupplier}
+              suggestions={known.suppliers}
+            />
+            <Field
+              label="Customer / destination"
+              value={customer}
+              onChange={setCustomer}
+              suggestions={known.customers}
+            />
             <label className="block">
               <span className="mb-1 block text-[11.5px] font-semibold text-[var(--color-brand-fg-soft)]">
                 Expires
@@ -405,18 +505,44 @@ function Field({
   value,
   onChange,
   placeholder,
+  suggestions,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  /**
+   * Values already used on this farm.
+   *
+   * A datalist rather than a select: the operator can still type
+   * anything, but the spelling they used last time is one keystroke
+   * away — which is what keeps a supplier groupable without pretending
+   * we can enumerate every supplier in Nigeria.
+   */
+  suggestions?: string[];
 }) {
+  const listId = suggestions?.length
+    ? `sug-${label.replace(/[^a-z]/gi, '').toLowerCase()}`
+    : undefined;
+
   return (
     <label className="block">
       <span className="mb-1 block text-[11.5px] font-semibold text-[var(--color-brand-fg-soft)]">
         {label}
       </span>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        list={listId}
+      />
+      {listId && (
+        <datalist id={listId}>
+          {suggestions?.map((o) => (
+            <option key={o} value={o} />
+          ))}
+        </datalist>
+      )}
     </label>
   );
 }
