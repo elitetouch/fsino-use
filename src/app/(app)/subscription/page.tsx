@@ -17,6 +17,7 @@ import {
   type ProductionType,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useVertical } from '@/lib/vertical';
 
 /**
  * Subscription page — the "what am I paying for" view.
@@ -70,6 +71,11 @@ const CYCLE_WINDOWS: ReadonlyArray<{ type: ProductionType; window: string; body:
 ];
 
 export default function SubscriptionPage() {
+  // Tokens are priced per bird per cycle. A cold store buys a device
+  // subscription instead, so the token half of this page is hidden
+  // for it and the hardware half — which is its actual billing —
+  // stays.
+  const { usesTokens } = useVertical();
   const [openBuy, setOpenBuy] = useState(false);
   const [buyDefaults, setBuyDefaults] = useState<{ tokenType?: TokenType; tier?: TokenTier } | undefined>();
 
@@ -107,12 +113,14 @@ export default function SubscriptionPage() {
       <PageHeader
         eyebrow="Subscription"
         title="Plan and billing"
-        description="One token, one bird, one tracked cycle. Choose the plan that matches how you run your farm."
+        description={usesTokens
+          ? 'One token, one bird, one tracked cycle. Choose the plan that matches how you run your farm.'
+          : 'Your PENKEEP devices and what they cost to run.'}
       />
 
       {/* Current balance strip. Silent until we have real data so the
           page doesn't flash zeros while the query fetches. */}
-      {balances.data && (
+      {usesTokens && balances.data && (
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-brand-border)] bg-[var(--color-brand-accent)] px-5 py-3.5">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-[var(--color-brand-primary-deep)]">
@@ -140,6 +148,7 @@ export default function SubscriptionPage() {
 
       {/* Plans grid — Basic and Premium side-by-side. Prices pulled
           live from the backend so we never hardcode a stale figure. */}
+      {usesTokens && (
       <section className="grid gap-5 lg:grid-cols-2">
         <PlanCard
           tier="basic"
@@ -166,6 +175,7 @@ export default function SubscriptionPage() {
           highlighted
         />
       </section>
+      )}
 
       {/* Hardware fees — one card per active device SKU the super
           admin has published in the device_prices table. Only relevant
@@ -177,10 +187,12 @@ export default function SubscriptionPage() {
       {/* Rules explainer — extended version of the /setup/flocks
           "How tokens work" panel. Farmers, bank readers and support
           all share the same model. */}
-      <TokenRulesPanel />
+      {usesTokens && <TokenRulesPanel />}
 
       {/* Bottom CTA — anchor for anyone who scrolled past the plan
-          cards to read the rules first. */}
+          cards to read the rules first. Asks them to place a cycle,
+          which a cold store cannot do. */}
+      {usesTokens && (
       <section className="rounded-2xl border border-[var(--color-brand-primary)] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-deep)] p-6 text-white sm:p-8">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -205,6 +217,7 @@ export default function SubscriptionPage() {
           </Gate>
         </div>
       </section>
+      )}
 
       <BuyTokensDialog
         open={openBuy}

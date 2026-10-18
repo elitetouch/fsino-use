@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { canCreateFarm, endpoints, type FarmDto } from '@/lib/api';
 import { useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
+import { DEFAULT_VERTICAL, isVertical, VERTICALS } from '@/lib/vertical';
 
 export default function FarmsPage() {
   const farms = useQuery({ queryKey: ['farms'], queryFn: () => endpoints.listFarms() });
@@ -56,6 +57,7 @@ export default function FarmsPage() {
 }
 
 function FarmCard({ farm, active }: { farm: FarmDto; active: boolean }) {
+  const cardCopy = VERTICALS[isVertical(farm.vertical) ? farm.vertical : DEFAULT_VERTICAL];
   return (
     <button
       type="button"
@@ -82,15 +84,30 @@ function FarmCard({ farm, active }: { farm: FarmDto; active: boolean }) {
         <MapPin className="h-3 w-3" />
         {[farm.state, farm.address].filter(Boolean).join(' · ') || 'No location set'}
       </p>
-      <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--color-brand-border)] pt-4 text-center">
+      {/* Per-card, not per-user: this list is the farm SWITCHER, so a
+          poultry farm and a cold store sit side by side and each must
+          be labelled as itself. A cold store has no flocks, so that
+          column is dropped rather than shown as a permanent zero. */}
+      <div
+        className={cn(
+          'mt-4 grid gap-3 border-t border-[var(--color-brand-border)] pt-4 text-center',
+          cardCopy.hasCycles ? 'grid-cols-3' : 'grid-cols-2',
+        )}
+      >
         <div>
           <p className="text-base font-bold text-[var(--color-brand-fg)]">{farm.farmStat?.activePensCount ?? 0}</p>
-          <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Pens</p>
+          <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+            {cardCopy.unitPlural}
+          </p>
         </div>
+        {cardCopy.hasCycles && cardCopy.cyclePlural !== null && (
         <div>
           <p className="text-base font-bold text-[var(--color-brand-fg)]">{farm.farmStat?.activeFlocksCount ?? 0}</p>
-          <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Flocks</p>
+          <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">
+            {cardCopy.cyclePlural}
+          </p>
         </div>
+        )}
         <div>
           <p className="text-base font-bold text-[var(--color-brand-fg)]">{farm.estimatedCapacity?.toLocaleString() ?? '—'}</p>
           <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]">Capacity</p>

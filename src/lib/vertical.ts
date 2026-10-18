@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
@@ -158,4 +160,68 @@ export function useVertical(): VerticalConfig & {
   const vertical: Vertical = isVertical(raw) ? raw : DEFAULT_VERTICAL;
 
   return { ...VERTICALS[vertical], vertical, isLoading: farms.isLoading };
+}
+
+/**
+ * Routes that only make sense when the farm runs production cycles.
+ *
+ * WHY A LIST AND A REDIRECT, rather than rewording each page. Two
+ * dozen screens here are built around a flock: cycles, reports, the
+ * daily record, disease check, sales per bird. They are not "poultry
+ * wording on a general page" — they are poultry all the way down, and
+ * rewording them for a cold store would produce screens that still ask
+ * questions a cold store cannot answer.
+ *
+ * So the honest answer is that they do not apply. The nav already
+ * omits them; this catches a stale bookmark, a pasted link, or a farm
+ * switched to cold chain while one of these pages was open.
+ *
+ * Prefix match, so /cycles also covers /cycles/{id}/record.
+ */
+const CYCLE_ONLY_PREFIXES = [
+  '/home',
+  '/cycles',
+  '/flocks',
+  '/pens',
+  '/pens-flocks',
+  '/reports',
+  '/diagnose',
+  '/sales',
+  '/wallet',
+  '/shop',
+  '/setup/flocks',
+  '/settings/daily-record',
+  '/settings/farm/daily-record',
+  '/settings/dashboard',
+];
+
+export function isCycleOnlyPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+
+  return CYCLE_ONLY_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/**
+ * Keep a cycle-less vertical off the cycle-only routes.
+ *
+ * Lives in the (app) layout rather than in each page: a guard inside a
+ * page either runs before its other hooks — which breaks hook order
+ * the moment it returns early — or runs after them, by which point the
+ * poultry dashboard has already flashed on screen.
+ *
+ * Returns true while redirecting so the layout can hold the render.
+ */
+export function useVerticalRouteGuard(pathname: string | null): boolean {
+  const router = useRouter();
+  const { hasCycles, unitsHref, isLoading } = useVertical();
+
+  const blocked = !isLoading && !hasCycles && isCycleOnlyPath(pathname);
+
+  useEffect(() => {
+    if (blocked) router.replace(unitsHref);
+  }, [blocked, unitsHref, router]);
+
+  return blocked;
 }

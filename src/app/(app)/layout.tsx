@@ -8,6 +8,7 @@ import { MobileDrawer } from '@/components/app/mobile-drawer';
 import { VerifyEmailBanner } from '@/components/app/verify-email-banner';
 import { AccessGuard, ruleForPath } from '@/lib/access';
 import { readToken } from '@/lib/auth';
+import { useVerticalRouteGuard } from '@/lib/vertical';
 
 const TITLE_BY_PATH: Record<string, string> = {
   '/home':        'Dashboard',
@@ -68,6 +69,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // for finer-grained button-level hiding).
   const accessRule = useMemo(() => ruleForPath(pathname), [pathname]);
 
+  // Vertical guard, beside the permission one. A cold store has no
+  // cycles, so the cycle-only routes are not "empty" for it — they do
+  // not apply, and it is sent to its own dashboard instead.
+  const redirectingVertical = useVerticalRouteGuard(pathname);
+
   return (
     <div className="flex min-h-screen bg-[var(--color-brand-surface-soft)]">
       <Sidebar />
@@ -77,7 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
           <div className="mx-auto w-full max-w-[1200px]">
             <AccessGuard rule={accessRule ?? { openToMembers: true }}>
-              {children}
+              {redirectingVertical ? null : children}
             </AccessGuard>
           </div>
         </main>
