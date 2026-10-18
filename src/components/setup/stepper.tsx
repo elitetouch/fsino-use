@@ -1,21 +1,43 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DEFAULT_VERTICAL, VERTICALS, type Vertical } from '@/lib/vertical';
 
-const STEPS = [
-  { key: 'farm',   label: 'Farm' },
-  { key: 'pens',   label: 'Pens' },
-  { key: 'flocks', label: 'Flocks' },
-  { key: 'done',   label: 'Done' },
-] as const;
+export type SetupStep = 'farm' | 'pens' | 'flocks' | 'done';
 
-export type SetupStep = (typeof STEPS)[number]['key'];
+/**
+ * The steps this vertical actually has.
+ *
+ * Cold chain has no cycles, so there is no third step for it — a
+ * progress bar that counts a stage the user will never reach reads as
+ * an unfinished setup forever. The unit step is named for the thing
+ * being added: Pens for poultry, Cold rooms for a store.
+ */
+function stepsFor(vertical: Vertical): Array<{ key: SetupStep; label: string }> {
+  const config = VERTICALS[vertical];
+
+  return [
+    { key: 'farm', label: 'Farm' },
+    { key: 'pens', label: config.unitPlural },
+    ...(config.hasCycles && config.cyclePlural !== null
+      ? [{ key: 'flocks' as SetupStep, label: config.cyclePlural }]
+      : []),
+    { key: 'done', label: 'Done' },
+  ];
+}
 
 /**
  * Horizontal step indicator at the top of the setup-flow card. Dot →
  * check transitions reflect completion. Reads as a path on desktop,
  * compacts to numbered dots on phones.
  */
-export function SetupStepper({ current }: { current: SetupStep }) {
+export function SetupStepper({
+  current,
+  vertical = DEFAULT_VERTICAL,
+}: {
+  current: SetupStep;
+  vertical?: Vertical;
+}) {
+  const STEPS = stepsFor(vertical);
   const currentIndex = STEPS.findIndex((s) => s.key === current);
   return (
     <ol className="mb-7 flex items-center justify-between gap-1 sm:gap-2">

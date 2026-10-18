@@ -11,6 +11,7 @@ import { ArrowLeft, ArrowRight, Loader2, Plus, Bird, AlertTriangle, Sparkles, Sh
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
+import { useVertical } from '@/lib/vertical';
 import { BuyTokensDialog } from '@/components/billing/buy-tokens-dialog';
 import { AddPenInline } from '@/components/app/add-pen-inline';
 import { fmtDate } from '@/lib/format';
@@ -94,6 +95,7 @@ type FormValues = z.infer<typeof schema>;
 export default function SetupFlocksPage() {
   const router = useRouter();
   const qc = useQueryClient();
+  const { vertical } = useVertical();
   // Reactive: previously readCurrentFarmId() was captured on mount,
   // so a farm switch mid-flow left queryKeys pinned to the old farm.
   // Outsider handling lives in AccessGuard now.
@@ -233,7 +235,7 @@ export default function SetupFlocksPage() {
 
   return (
     <div>
-      <SetupStepper current="flocks" />
+      <SetupStepper current="flocks" vertical={vertical} />
 
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
         Step 3 of 3

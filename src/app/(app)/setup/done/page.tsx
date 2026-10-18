@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SetupStepper } from '@/components/setup/stepper';
+import { useVertical } from '@/lib/vertical';
 
 /**
  * Setup complete — the post-onboarding "You're all set" moment.
@@ -12,9 +13,22 @@ import { SetupStepper } from '@/components/setup/stepper';
  * visual consistency.
  */
 export default function SetupDonePage() {
+  const { vertical, unitPlural, cycle, hasCycles } = useVertical();
+
+  const summary = hasCycles
+    ? `Farm, ${unitPlural.toLowerCase()} and your first ${(cycle ?? 'cycle').toLowerCase()} are live.`
+    : `Farm and ${unitPlural.toLowerCase()} are live.`;
+
+  // A cold-chain operator does not log feed bags or weigh-ins. Telling
+  // them they will is the quickest way to make the whole screen read
+  // as written for somebody else.
+  const closing = hasCycles
+    ? 'From now on, every feed bag, vaccine and weigh-in you log goes into a real cost-per-bird picture.'
+    : 'From now on every reading, excursion and consignment is recorded — and the breach report writes itself.';
+
   return (
     <div className="text-center">
-      <SetupStepper current="done" />
+      <SetupStepper current="done" vertical={vertical} />
 
       <div className="mx-auto flex h-24 w-24 items-center justify-center">
         <div className="relative">
@@ -36,8 +50,7 @@ export default function SetupDonePage() {
         className="mt-3 text-[var(--color-brand-muted)]"
         style={{ fontSize: 'var(--text-lead)' }}
       >
-        Farm, pens and your first flock are live. From now on, every feed
-        bag, vaccine and weigh-in you log goes into a real cost-per-bird picture.
+        {summary} {closing}
       </p>
 
       <Button asChild size="block" className="mt-8">
