@@ -2052,7 +2052,30 @@ export type FeedCardDto = DashboardCardBase & {
     itemBrand: string | null;
     lifetimeTotal: number | null;
   };
-  benchmark?: { low: number; mid: number; high: number } | null;
+  /**
+   * The breed benchmark this verdict was measured against.
+   *
+   * `confidence` matters as much as `target` does. A Cobb 500 curve is
+   * lifted from the breeder's own manual and is fair to judge tightly;
+   * the dual-purpose curves are measured in one on-station trial under
+   * intensive feeding; the cockerel curves are reasoned from adjacent
+   * data because nobody publishes a cockerel standard at all. Telling
+   * a farmer their flock is "poor" without saying which of those three
+   * they are being compared with is how you lose their trust in the
+   * numbers that are solid.
+   */
+  benchmark?: {
+    stageLabel: string | null;
+    target: number | null;
+    thresholds?: { excellentMax: number; goodMax: number; fairMax: number } | null;
+    targetWeightG?: number | null;
+    targetLayRatePct?: number | null;
+    source?: string | null;
+    confidence?: 'manual' | 'trial' | 'derived' | null;
+    isIndicative?: boolean | null;
+    /** One sentence to show beside the verdict, or null when it needs none. */
+    caveat?: string | null;
+  } | null;
   breed?: string | null;
   weeksInLay?: number | null;
   series: DashboardSeries;

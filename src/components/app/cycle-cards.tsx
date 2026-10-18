@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import {
   Bird, Droplet, Skull, Syringe, Wheat, ChevronRight, Egg, Scale, BadgeDollarSign,
-  Check, BadgeCheck, X as XIcon, ChevronDown, CalendarPlus, Sparkles, Plus,
+  Check, BadgeCheck, X as XIcon, ChevronDown, CalendarPlus, Sparkles, Plus, Info,
   type LucideIcon,
 } from 'lucide-react';
 import type {
@@ -103,6 +103,10 @@ export function FeedConsumptionCard({
 }) {
   const fcr = data?.summary.fcr ?? null;
   const ratingLabel = data?.summary.ratingLabel ?? null;
+  // Qualifies the verdict. Null for a breeder's own published curve,
+  // which needs no qualification; set for a curve measured in one
+  // trial, or reasoned out because no standard exists for this bird.
+  const benchmarkCaveat = data?.benchmark?.caveat ?? null;
   const ratingWord = ratingWordFromLabel(ratingLabel);
   const itemType = data?.summary.itemType ?? null;
   const itemBrand = data?.summary.itemBrand ?? null;
@@ -251,6 +255,19 @@ export function FeedConsumptionCard({
             />
           )}
         </div>
+      )}
+
+      {/* Shown ONLY when the benchmark is not a breeder's own figure.
+          Telling a farmer their flock is "poor" against a curve we
+          reasoned out — without saying that is what it is — is how
+          they stop believing the numbers that ARE solid. Deliberately
+          quiet: it qualifies the verdict, it does not compete with
+          it. */}
+      {!empty && benchmarkCaveat && (
+        <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-[var(--color-brand-surface-soft)] px-2.5 py-2 text-[0.6875rem] leading-relaxed text-[var(--color-brand-muted)]">
+          <Info className="mt-[1px] h-3 w-3 shrink-0" aria-hidden />
+          <span>{benchmarkCaveat}</span>
+        </p>
       )}
 
       <LearnMoreFooter
