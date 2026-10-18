@@ -10,6 +10,7 @@ import { ArrowRight, Loader2, Plus, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
+import { useVertical } from '@/lib/vertical';
 import { apiErrorMessage, endpoints, type CreatePenPayload, type PenDto } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,10 @@ export default function SetupPensPage() {
   // AccessGuard — this page assumes a farm is selected.
   const farmId = useCurrentFarmId();
 
+  // The farm exists by now (step 1 created it and set the current-farm
+  // id), so the hook can read its vertical.
+  const { unit, unitPlural, hasCycles, vertical } = useVertical();
+
   const pens = useQuery({
     queryKey: ['pens', farmId],
     queryFn: () => endpoints.listPens(),
@@ -74,7 +79,7 @@ export default function SetupPensPage() {
   const create = useMutation({
     mutationFn: (payload: CreatePenPayload) => endpoints.createPen(payload),
     onSuccess: () => {
-      toast.success('Pen added.');
+      toast.success(`${unit} added.`);
       form.reset({ name: '', capacity: '' as unknown as number, pen_type: '' });
       qc.invalidateQueries({ queryKey: ['pens', farmId] });
     },
@@ -98,7 +103,7 @@ export default function SetupPensPage() {
 
   return (
     <div>
-      <SetupStepper current="pens" />
+      <SetupStepper current="pens" vertical={vertical} />
 
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
         Step 2 of 3
@@ -155,10 +160,10 @@ export default function SetupPensPage() {
         </p>
         <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4" noValidate>
           <div>
-            <Label htmlFor="name">Pen name / number *</Label>
+            <Label htmlFor="name">{unit} name / number *</Label>
             <Input
               id="name"
-              placeholder="Pen 1, or House A"
+              placeholder={hasCycles ? 'Pen 1, or House A' : 'Cold Room 1'}
               {...form.register('name')}
             />
             <FieldError message={form.formState.errors.name?.message} />
@@ -179,7 +184,7 @@ export default function SetupPensPage() {
               <FieldError message={form.formState.errors.capacity?.message} />
             </div>
             <div>
-              <Label htmlFor="pen_type">Pen type</Label>
+              <Label htmlFor="pen_type">{unit} type</Label>
               <select
                 id="pen_type"
                 {...form.register('pen_type')}
@@ -206,7 +211,10 @@ export default function SetupPensPage() {
         size="block"
         className={cn('mt-7', !canContinue && 'pointer-events-none opacity-50')}
         disabled={!canContinue}
-        onClick={() => router.push('/setup/flocks')}
+        // Cold chain has no cycles, so there is no flock step to send
+        // them to — going there would strand an operator on a screen
+        // asking which breed is in their cold room.
+        onClick={() => router.push(hasCycles ? '/setup/flocks' : '/setup/done')}
       >
         Continue to flocks
         <ArrowRight className="h-5 w-5" />

@@ -11,6 +11,7 @@ import { ArrowRight, Loader2, Beef, Egg, Bird, Snowflake, Leaf, Droplets, Fish }
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
+import { VERTICALS } from '@/lib/vertical';
 import { apiErrorMessage, canCreateFarm, endpoints, type CreateFarmPayload } from '@/lib/api';
 import { writeCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
@@ -147,6 +148,9 @@ export default function SetupFarmPage() {
   const meat = form.watch('produces_meat');
   const eggs = form.watch('produces_eggs');
   const vertical = form.watch('vertical');
+  // Read from the FORM, not useVertical(): the farm does not exist
+  // yet, so there is no current farm to look the vertical up from.
+  const copy = VERTICALS[vertical];
 
   // Don't flash the form while we're deciding whether this user even
   // belongs here. The useEffect above redirects when they can't create.
@@ -160,7 +164,7 @@ export default function SetupFarmPage() {
 
   return (
     <div>
-      <SetupStepper current="farm" />
+      <SetupStepper current="farm" vertical={vertical} />
 
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-deep)]">
         Step 1 of 3
@@ -183,7 +187,7 @@ export default function SetupFarmPage() {
           <Label htmlFor="farm_name">Farm name *</Label>
           <Input
             id="farm_name"
-            placeholder="Sunrise Poultry Farm"
+            placeholder={copy.namePlaceholder}
             autoComplete="organization"
             {...form.register('farm_name')}
           />
@@ -197,14 +201,14 @@ export default function SetupFarmPage() {
             <FieldError message={form.formState.errors.state?.message} />
           </div>
           <div>
-            <Label htmlFor="estimated_capacity">Capacity (birds)</Label>
+            <Label htmlFor="estimated_capacity">{copy.capacityLabel}</Label>
             <Input
               id="estimated_capacity"
               inputMode="numeric"
               type="number"
               min={1}
               max={10_000_000}
-              placeholder="2,500"
+              placeholder={copy.capacityPlaceholder}
               {...form.register('estimated_capacity')}
             />
             <FieldError message={form.formState.errors.estimated_capacity?.message} />

@@ -32,11 +32,28 @@ export type VerticalConfig = {
   unitPlural: string;
   /** What one run of production is called; null where there are none. */
   cycle: string | null;
+  /**
+   * Spelled out rather than cycle + "s". "Stock batch" pluralises to
+   * "Stock batches", and naive concatenation produced "Stock batchs"
+   * in the setup stepper.
+   */
+  cyclePlural: string | null;
   hasCycles: boolean;
   /** Poultry bills per bird; everything else on device subscription. */
   usesTokens: boolean;
   /** Where the unit list lives. Cold chain has its own screen. */
   unitsHref: string;
+
+  /**
+   * Setup-wizard copy.
+   *
+   * "Capacity (birds)" on a cold room is the kind of detail that tells
+   * an operator this product was not built for them, however good the
+   * rest of it is.
+   */
+  capacityLabel: string;
+  capacityPlaceholder: string;
+  namePlaceholder: string;
 };
 
 export const VERTICALS: Record<Vertical, VerticalConfig> = {
@@ -44,25 +61,37 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     unit: 'Pen',
     unitPlural: 'Pens',
     cycle: 'Flock',
+    cyclePlural: 'Flocks',
     hasCycles: true,
     usesTokens: true,
     unitsHref: '/pens',
+    capacityLabel: 'Capacity (birds)',
+    capacityPlaceholder: '2,500',
+    namePlaceholder: 'Sunrise Poultry Farm',
   },
   greenhouse: {
     unit: 'Bay',
     unitPlural: 'Bays',
     cycle: 'Crop',
+    cyclePlural: 'Crops',
     hasCycles: true,
     usesTokens: false,
     unitsHref: '/pens',
+    capacityLabel: 'Growing area (m²)',
+    capacityPlaceholder: '1,200',
+    namePlaceholder: 'Sunrise Greenhouse',
   },
   irrigation: {
     unit: 'Plot',
     unitPlural: 'Plots',
     cycle: 'Crop',
+    cyclePlural: 'Crops',
     hasCycles: true,
     usesTokens: false,
     unitsHref: '/pens',
+    capacityLabel: 'Area under irrigation (hectares)',
+    capacityPlaceholder: '8',
+    namePlaceholder: 'Sunrise Farm',
   },
   cold_chain: {
     unit: 'Cold room',
@@ -71,17 +100,28 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     // cycles": no placement, no age, no harvest. Every screen that
     // reaches for a current cycle has to check hasCycles first.
     cycle: null,
+    cyclePlural: null,
     hasCycles: false,
     usesTokens: false,
     unitsHref: '/cold-rooms',
+    // Tonnes, not birds. An operator who reads "Capacity (birds)" on
+    // their cold store learns the product was not built for them,
+    // however good the rest of it is.
+    capacityLabel: 'Storage capacity (tonnes)',
+    capacityPlaceholder: '40',
+    namePlaceholder: 'Sunrise Cold Store',
   },
   aquaculture: {
     unit: 'Pond',
     unitPlural: 'Ponds',
     cycle: 'Stock batch',
+    cyclePlural: 'Stock batches',
     hasCycles: true,
     usesTokens: false,
     unitsHref: '/pens',
+    capacityLabel: 'Capacity (fish)',
+    capacityPlaceholder: '5,000',
+    namePlaceholder: 'Sunrise Fish Farm',
   },
 };
 
