@@ -9,6 +9,7 @@ import { endpoints } from '@/lib/api';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { clearToken, readUser } from '@/lib/auth';
+import { useVertical } from '@/lib/vertical';
 import { writeCurrentFarmId } from '@/lib/farm-context';
 import { useOnline } from '@/lib/offline';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,11 @@ export function Topbar({
     queryKey: ['token-balances'],
     queryFn: () => endpoints.listBalances(),
   });
+  // Tokens are priced per bird per cycle. A cold store buys neither,
+  // so the counter and the wallet link are meaningless there — and a
+  // balance of 0 shown permanently reads as an account problem.
+  const { usesTokens, hasCycles, unitPlural, unitsHref } = useVertical();
+
   const totalTokens = (balances.data?.balances ?? []).reduce((s, b) => s + b.balance, 0);
   const lowBalance = !balances.isLoading && totalTokens < 50;
 
@@ -98,6 +104,7 @@ export function Topbar({
             {online ? 'Online' : 'Offline'}
           </span>
 
+          {usesTokens && (
           <Link
             href="/wallet"
             className={cn(
@@ -114,11 +121,15 @@ export function Topbar({
             </span>
             <span className="hidden sm:inline">tokens</span>
           </Link>
+          )}
 
+          {/* "New flock" is the right primary action on a poultry
+              farm and nonsense on a cold store, where the equivalent
+              is going to the rooms. */}
           <Button asChild size="sm" className="hidden h-9 px-3.5 text-[0.8125rem] sm:inline-flex">
-            <Link href="/setup/flocks">
+            <Link href={hasCycles ? '/setup/flocks' : unitsHref}>
               <Plus className="h-3.5 w-3.5" />
-              New flock
+              {hasCycles ? 'New flock' : unitPlural}
             </Link>
           </Button>
 
