@@ -8,6 +8,7 @@ import { endpoints } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 import { mins, money } from '@/lib/cold-chain-format';
+import { DEFAULT_CURRENCY } from '@/lib/currencies';
 
 /**
  * The facility breach report — every excursion across every room in a
@@ -136,8 +137,13 @@ export default function ColdChainReportPage() {
                         <Package className="h-3.5 w-3.5" />
                         Stock exposed
                         {e.value_at_risk !== null && (
+                          // This line gets quoted on a claim, so the
+                          // currency comes from the batches that were
+                          // actually in the room, and "from" marks a
+                          // total that stops at one currency.
                           <span className="ml-1 text-rose-700">
-                            {money(e.value_at_risk, 'NGN')} at risk
+                            {e.value_mixed ? 'from ' : ''}
+                            {money(e.value_at_risk, e.currency ?? DEFAULT_CURRENCY)} at risk
                           </span>
                         )}
                       </p>

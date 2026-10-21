@@ -11,7 +11,13 @@ import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
 import { useVertical } from '@/lib/vertical';
-import { apiErrorMessage, endpoints, type CreatePenPayload, type PenDto } from '@/lib/api';
+import {
+  apiErrorMessage,
+  endpoints,
+  type ColdChainPresetKey,
+  type CreatePenPayload,
+  type PenDto,
+} from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 
@@ -33,15 +39,20 @@ import { cn } from '@/lib/utils';
  * (flocks) requires a free pen.
  */
 
-const PEN_TYPES = [
-  { value: 'deep_litter', label: 'Deep litter' },
-  { value: 'battery_cage', label: 'Battery cage' },
-  { value: 'free_range', label: 'Free range' },
-  { value: 'semi_intensive', label: 'Semi-intensive' },
-] as const;
+/**
+ * Cold-chain preset codes, as the backend validates them. Custom is
+ * excluded on purpose: picking it here would create a room with a
+ * band nobody has typed numbers for yet, so it is left unset and the
+ * room screen asks for the range.
+ */
+const PRESET_KEYS = ['vaccine', 'chilled', 'frozen', 'produce'] as const;
+
+function isPresetKey(v: string | undefined): v is ColdChainPresetKey {
+  return typeof v === 'string' && (PRESET_KEYS as readonly string[]).includes(v);
+}
 
 const schema = z.object({
-  name: z.string().trim().min(1, 'Give the pen a name or number').max(120),
+  name: z.string().trim().min(1, 'Give it a name or number').max(120),
   capacity: z
     .union([z.string(), z.number()])
     .optional()
@@ -63,7 +74,19 @@ export default function SetupPensPage() {
 
   // The farm exists by now (step 1 created it and set the current-farm
   // id), so the hook can read its vertical.
-  const { unit, unitPlural, hasCycles, vertical } = useVertical();
+  const {
+    unit,
+    unitPlural,
+    hasCycles,
+    vertical,
+    cyclePlural,
+    unitTypes,
+    unitDescription,
+    unitNamePlaceholder,
+    capacityLabel,
+    capacityPlaceholder,
+    capacityUnit,
+  } = useVertical();
 
   const pens = useQuery({
     queryKey: ['pens', farmId],
@@ -77,13 +100,37 @@ export default function SetupPensPage() {
   });
 
   const create = useMutation({
-    mutationFn: (payload: CreatePenPayload) => endpoints.createPen(payload),
+    mutationFn: async (payload: CreatePenPayload) => {
+      const created = await endpoints.createPen(payload);
+
+      // For a cold room the type IS the temperature band — "Vaccine"
+      // means 2 to 8°C. Creating the room without applying it leaves
+      // it saying "No band set", monitoring nothing, and the operator
+      // has every reason to believe they already answered this.
+      //
+      // Deliberately not fatal: the room exists either way, and the
+      // band can be set from the room screen. Failing the whole step
+      // because a device did not acknowledge would be worse.
+      if (vertical === 'cold_chain' && isPresetKey(payload.pen_type)) {
+        try {
+          await endpoints.setColdRoomBand(created.pen.id, { preset: payload.pen_type });
+        } catch {
+          toast.message('Room added, but its temperature range was not saved.', {
+            description: 'Open the room to set it.',
+          });
+        }
+      }
+
+      return created;
+    },
     onSuccess: () => {
       toast.success(`${unit} added.`);
       form.reset({ name: '', capacity: '' as unknown as number, pen_type: '' });
       qc.invalidateQueries({ queryKey: ['pens', farmId] });
+      qc.invalidateQueries({ queryKey: ['cold-rooms'] });
     },
-    onError: (err) => toast.error(apiErrorMessage(err, 'Could not add the pen.')),
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, `Could not add the ${unit.toLowerCase()}.`)),
   });
 
   function onSubmit(v: FormValues) {
@@ -112,21 +159,22 @@ export default function SetupPensPage() {
         className="mt-2 font-extrabold tracking-tight text-[var(--color-brand-fg)]"
         style={{ fontSize: 'var(--text-h1)' }}
       >
-        Add your pens
+        Add your {unitPlural.toLowerCase()}
       </h1>
       <p
         className="mt-2 text-[var(--color-brand-muted)]"
         style={{ fontSize: 'var(--text-lead)' }}
       >
-        A pen is a house, cage, or section where a flock lives. Add at least one
-        — you can keep adding more before continuing.
+        {unitDescription} Add at least one — you can keep adding more before
+        continuing.
       </p>
 
       {/* Existing pens */}
       {existing.length > 0 && (
         <div className="mt-7">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-muted)]">
-            {existing.length} {existing.length === 1 ? 'pen' : 'pens'} added
+            {existing.length}{' '}
+            {(existing.length === 1 ? unit : unitPlural).toLowerCase()} added
           </p>
           <ul className="space-y-2">
             {existing.map((p: PenDto) => (
@@ -142,8 +190,10 @@ export default function SetupPensPage() {
                     {p.name}
                   </p>
                   <p className="text-xs text-[var(--color-brand-muted)]">
-                    {p.penType ? labelForType(p.penType) : 'No type'}
-                    {p.capacity ? ` · ${p.capacity.toLocaleString()} birds` : ''}
+                    {p.penType ? labelForType(p.penType, unitTypes) : 'No type'}
+                    {p.capacity
+                      ? ` · ${p.capacity.toLocaleString()} ${capacityUnit}`
+                      : ''}
                   </p>
                 </div>
               </li>
@@ -156,14 +206,16 @@ export default function SetupPensPage() {
       <div className="mt-7 rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-[var(--color-brand-surface-soft)]/60 p-5">
         <p className="flex items-center gap-2 text-sm font-semibold text-[var(--color-brand-fg)]">
           <Plus className="h-4 w-4" />
-          {existing.length === 0 ? 'Add your first pen' : 'Add another pen'}
+          {existing.length === 0
+            ? `Add your first ${unit.toLowerCase()}`
+            : `Add another ${unit.toLowerCase()}`}
         </p>
         <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4" noValidate>
           <div>
             <Label htmlFor="name">{unit} name / number *</Label>
             <Input
               id="name"
-              placeholder={hasCycles ? 'Pen 1, or House A' : 'Cold Room 1'}
+              placeholder={unitNamePlaceholder}
               {...form.register('name')}
             />
             <FieldError message={form.formState.errors.name?.message} />
@@ -171,14 +223,14 @@ export default function SetupPensPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="capacity">Capacity (birds)</Label>
+              <Label htmlFor="capacity">{capacityLabel}</Label>
               <Input
                 id="capacity"
                 type="number"
                 inputMode="numeric"
                 min={1}
                 max={5_000_000}
-                placeholder="500"
+                placeholder={capacityPlaceholder}
                 {...form.register('capacity')}
               />
               <FieldError message={form.formState.errors.capacity?.message} />
@@ -191,7 +243,7 @@ export default function SetupPensPage() {
                 className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.9375rem] text-[var(--color-brand-fg)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               >
                 <option value="">Select…</option>
-                {PEN_TYPES.map((t) => (
+                {unitTypes.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
@@ -201,7 +253,7 @@ export default function SetupPensPage() {
           <Button type="submit" variant="outline" size="block" disabled={create.isPending}>
             {create.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
             <Plus className="h-5 w-5" />
-            Add pen
+            Add {unit.toLowerCase()}
           </Button>
         </form>
       </div>
@@ -216,13 +268,16 @@ export default function SetupPensPage() {
         // asking which breed is in their cold room.
         onClick={() => router.push(hasCycles ? '/setup/flocks' : '/setup/done')}
       >
-        Continue to flocks
+        {hasCycles ? `Continue to ${(cyclePlural ?? '').toLowerCase()}` : 'Finish setup'}
         <ArrowRight className="h-5 w-5" />
       </Button>
     </div>
   );
 }
 
-function labelForType(v: string): string {
-  return PEN_TYPES.find((t) => t.value === v)?.label ?? v.replace(/_/g, ' ');
+function labelForType(
+  v: string,
+  types: ReadonlyArray<{ value: string; label: string }>,
+): string {
+  return types.find((t) => t.value === v)?.label ?? v.replace(/_/g, ' ');
 }
