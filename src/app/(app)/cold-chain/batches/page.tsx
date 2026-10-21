@@ -130,6 +130,9 @@ export default function BatchesPage() {
       {adding && (
         <AddBatch
           rooms={rooms.data?.rooms ?? []}
+          roomsLoading={rooms.isLoading}
+          roomsError={rooms.error}
+          onRetryRooms={() => rooms.refetch()}
           known={known}
           defaultCurrency={summary?.currency ?? DEFAULT_CURRENCY}
           onClose={() => setAdding(false)}
@@ -159,6 +162,33 @@ export default function BatchesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/** The panel chrome the add-stock dialog shows in every state. */
+function Shell({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[15px] font-bold">{title}</h2>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="rounded p-1 hover:bg-[var(--color-brand-surface-soft)]"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -286,12 +316,20 @@ function BatchRow({ batch, onChanged }: { batch: ColdChainBatchDto; onChanged: (
 
 function AddBatch({
   rooms,
+  roomsLoading,
+  roomsError,
+  onRetryRooms,
   known,
   defaultCurrency,
   onClose,
   onSaved,
 }: {
   rooms: ColdRoomDto[];
+  /** Still fetching — not the same as "this farm has no rooms". */
+  roomsLoading: boolean;
+  /** The rooms request failed — also not the same as having none. */
+  roomsError: unknown;
+  onRetryRooms: () => void;
   known: KnownValues;
   /** What this facility already values stock in. */
   defaultCurrency: string;
@@ -357,18 +395,41 @@ function AddBatch({
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not record the stock.')),
   });
 
+  // THREE DIFFERENT THINGS LOOK THE SAME IF YOU ONLY CHECK
+  // `rooms.length === 0`: still loading, the request failed, and the
+  // farm genuinely has no rooms. Telling an operator who has just
+  // created two cold rooms that they need a cold room first is worse
+  // than showing nothing — it sends them back to build a third.
+  if (roomsLoading) {
+    return (
+      <Shell title="Add stock" onClose={onClose}>
+        <div className="h-24 animate-pulse rounded-xl bg-[var(--color-brand-surface-soft)]" />
+      </Shell>
+    );
+  }
+
+  if (roomsError) {
+    return (
+      <Shell title="Add stock" onClose={onClose}>
+        <p className="text-[13px] text-rose-700">
+          Could not load your cold rooms, so there is nowhere to file this yet.
+        </p>
+        <p className="mt-1 text-[12.5px] text-[var(--color-brand-muted)]">
+          {apiErrorMessage(roomsError, 'The server did not say why.')}
+        </p>
+        <Button size="sm" variant="outline" className="mt-3" onClick={onRetryRooms}>
+          Try again
+        </Button>
+      </Shell>
+    );
+  }
+
   // Stock lives IN a room, so there is nothing to record until one
   // exists. Saying so beats an empty dropdown and a dead Save button,
   // which is indistinguishable from the page being broken.
   if (rooms.length === 0) {
     return (
-      <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[15px] font-bold">Add stock</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded p-1 hover:bg-[var(--color-brand-surface-soft)]">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+      <Shell title="Add stock" onClose={onClose}>
         <p className="text-[13px] text-[var(--color-brand-muted)]">
           You need a cold room first — stock is recorded as being inside one, so there is
           nowhere to put this yet.
@@ -381,7 +442,7 @@ function AddBatch({
             </Link>
           </Button>
         </div>
-      </section>
+      </Shell>
     );
   }
 

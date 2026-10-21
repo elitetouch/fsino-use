@@ -60,6 +60,9 @@ export default function ExpensesPage() {
   const flocks = useQuery({
     queryKey: flocksKey(farmId, { includeArchived: true }),
     queryFn: () => endpoints.listFlocks({ includeArchived: true }),
+    // A cold store has none, and neither the filter nor the add form
+    // asks for one — so don't spend a request fetching an empty list.
+    enabled: hasCycles,
   });
 
   const expenses = useQuery({
@@ -227,7 +230,12 @@ function ExpenseRow({
           {expense.description ?? expense.vendor ?? '—'}
         </p>
         <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
-          {expense.flockName ?? 'Unknown flock'} · {expense.expenseDate}
+          {/* A flockless row is a farm-wide cost, not a row whose flock
+              we failed to load — saying "Unknown flock" to a cold-store
+              operator reads like a bug in their ledger. */}
+          {expense.flockId === null
+            ? 'Farm-wide'
+            : expense.flockName ?? 'Unknown flock'} · {expense.expenseDate}
           {expense.vendor && expense.description ? ` · ${expense.vendor}` : ''}
           {expense.createdByName ? ` · by ${expense.createdByName}` : ''}
           {voided ? ` · voided (${expense.voidReason ?? 'no reason given'})` : ''}
@@ -268,8 +276,9 @@ function AddExpenseDialog({
   /** Vendors already used on this farm, for the suggestion list. */
   knownVendors: string[];
 }) {
+  const { hasCycles, cycle } = useVertical();
   const qc = useQueryClient();
-  const [flockId, setFlockId] = useState<string>(flocks[0]?.id ?? '');
+  const [flockId, setFlockId] = useState<string>(hasCycles ? flocks[0]?.id ?? '' : '');
   const [category, setCategory] = useState<ExpenseCategory>('feed');
   const [amount, setAmount] = useState<string>('');
   const [currency, setCurrency] = useState<string>(DEFAULT_CURRENCY);
@@ -278,11 +287,16 @@ function AddExpenseDialog({
   const [description, setDescription] = useState<string>('');
 
   const amountNum = Number(amount);
-  const canSubmit = flockId !== '' && amountNum > 0 && date !== '' && currency.length === 3;
+  // A farm with no cycles has nothing to pick, so requiring a flock here
+  // left the Save button permanently disabled on a cold store.
+  const canSubmit =
+    (!hasCycles || flockId !== '') && amountNum > 0 && date !== '' && currency.length === 3;
 
   const create = useMutation({
     mutationFn: () => endpoints.createExpense({
-      flock_id: flockId,
+      // Sent only where there is a cycle to charge the cost to; the
+      // server then attaches it to the current farm instead.
+      ...(hasCycles && flockId !== '' ? { flock_id: flockId } : {}),
       category,
       amount: amountNum,
       currency: currency.toUpperCase(),
@@ -326,18 +340,24 @@ function AddExpenseDialog({
         </header>
 
         <div className="space-y-3 p-4 sm:p-5">
-          <Field label="Flock (required)">
+          {/* Hidden outright on a vertical with no cycles rather than
+              left empty: a cold store has no flocks, and an unfillable
+              required field is the bug this replaces. The cost attaches
+              to the farm instead. */}
+          {hasCycles && (
+          <Field label={`${cycle ?? 'Cycle'} (required)`}>
             <select
               value={flockId}
               onChange={(e) => setFlockId(e.target.value)}
               className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
             >
-              <option value="">Select a flock…</option>
+              <option value="">Select a {(cycle ?? 'cycle').toLowerCase()}…</option>
               {flocks.map((f) => (
                 <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
           </Field>
+          )}
 
           <Field label="Category">
             <select

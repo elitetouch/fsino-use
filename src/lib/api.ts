@@ -970,7 +970,11 @@ export const endpoints = {
     ),
 
   createExpense: (payload: {
-    flock_id: string;
+    /**
+     * Omitted on a farm with no cycles — a cold store has no flocks at
+     * all, so the cost attaches to the farm instead.
+     */
+    flock_id?: string;
     category: ExpenseCategory;
     amount: number;
     currency: string;
@@ -2831,7 +2835,8 @@ export type ExpenseCategory =
 export interface ExpenseDto {
   id: string;
   farmId: string;
-  flockId: string;
+  /** Null on a farm-wide cost — see createExpense's flock_id. */
+  flockId: string | null;
   category: ExpenseCategory;
   amount: number;
   currency: string;

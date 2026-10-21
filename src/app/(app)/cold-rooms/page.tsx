@@ -15,7 +15,7 @@ import {
 import { PageHeader } from '@/components/app/page-header';
 import { Button } from '@/components/ui/button';
 import { Gate } from '@/lib/access';
-import { endpoints, type ColdRoomDto } from '@/lib/api';
+import { apiErrorMessage, endpoints, type ColdRoomDto } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 import { fmt, mins, money } from '@/lib/cold-chain-format';
@@ -73,6 +73,11 @@ export default function ColdRoomsPage() {
 
       {rooms.isLoading ? (
         <Skeleton />
+      ) : rooms.isError ? (
+        // A failed request is not an empty facility. Telling an
+        // operator who has two cold rooms that they have none sends
+        // them off to create a third and hides the real fault.
+        <Failed error={rooms.error} onRetry={() => rooms.refetch()} />
       ) : list.length === 0 ? (
         <Empty />
       ) : (
@@ -251,6 +256,21 @@ function Row({
       <Icon className="h-3.5 w-3.5 shrink-0" />
       {text}
     </p>
+  );
+}
+
+function Failed({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  return (
+    <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center">
+      <AlertTriangle className="mx-auto h-8 w-8 text-rose-700" />
+      <p className="mt-3 text-[15px] font-bold text-rose-900">Could not load your cold rooms</p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-rose-800">
+        {apiErrorMessage(error, 'The server did not say why.')}
+      </p>
+      <Button size="sm" variant="outline" className="mt-4" onClick={onRetry}>
+        Try again
+      </Button>
+    </div>
   );
 }
 
