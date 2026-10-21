@@ -4,7 +4,15 @@ import { use, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, Package, Snowflake } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  Cpu,
+  Loader2,
+  Package,
+  Snowflake,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/app/page-header';
@@ -64,7 +72,33 @@ export default function ColdRoomPage({ params }: { params: Promise<{ id: string 
                 ? `Holding ${data.band.min_c}°C to ${data.band.max_c}°C`
                 : 'No temperature band set — nothing is being watched yet.'
             }
+            actions={
+              <Gate perm="pens.update">
+                <Button asChild size="sm" variant="outline" className="h-10">
+                  <Link href={`/pens/${id}/pair-device`}>
+                    <Cpu className="h-4 w-4" />
+                    Pair a device
+                  </Link>
+                </Button>
+              </Gate>
+            }
           />
+
+          {/* A room with a band but no sensor reads as healthy on the
+              list — "holding its band" with nothing measuring it. Say
+              so here, where there is room for the sentence. */}
+          {data.minutes_since_reading === null && (
+            <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
+              <p className="text-[13px] font-semibold text-amber-900">
+                No PENKEEP is reporting from this room yet, so its temperature is not being
+                watched.
+              </p>
+              <Button asChild size="sm" className="ml-auto h-9">
+                <Link href={`/pens/${id}/pair-device`}>Pair a device</Link>
+              </Button>
+            </div>
+          )}
 
           <Current room={data} />
 
