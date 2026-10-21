@@ -266,6 +266,13 @@ const CYCLE_ONLY_PREFIXES = [
 export function isCycleOnlyPath(pathname: string | null): boolean {
   if (!pathname) return false;
 
+  // Pairing a device is not a cycle concept. A cold room needs it
+  // more than a pen does — it is the entire point of the vertical —
+  // and the endpoint behind it is pen-scoped, with no flock involved.
+  // Without this exception a cold store is redirected away from the
+  // only screen that can put a sensor in its room.
+  if (/^\/pens\/[^/]+\/pair-device$/.test(pathname)) return false;
+
   return CYCLE_ONLY_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );

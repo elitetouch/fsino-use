@@ -49,6 +49,12 @@ export default function ColdRoomsPage() {
 
   const list = rooms.data?.rooms ?? [];
   const inTrouble = list.filter((r) => r.severity_rank > 0).length;
+  // A room nothing is reporting from is not a room that is fine. It
+  // is a room nobody is watching, and on a cold-chain product that is
+  // the more dangerous of the two states because it looks like health.
+  const silent = list.filter(
+    (r) => r.minutes_since_reading === null || r.minutes_since_reading > 15,
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -82,7 +88,7 @@ export default function ColdRoomsPage() {
         <Empty />
       ) : (
         <>
-          <Banner count={inTrouble} total={list.length} />
+          <Banner count={inTrouble} silent={silent} total={list.length} />
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {list.map((room) => (
               <RoomCard key={room.id} room={room} />
@@ -94,13 +100,28 @@ export default function ColdRoomsPage() {
   );
 }
 
-function Banner({ count, total }: { count: number; total: number }) {
-  if (count === 0) {
+function Banner({ count, silent, total }: { count: number; silent: number; total: number }) {
+  if (count === 0 && silent === 0) {
     return (
       <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
         <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" />
         <p className="text-[13.5px] font-semibold text-emerald-900">
           All {total} {total === 1 ? 'room is' : 'rooms are'} holding their band.
+        </p>
+      </div>
+    );
+  }
+
+  // Nothing is wrong, but nothing is being measured either. Never
+  // claim a room is holding its band on the strength of no data.
+  if (count === 0) {
+    return (
+      <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <WifiOff className="h-4 w-4 shrink-0 text-amber-700" />
+        <p className="text-[13.5px] font-semibold text-amber-900">
+          {silent === total
+            ? `No readings from ${total === 1 ? 'this room' : 'any of these rooms'} — nothing is being watched yet.`
+            : `${silent} of ${total} rooms are not reporting, so they are not being watched.`}
         </p>
       </div>
     );

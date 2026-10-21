@@ -14,6 +14,7 @@ import { Input, Label, FieldError } from '@/components/ui/input';
 import { PageHeader } from '@/components/app/page-header';
 import { apiErrorMessage, endpoints } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useVertical } from '@/lib/vertical';
 
 /**
  * Pair PENKEEP to this pen.
@@ -47,6 +48,12 @@ export default function PairDevicePage({ params }: { params: Promise<{ id: strin
   const router = useRouter();
   const qc = useQueryClient();
 
+  // A cold room is a pen in the database and nowhere else. Every
+  // word on this screen comes from the vertical so an operator
+  // pairing a sensor to a vaccine fridge is never told it is a pen.
+  const { unit, unitsHref, hasCycles } = useVertical();
+  const unitLower = unit.toLowerCase();
+
   const [mode, setMode] = useState<'scan' | 'manual'>('manual');
   const [deviceId, setDeviceId] = useState('');
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' });
@@ -72,10 +79,13 @@ export default function PairDevicePage({ params }: { params: Promise<{ id: strin
       stationLabel.trim() || null,
     ),
     onSuccess: () => {
-      toast.success('PENKEEP paired with this pen.');
+      toast.success(`PENKEEP paired with this ${unitLower}.`);
       qc.invalidateQueries({ queryKey: ['pen-climate'] });
+      qc.invalidateQueries({ queryKey: ['cold-rooms'] });
       qc.invalidateQueries({ queryKey: ['flocks'] });
-      router.push('/pens');
+      // Back to the list this vertical actually uses. Sending a cold
+      // store to /pens lands it on a guard that bounces it again.
+      router.push(unitsHref);
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not pair this device.')),
   });
@@ -114,8 +124,12 @@ export default function PairDevicePage({ params }: { params: Promise<{ id: strin
 
       <PageHeader
         eyebrow="PENKEEP"
-        title="Pair a device with this pen"
-        description="Scan the QR code on the back of the unit, or type its device id. Once paired, the pen climate tab will go live."
+        title={`Pair a device with this ${unitLower}`}
+        description={
+          hasCycles
+            ? 'Scan the QR code on the back of the unit, or type its device id. Once paired, the pen climate tab will go live.'
+            : 'Scan the QR code on the back of the unit, or type its device id. Once paired, this room starts reporting its temperature and you will be alerted when it leaves its band.'
+        }
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -188,6 +202,9 @@ function LookupResult({
   pairing: boolean;
   onTryAnother: () => void;
 }) {
+  const { unit } = useVertical();
+  const unitLower = unit.toLowerCase();
+
   if (state.kind === 'idle') return null;
 
   if (state.kind === 'verifying') {
@@ -240,7 +257,8 @@ function LookupResult({
           </p>
           {alreadyPaired && (
             <p className="mt-1.5 text-[0.71875rem] leading-snug text-amber-800">
-              This device is currently paired to another pen on your farm. Pairing here will move it.
+              This device is currently paired to another {unitLower} on your farm. Pairing here will
+              move it.
             </p>
           )}
         </div>
@@ -251,7 +269,10 @@ function LookupResult({
           single-station mode and the climate page looks unchanged. */}
       <div className="mt-3">
         <label className="block text-[0.71875rem] font-semibold text-[var(--color-brand-fg-soft)]" htmlFor="pair-station-label">
-          Station name <span className="font-normal text-[var(--color-brand-muted)]">(optional — name this spot in the pen)</span>
+          Station name{' '}
+          <span className="font-normal text-[var(--color-brand-muted)]">
+            (optional — name this spot in the {unitLower})
+          </span>
         </label>
         <input
           id="pair-station-label"
@@ -263,14 +284,15 @@ function LookupResult({
           className="mt-1 block h-10 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 text-[0.84375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
         />
         <p className="mt-1 text-[0.6875rem] leading-snug text-[var(--color-brand-muted)]">
-          Useful when a pen has more than one PENKEEP — you&rsquo;ll see this label on the climate tab so you know which corner each reading came from.
+          Useful when a {unitLower} has more than one PENKEEP, so you know which corner each
+          reading came from.
         </p>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" onClick={onConfirm} disabled={pairing}>
           {pairing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-          {alreadyPaired ? 'Move to this pen' : 'Confirm pair'}
+          {alreadyPaired ? `Move to this ${unitLower}` : 'Confirm pair'}
         </Button>
         <Button variant="outline" size="sm" onClick={onTryAnother}>
           Cancel
