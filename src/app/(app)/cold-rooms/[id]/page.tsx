@@ -161,6 +161,10 @@ function Current({ room }: { room: ColdRoomDto }) {
           <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[var(--color-brand-muted)]">
             <Package className="h-3.5 w-3.5" />
             {money(room.stock.value_amount, room.stock.currency)} at risk
+            {/* Named, not hidden: somebody reading "₦4m at risk" on a
+                room that also holds $900 of reagent should know the
+                figure stops at one currency. */}
+            {room.stock.value_mixed && ', plus stock in another currency'}
           </p>
         )}
       </div>

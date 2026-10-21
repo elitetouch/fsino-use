@@ -55,7 +55,25 @@ export type VerticalConfig = {
    */
   capacityLabel: string;
   capacityPlaceholder: string;
+  /** Placeholder for the FARM name, on setup step 1. */
   namePlaceholder: string;
+  /** Placeholder for one UNIT's name, on setup step 2. */
+  unitNamePlaceholder: string;
+  /** Short noun for a capacity figure shown inline, e.g. "40 tonnes". */
+  capacityUnit: string;
+  /** One sentence saying what a unit is, for setup step 2. */
+  unitDescription: string;
+  /**
+   * What goes in the "<unit> type" dropdown.
+   *
+   * Poultry housing types on a cold room was the giveaway that the
+   * wizard had been renamed rather than actually made multi-vertical:
+   * an operator picking "Deep litter" for their vaccine store is being
+   * asked a poultry question in cold-chain words. For cold chain these
+   * are the ColdChainPreset codes, so the choice also names the
+   * temperature band the room will be held to.
+   */
+  unitTypes: ReadonlyArray<{ value: string; label: string }>;
 };
 
 export const VERTICALS: Record<Vertical, VerticalConfig> = {
@@ -70,6 +88,15 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     capacityLabel: 'Capacity (birds)',
     capacityPlaceholder: '2,500',
     namePlaceholder: 'Sunrise Poultry Farm',
+    unitNamePlaceholder: 'Pen 1, or House A',
+    capacityUnit: 'birds',
+    unitDescription: 'A pen is a house, cage, or section where a flock lives.',
+    unitTypes: [
+      { value: 'deep_litter', label: 'Deep litter' },
+      { value: 'battery_cage', label: 'Battery cage' },
+      { value: 'free_range', label: 'Free range' },
+      { value: 'semi_intensive', label: 'Semi-intensive' },
+    ],
   },
   greenhouse: {
     unit: 'Bay',
@@ -82,6 +109,15 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     capacityLabel: 'Growing area (m²)',
     capacityPlaceholder: '1,200',
     namePlaceholder: 'Sunrise Greenhouse',
+    unitNamePlaceholder: 'Bay 1, or Tunnel A',
+    capacityUnit: 'm²',
+    unitDescription: 'A bay is one enclosed growing space under its own climate control.',
+    unitTypes: [
+      { value: 'tunnel', label: 'Tunnel' },
+      { value: 'gutter_connected', label: 'Gutter-connected' },
+      { value: 'shade_net', label: 'Shade net' },
+      { value: 'screen_house', label: 'Screen house' },
+    ],
   },
   irrigation: {
     unit: 'Plot',
@@ -94,6 +130,15 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     capacityLabel: 'Area under irrigation (hectares)',
     capacityPlaceholder: '8',
     namePlaceholder: 'Sunrise Farm',
+    unitNamePlaceholder: 'Plot 1, or North Field',
+    capacityUnit: 'hectares',
+    unitDescription: 'A plot is one block of land watered on its own schedule.',
+    unitTypes: [
+      { value: 'drip', label: 'Drip' },
+      { value: 'sprinkler', label: 'Sprinkler' },
+      { value: 'furrow', label: 'Furrow' },
+      { value: 'flood', label: 'Flood' },
+    ],
   },
   cold_chain: {
     unit: 'Cold room',
@@ -112,6 +157,19 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     capacityLabel: 'Storage capacity (tonnes)',
     capacityPlaceholder: '40',
     namePlaceholder: 'Sunrise Cold Store',
+    unitNamePlaceholder: 'Cold Room 1',
+    capacityUnit: 'tonnes',
+    unitDescription:
+      'A cold room is one space held at its own temperature — a walk-in, a chest freezer, or a vaccine fridge.',
+    // These are the ColdChainPreset codes the backend knows, so the
+    // choice made here is also the band the room is monitored against.
+    unitTypes: [
+      { value: 'vaccine', label: 'Vaccine / pharmaceutical (2 to 8°C)' },
+      { value: 'chilled', label: 'Chilled (0 to 4°C)' },
+      { value: 'frozen', label: 'Frozen (−25 to −15°C)' },
+      { value: 'produce', label: 'Fresh produce (12 to 16°C)' },
+      { value: 'custom', label: 'Something else — I will set the range' },
+    ],
   },
   aquaculture: {
     unit: 'Pond',
@@ -124,6 +182,16 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     capacityLabel: 'Capacity (fish)',
     capacityPlaceholder: '5,000',
     namePlaceholder: 'Sunrise Fish Farm',
+    unitNamePlaceholder: 'Pond 1, or Tank A',
+    capacityUnit: 'fish',
+    unitDescription: 'A pond is one body of water stocked and managed on its own.',
+    unitTypes: [
+      { value: 'earthen', label: 'Earthen pond' },
+      { value: 'concrete', label: 'Concrete tank' },
+      { value: 'tarpaulin', label: 'Tarpaulin tank' },
+      { value: 'cage', label: 'Cage in open water' },
+      { value: 'ras', label: 'Recirculating (RAS)' },
+    ],
   },
 };
 

@@ -9,10 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/app/page-header';
 import { Gate } from '@/lib/access';
-import { endpoints, type ColdChainBatchDto, type ColdRoomDto } from '@/lib/api';
+import { apiErrorMessage, endpoints, type ColdChainBatchDto, type ColdRoomDto } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
 import { money } from '@/lib/cold-chain-format';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
+
+type KnownValues = { suppliers: string[]; customers: string[]; units: string[] };
+
+/** Stable empty default, so `known` is not a new object every render. */
+const EMPTY_KNOWN: KnownValues = { suppliers: [], customers: [], units: [] };
 
 /**
  * Stock in and out of the rooms.
@@ -76,16 +82,12 @@ export default function BatchesPage() {
   // be totalled by supplier afterwards. Offering what has already
   // been used makes the existing spelling the easy choice without
   // preventing a new one.
-  const known = useMemo(() => {
-    const uniq = (xs: Array<string | null>) =>
-      Array.from(new Set(xs.filter((x): x is string => !!x && x.trim() !== ''))).sort();
-
-    return {
-      suppliers: uniq(list.map((b) => b.supplier)),
-      customers: uniq(list.map((b) => b.customer)),
-      units: uniq(list.map((b) => b.unit)),
-    };
-  }, [list]);
+  //
+  // Comes from the server rather than from `list`, because this page
+  // shows in_store by default: a supplier whose stock has all been
+  // dispatched would otherwise drop out of the suggestions and the
+  // next delivery from them gets a second spelling.
+  const known = batches.data?.known ?? EMPTY_KNOWN;
 
   return (
     <div className="space-y-6">
@@ -108,7 +110,14 @@ export default function BatchesPage() {
           <Stat label="Batches in store" value={String(summary.count)} />
           <Stat
             label="Value in store"
-            value={summary.value_amount ? money(summary.value_amount, 'NGN') : '—'}
+            value={
+              summary.value_amount
+                ? money(summary.value_amount, summary.currency ?? DEFAULT_CURRENCY)
+                : '—'
+            }
+            // Only one currency is totalled. Saying so is the whole
+            // point: the alternative is a number that looks complete.
+            note={summary.value_mixed ? 'plus other currencies' : undefined}
           />
           <Stat
             label="Expiring in 14 days"
@@ -122,6 +131,7 @@ export default function BatchesPage() {
         <AddBatch
           rooms={rooms.data?.rooms ?? []}
           known={known}
+          defaultCurrency={summary?.currency ?? DEFAULT_CURRENCY}
           onClose={() => setAdding(false)}
           onSaved={() => {
             batches.refetch();
@@ -152,7 +162,17 @@ export default function BatchesPage() {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
+function Stat({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  tone?: 'warn';
+}) {
   return (
     <div
       className={cn(
@@ -164,6 +184,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: 'wa
         {label}
       </p>
       <p className="mt-1.5 text-[22px] font-bold tabular-nums">{value}</p>
+      {note && <p className="mt-0.5 text-[11.5px] text-[var(--color-brand-muted)]">{note}</p>}
     </div>
   );
 }
@@ -266,11 +287,14 @@ function BatchRow({ batch, onChanged }: { batch: ColdChainBatchDto; onChanged: (
 function AddBatch({
   rooms,
   known,
+  defaultCurrency,
   onClose,
   onSaved,
 }: {
   rooms: ColdRoomDto[];
-  known: { suppliers: string[]; customers: string[]; units: string[] };
+  known: KnownValues;
+  /** What this facility already values stock in. */
+  defaultCurrency: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -307,6 +331,7 @@ function AddBatch({
   const [customer, setCustomer] = useState('');
   const [expires, setExpires] = useState('');
   const [value, setValue] = useState('');
+  const [currency, setCurrency] = useState(defaultCurrency);
 
   const save = useMutation({
     mutationFn: () =>
@@ -320,13 +345,16 @@ function AddBatch({
         customer: customer || null,
         expires_at: expires || null,
         value_amount: value ? Number(value) : null,
-        currency: value ? 'NGN' : null,
+        currency: value ? currency : null,
       }),
     onSuccess: () => {
       toast.success('Stock recorded.');
       onSaved();
     },
-    onError: () => toast.error('Could not record the stock.'),
+    // The server's own reason, not a generic failure. "Could not
+    // record the stock" tells an operator nothing they can act on,
+    // and tells us nothing when they report it.
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not record the stock.')),
   });
 
   // Stock lives IN a room, so there is nothing to record until one
@@ -478,12 +506,35 @@ function AddBatch({
               <Input type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
             </label>
           </div>
-          <Field
-            label="Value (₦) — used to show what is at risk during an excursion"
-            value={value}
-            onChange={setValue}
-            placeholder="2400000"
-          />
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <Field
+              label="Value — used to show what is at risk during an excursion"
+              value={value}
+              onChange={setValue}
+              placeholder="2400000"
+            />
+            <label className="block">
+              <span className="mb-1 block text-[11.5px] font-semibold text-[var(--color-brand-fg-soft)]">
+                Currency
+              </span>
+              {/* Defaults to whatever this facility already values
+                  stock in, so the picker is touched once and then
+                  never again. A select rather than a 3-letter box
+                  because "ngn", "NGN" and "N" all pass size:3 and
+                  then nothing totals. */}
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem] sm:w-[9.5rem]"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} — {c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
       )}
 

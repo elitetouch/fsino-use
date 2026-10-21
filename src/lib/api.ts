@@ -491,7 +491,19 @@ export const endpoints = {
   }) =>
     unwrap<{
       batches: ColdChainBatchDto[];
-      summary: { count: number; value_amount: number | null; expiring_14d: number };
+      /** Suppliers, customers and units already used on this farm,
+       *  across every status — so the suggestion list survives the
+       *  default in_store filter. */
+      known: { suppliers: string[]; customers: string[]; units: string[] };
+      summary: {
+        count: number;
+        /** Totalled in `currency` only; `value_mixed` says whether
+         *  other currencies are also in store. */
+        value_amount: number | null;
+        currency: string | null;
+        value_mixed: boolean;
+        expiring_14d: number;
+      };
     }>(api.get('/cold-chain/batches', { params })),
 
   createColdChainBatch: (payload: CreateBatchPayload) =>
@@ -1371,8 +1383,12 @@ export type ColdRoomDto = {
   alerts: ColdRoomAlertDto[];
   stock: {
     batches: number;
+    /** Totalled in `currency` only; see `value_mixed`. */
     value_amount: number | null;
     currency: string | null;
+    /** True when the room also holds stock valued in another
+     *  currency, which this total deliberately excludes. */
+    value_mixed: boolean;
   };
 };
 
@@ -1431,7 +1447,10 @@ export type ColdChainExcursionDto = {
     minutes: number | null;
     peak_temp_c: number | null;
   }>;
+  /** Totalled in `currency` only; see `value_mixed`. */
   value_at_risk: number | null;
+  currency: string | null;
+  value_mixed: boolean;
 };
 
 export type CreateBatchPayload = {

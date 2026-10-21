@@ -205,7 +205,10 @@ function RoomCard({ room }: { room: ColdRoomDto }) {
             tone="muted"
             text={
               room.stock.value_amount
-                ? `${room.stock.batches} batch${room.stock.batches === 1 ? '' : 'es'} · ${money(room.stock.value_amount, room.stock.currency)}`
+                ? // "from" when the room also holds stock priced in
+                  // another currency: the total is real but partial,
+                  // and one word is all the space a card has to say so.
+                  `${room.stock.batches} batch${room.stock.batches === 1 ? '' : 'es'} · ${room.stock.value_mixed ? 'from ' : ''}${money(room.stock.value_amount, room.stock.currency)}`
                 : `${room.stock.batches} batch${room.stock.batches === 1 ? '' : 'es'} inside`
             }
           />

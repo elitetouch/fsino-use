@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { flocksKey } from '@/lib/query-keys';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { useVertical } from '@/lib/vertical';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
 
 /**
  * Expenses ledger — the finance-only surface.
@@ -72,6 +73,22 @@ export default function ExpensesPage() {
 
   const rows = expenses.data?.expenses ?? [];
   const totals = expenses.data?.meta.pageTotals ?? [];
+
+  // Vendors already recorded, offered back on the next entry so the
+  // same supplier is spelled the same way twice. Drawn from the page's
+  // own list, so a category filter narrows it — that is a feature when
+  // you are adding another feed invoice, and harmless otherwise.
+  const knownVendors = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (expenses.data?.expenses ?? [])
+            .map((e) => e.vendor)
+            .filter((v): v is string => !!v && v.trim() !== ''),
+        ),
+      ).sort(),
+    [expenses.data],
+  );
 
   return (
     <div className="space-y-5">
@@ -167,6 +184,7 @@ export default function ExpensesPage() {
         <AddExpenseDialog
           onClose={() => setAddOpen(false)}
           flocks={flocks.data?.flocks ?? []}
+          knownVendors={knownVendors}
         />
       )}
 
@@ -243,15 +261,18 @@ function ExpenseRow({
 function AddExpenseDialog({
   onClose,
   flocks,
+  knownVendors,
 }: {
   onClose: () => void;
   flocks: FlockDto[];
+  /** Vendors already used on this farm, for the suggestion list. */
+  knownVendors: string[];
 }) {
   const qc = useQueryClient();
   const [flockId, setFlockId] = useState<string>(flocks[0]?.id ?? '');
   const [category, setCategory] = useState<ExpenseCategory>('feed');
   const [amount, setAmount] = useState<string>('');
-  const [currency, setCurrency] = useState<string>('NGN');
+  const [currency, setCurrency] = useState<string>(DEFAULT_CURRENCY);
   const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [vendor, setVendor] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -345,12 +366,21 @@ function AddExpenseDialog({
               </Field>
             </div>
             <Field label="Currency">
-              <input
-                type="text"
+              {/* Was a free-text 3-character box. "ngn", "NGN " and
+                  "NG" all pass a size:3 check, and the totals above
+                  then split one currency across several rows and look
+                  like broken arithmetic. */}
+              <select
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
-                className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem] uppercase"
-              />
+                onChange={(e) => setCurrency(e.target.value)}
+                className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} — {c.label}
+                  </option>
+                ))}
+              </select>
             </Field>
           </div>
 
@@ -364,13 +394,25 @@ function AddExpenseDialog({
           </Field>
 
           <Field label="Vendor (optional)">
+            {/* Still free text — a farm's vendors cannot be
+                enumerated — but the spelling used last time is one
+                keystroke away, which is what keeps spend groupable by
+                vendor. */}
             <input
               type="text"
               value={vendor}
               onChange={(e) => setVendor(e.target.value.slice(0, 120))}
               placeholder="e.g. Olam, Hipro Vet"
+              list="known-vendors"
               className="h-10 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2 text-[0.8125rem]"
             />
+            {knownVendors.length > 0 && (
+              <datalist id="known-vendors">
+                {knownVendors.map((v) => (
+                  <option key={v} value={v} />
+                ))}
+              </datalist>
+            )}
           </Field>
 
           <Field label="Description (optional)">
