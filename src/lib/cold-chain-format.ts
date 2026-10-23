@@ -34,3 +34,16 @@ export function money(amount: number, currency: string | null): string {
   const symbol = currency === 'NGN' || currency === null ? '₦' : `${currency} `;
   return `${symbol}${Math.round(amount).toLocaleString()}`;
 }
+
+/**
+ * Whole minutes since an ISO timestamp, floored at zero.
+ *
+ * Clock skew between a device, the server and the browser can put a
+ * timestamp slightly in the future; "open for -1 minutes" is worse
+ * than "open for 0 minutes".
+ */
+export function minutesSince(iso: string): number {
+  const ms = Date.now() - new Date(iso).getTime();
+
+  return Math.max(0, Math.floor(ms / 60_000));
+}

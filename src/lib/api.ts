@@ -1385,6 +1385,13 @@ export type ColdRoomDto = {
   severity: ColdRoomAlertDto['severity'] | null;
   severity_rank: number;
   alerts: ColdRoomAlertDto[];
+  /**
+   * The reed switch, as a state rather than only as an alarm.
+   * `fitted` false means no switch on this room — which must not be
+   * drawn as a closed door, because nothing is checking.
+   * `since` is only filled on a single room, not in the list.
+   */
+  door: { fitted: boolean; open: boolean | null; since: string | null };
   stock: {
     batches: number;
     /** Totalled in `currency` only; see `value_mixed`. */

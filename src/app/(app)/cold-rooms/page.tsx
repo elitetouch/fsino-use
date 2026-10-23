@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Plus,
   CheckCircle2,
+  DoorClosed,
   DoorOpen,
   Package,
   Snowflake,
@@ -221,8 +222,17 @@ function RoomCard({ room }: { room: ColdRoomDto }) {
           <Row icon={AlertTriangle} tone="warn" text="Band not confirmed by the device" />
         )}
 
-        {room.alerts.some((a) => a.rule_key === 'door_open') && (
-          <Row icon={DoorOpen} tone="warn" text="Door open" />
+        {/* The state, not the alarm. DoorOpenRule only fires after a
+            five-minute grace, so keying this off the alert meant an
+            open door read as shut for the four minutes when telling
+            somebody is still worth something. No switch fitted shows
+            nothing — a closed door we cannot vouch for is a lie. */}
+        {room.door.fitted && (
+          room.door.open ? (
+            <Row icon={DoorOpen} tone="warn" text="Door open" />
+          ) : (
+            <Row icon={DoorClosed} tone="muted" text="Door closed" />
+          )
         )}
 
         {room.stock.batches > 0 && (

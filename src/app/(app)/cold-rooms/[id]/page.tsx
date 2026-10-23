@@ -9,6 +9,8 @@ import {
   ArrowLeft,
   CheckCircle2,
   Cpu,
+  DoorClosed,
+  DoorOpen,
   Loader2,
   Package,
   Snowflake,
@@ -25,7 +27,7 @@ import {
 } from '@/lib/api';
 import { useCurrentFarmId } from '@/lib/farm-context';
 import { cn } from '@/lib/utils';
-import { mins, money } from '@/lib/cold-chain-format';
+import { mins, minutesSince, money } from '@/lib/cold-chain-format';
 
 /**
  * One cold room: what it is doing, and what it is supposed to be doing.
@@ -138,7 +140,7 @@ function Current({ room }: { room: ColdRoomDto }) {
   const offline = room.minutes_since_reading === null || room.minutes_since_reading > 15;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className={cn('grid gap-4', room.door.fitted ? 'sm:grid-cols-4' : 'sm:grid-cols-3')}>
       <div className="rounded-2xl border border-[var(--color-brand-border)] bg-white p-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
           Now
@@ -202,6 +204,41 @@ function Current({ room }: { room: ColdRoomDto }) {
           </p>
         )}
       </div>
+
+      {/* Only when a reed switch is actually reporting. A "Closed"
+          tile on a room with no switch is a reassurance nothing is
+          backing, and this is the sensor whose whole job is to catch
+          the commonest cause of an excursion. */}
+      {room.door.fitted && (
+        <div
+          className={cn(
+            'rounded-2xl border bg-white p-5',
+            room.door.open ? 'border-amber-300' : 'border-[var(--color-brand-border)]',
+          )}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-muted)]">
+            Door
+          </p>
+          <p
+            className={cn(
+              'mt-2 text-[20px] font-bold',
+              room.door.open && 'text-amber-800',
+            )}
+          >
+            {room.door.open ? 'Open' : 'Closed'}
+          </p>
+          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[var(--color-brand-muted)]">
+            {room.door.open ? (
+              <DoorOpen className="h-3.5 w-3.5" />
+            ) : (
+              <DoorClosed className="h-3.5 w-3.5" />
+            )}
+            {room.door.since
+              ? `${room.door.open ? 'Open' : 'Shut'} for ${mins(minutesSince(room.door.since))}`
+              : 'Reed switch reporting'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
