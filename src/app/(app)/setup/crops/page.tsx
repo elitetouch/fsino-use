@@ -6,7 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowRight, Loader2, Sprout, ThermometerSun, Droplets } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Droplets,
+  Loader2,
+  Sprout,
+  ThermometerSun,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/input';
 import { SetupStepper } from '@/components/setup/stepper';
@@ -160,6 +167,33 @@ export default function SetupCropsPage() {
           {cycles.isLoading ? (
             <div className="mt-2 flex h-24 items-center justify-center rounded-2xl border border-[var(--color-brand-border)]">
               <Loader2 className="h-5 w-5 animate-spin text-[var(--color-brand-primary)]" />
+            </div>
+          ) : crops.length === 0 ? (
+            // The catalogue is deliberately server-side, so there is no
+            // client fallback to quietly render instead. An empty list
+            // here means the request failed — most often because the
+            // API does not have /crop-cycles yet — and a bare required
+            // label with no controls under it is worse than saying so.
+            <div className="mt-2 rounded-2xl border border-[#FCA5A5] bg-[#FEE2E2] px-4 py-3">
+              <p className="flex items-center gap-2 text-xs font-bold text-[#991B1B]">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Could not load the crop list
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[#991B1B]">
+                {cycles.isError
+                  ? apiErrorMessage(
+                      cycles.error,
+                      'The server did not return the crops this app can grow.',
+                    )
+                  : 'The server returned an empty crop list.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => void cycles.refetch()}
+                className="mt-2 text-xs font-bold text-[#991B1B] underline"
+              >
+                Try again
+              </button>
             </div>
           ) : (
             <div className="mt-2 grid gap-2 sm:grid-cols-2">

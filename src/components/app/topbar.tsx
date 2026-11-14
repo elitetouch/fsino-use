@@ -62,7 +62,20 @@ export function Topbar({
   // Tokens are priced per bird per cycle. A cold store buys neither,
   // so the counter and the wallet link are meaningless there — and a
   // balance of 0 shown permanently reads as an account problem.
-  const { usesTokens, hasCycles, unitPlural, unitsHref } = useVertical();
+  const { usesTokens, hasCycles, unitPlural, unitsHref, cycle, vertical } =
+    useVertical();
+
+  // The primary action is "start another cycle", but both the word and
+  // the screen differ by vertical: a flock goes to the poultry wizard,
+  // a crop to its own, and a vertical with no cycles has no such action
+  // at all so it points at the units instead.
+  const newCycleHref = !hasCycles
+    ? unitsHref
+    : vertical === 'greenhouse'
+      ? '/setup/crops'
+      : '/setup/flocks';
+
+  const newCycleLabel = hasCycles ? `New ${(cycle ?? 'cycle').toLowerCase()}` : unitPlural;
 
   const totalTokens = (balances.data?.balances ?? []).reduce((s, b) => s + b.balance, 0);
   const lowBalance = !balances.isLoading && totalTokens < 50;
@@ -124,12 +137,12 @@ export function Topbar({
           )}
 
           {/* "New flock" is the right primary action on a poultry
-              farm and nonsense on a cold store, where the equivalent
-              is going to the rooms. */}
+              farm, "New crop" in a greenhouse, and nonsense on a cold
+              store, where the equivalent is going to the rooms. */}
           <Button asChild size="sm" className="hidden h-9 px-3.5 text-[0.8125rem] sm:inline-flex">
-            <Link href={hasCycles ? '/setup/flocks' : unitsHref}>
+            <Link href={newCycleHref}>
               <Plus className="h-3.5 w-3.5" />
-              {hasCycles ? 'New flock' : unitPlural}
+              {newCycleLabel}
             </Link>
           </Button>
 
