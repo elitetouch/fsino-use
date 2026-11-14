@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowRight, Loader2, Beef, Egg, Bird, Snowflake, Leaf, Droplets, Fish } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -68,6 +68,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function SetupFarmPage() {
   const router = useRouter();
+  const qc = useQueryClient();
 
   // Route guard — the backend (CreateFarmRequest::authorize) is the
   // authoritative line, but we redirect early so a user who joined a
@@ -109,9 +110,33 @@ export default function SetupFarmPage() {
 
   const create = useMutation({
     mutationFn: (payload: CreateFarmPayload) => endpoints.createFarm(payload),
-    onSuccess: ({ farm }) => {
+    onSuccess: async ({ farm }) => {
       writeCurrentFarmId(farm.id);
-      toast.success('Farm saved — let’s add your first pen.');
+
+      // AWAITED, AND BEFORE THE PUSH. This page has already run the
+      // ['farms'] query itself (canCreateFarm needs it), so that cache
+      // holds the list from before this farm existed — and useVertical()
+      // reads the same key with a 60 second staleTime.
+      //
+      // Without this, step 2 looks the new farm up in a stale list,
+      // misses it, and falls back to DEFAULT_VERTICAL. A grower who
+      // just picked "greenhouse" is then asked to add "pens" with a
+      // "Capacity (birds)", and — worse, because it is silent — the
+      // cold chain branch in setup/pens that sends the room's
+      // temperature preset is keyed on `vertical === 'cold_chain'`, so
+      // it never fires and the room is created with no band at all.
+      //
+      // Invalidating without awaiting is not enough: the push happens
+      // first and the next screen renders from the same stale cache
+      // while the refetch is still in flight.
+      await qc.invalidateQueries({ queryKey: ['farms'] });
+
+      // Read from the form for the same reason step 1's copy does:
+      // useVertical() has no farm to look up until the line above
+      // lands.
+      const unitWord = VERTICALS[form.getValues('vertical')].unit.toLowerCase();
+
+      toast.success(`Farm saved — let’s add your first ${unitWord}.`);
       router.push('/setup/pens');
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not create your farm.')),

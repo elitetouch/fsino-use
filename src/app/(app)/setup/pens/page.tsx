@@ -86,6 +86,7 @@ export default function SetupPensPage() {
     capacityLabel,
     capacityPlaceholder,
     capacityUnit,
+    isLoading: verticalLoading,
   } = useVertical();
 
   const pens = useQuery({
@@ -147,6 +148,23 @@ export default function SetupPensPage() {
 
   const existing = pens.data?.pens ?? [];
   const canContinue = existing.length > 0;
+
+  // Hold the render until the vertical is known. useVertical() falls
+  // back to poultry whenever it cannot resolve a farm — including while
+  // its own query is still in flight — so without this a greenhouse
+  // grower sees "Add your pens" and "Capacity (birds)" for a beat
+  // before the labels correct themselves.
+  //
+  // It is not only cosmetic. onSubmit below branches on `vertical` to
+  // decide whether a cold room's temperature preset goes with the unit,
+  // and a submit made during that window creates a room with no band.
+  if (verticalLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-[var(--color-brand-primary)]" />
+      </div>
+    );
+  }
 
   return (
     <div>
