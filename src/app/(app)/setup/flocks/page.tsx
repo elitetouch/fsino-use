@@ -95,7 +95,22 @@ type FormValues = z.infer<typeof schema>;
 export default function SetupFlocksPage() {
   const router = useRouter();
   const qc = useQueryClient();
-  const { vertical } = useVertical();
+  const { vertical, isLoading: verticalLoading } = useVertical();
+
+  // A greenhouse belongs on /setup/crops. Step 2 sends it there, so
+  // reaching this page means a back button, a stale bookmark, or a farm
+  // switched to greenhouse with this screen already open. Without the
+  // redirect the grower gets asked for a breed and a token tier, and
+  // whatever they submit is created as a poultry flock.
+  //
+  // Guarded on isLoading because useVertical() reports poultry while
+  // its own query is in flight, and redirecting on that would bounce
+  // real poultry farms off their own step 3.
+  useEffect(() => {
+    if (!verticalLoading && vertical === 'greenhouse') {
+      router.replace('/setup/crops');
+    }
+  }, [verticalLoading, vertical, router]);
   // Reactive: previously readCurrentFarmId() was captured on mount,
   // so a farm switch mid-flow left queryKeys pinned to the old farm.
   // Outsider handling lives in AccessGuard now.

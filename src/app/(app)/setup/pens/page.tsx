@@ -149,6 +149,22 @@ export default function SetupPensPage() {
   const existing = pens.data?.pens ?? [];
   const canContinue = existing.length > 0;
 
+  // Where step 3 lives depends on the vertical:
+  //   cold chain — nowhere. It has no cycles, so sending an operator to
+  //     a cycle screen strands them on one they can never complete.
+  //   greenhouse — its own crop screen, mirroring the backend split
+  //     between CropCycleController and FlockController.
+  //   poultry    — the flock wizard, unchanged.
+  //
+  // Irrigation and aquaculture still fall through to the flock wizard.
+  // That is wrong for them too, but it is wrong in the way it has
+  // always been, and fixing it needs their own cycle vocabulary first.
+  const nextStepHref = !hasCycles
+    ? '/setup/done'
+    : vertical === 'greenhouse'
+      ? '/setup/crops'
+      : '/setup/flocks';
+
   // Hold the render until the vertical is known. useVertical() falls
   // back to poultry whenever it cannot resolve a farm — including while
   // its own query is still in flight — so without this a greenhouse
@@ -284,7 +300,7 @@ export default function SetupPensPage() {
         // Cold chain has no cycles, so there is no flock step to send
         // them to — going there would strand an operator on a screen
         // asking which breed is in their cold room.
-        onClick={() => router.push(hasCycles ? '/setup/flocks' : '/setup/done')}
+        onClick={() => router.push(nextStepHref)}
       >
         {hasCycles ? `Continue to ${(cyclePlural ?? '').toLowerCase()}` : 'Finish setup'}
         <ArrowRight className="h-5 w-5" />

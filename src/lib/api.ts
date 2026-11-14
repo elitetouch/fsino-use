@@ -578,6 +578,25 @@ export const endpoints = {
     unwrap<{ flock: FlockDto }>(api.post('/flocks', payload)),
 
   /**
+   * Greenhouse crop cycles.
+   *
+   * A crop cycle IS a flock row server-side — same table, same bay,
+   * same events — but it goes through its own endpoints because the
+   * flock ones require a poultry breed, a hatchery and a token tier,
+   * none of which a greenhouse has. See CropCycleController.
+   *
+   * The index returns the crop catalogue alongside the cycles so a
+   * picker can render bands and reasoning without a second request.
+   */
+  listCropCycles: () =>
+    unwrap<{ cycles: CropCycleDto[]; crops: CropOptionDto[] }>(
+      api.get('/crop-cycles'),
+    ),
+
+  createCropCycle: (payload: CreateCropCyclePayload) =>
+    unwrap<{ cycle: CropCycleDto }>(api.post('/crop-cycles', payload)),
+
+  /**
    * Archive a flock. Backend warns with 409 + FLOCK_ARCHIVE_WARNING if
    * the flock is still active (has birds or is in-date) unless `force`
    * is true — pass true once the user confirms.
@@ -1716,6 +1735,95 @@ export type CreateFlockPayload = {
   flock_price: number;
   start_date: string; // YYYY-MM-DD
   tier: 'basic' | 'premium';
+};
+
+/**
+ * Greenhouse crops. Mirrors App\Domain\Verticals\GreenhouseCrop —
+ * change one, change the other, the same rule as ProductionType and
+ * ColdChainPresetKey.
+ */
+export type GreenhouseCropKey =
+  | 'tomato'
+  | 'sweet_pepper'
+  | 'hot_pepper'
+  | 'cucumber'
+  | 'leafy_green'
+  | 'mushroom';
+
+/**
+ * One crop in the picker, with the band it commits the bay to.
+ *
+ * `critical_high_c` is NOT the top of the comfort band — it is the
+ * temperature at which the crop is lost rather than merely reduced
+ * (pollen sterility for tomato and sweet pepper, bolting for lettuce,
+ * green mould taking the bags for mushrooms). Worth showing
+ * differently from `day_max_c`.
+ *
+ * `wants_night_drop` is false for mushrooms, which are a fungus and
+ * want a steady temperature. Don't tell those growers their house
+ * isn't cooling overnight.
+ */
+export type CropOptionDto = {
+  key: GreenhouseCropKey;
+  label: string;
+  hint: string;
+  cycle_weeks: number;
+  day_min_c: number;
+  day_max_c: number;
+  night_min_c: number;
+  night_max_c: number;
+  rh_min_pct: number;
+  rh_max_pct: number;
+  critical_high_c: number;
+  wants_night_drop: boolean;
+  continuous_harvest: boolean;
+};
+
+export type CropCycleDto = {
+  id: string;
+  code: string;
+  crop: string;
+  crop_label: string;
+  /**
+   * False for a cycle whose production type is not a known crop — a
+   * poultry flock left over from before the farm was switched to
+   * greenhouse. Shown rather than hidden, but with nothing
+   * crop-specific invented for it.
+   */
+  is_crop: boolean;
+  bay: { id: string | null; name: string | null };
+  variety: string | null;
+  plants_placed: number;
+  plants_now: number;
+  start_date: string;
+  harvest_due: string | null;
+  /** Signed: negative means past the end of the cycle. */
+  days_to_harvest: number | null;
+  continuous_harvest: boolean | null;
+  climate: {
+    day_min_c: number;
+    day_max_c: number;
+    night_min_c: number;
+    night_max_c: number;
+    rh_min_pct: number;
+    rh_max_pct: number;
+    critical_high_c: number;
+    wants_night_drop: boolean;
+    hint: string;
+  } | null;
+};
+
+export type CreateCropCyclePayload = {
+  pen_id: string;
+  crop: GreenhouseCropKey;
+  /** Plants, or bags for mushrooms. */
+  plants_placed: number;
+  variety?: string;
+  seedling_age_days?: number;
+  /** Per unit, in kobo. */
+  seedling_price?: number;
+  /** YYYY-MM-DD. Transplant date, or spawning date for mushrooms. */
+  start_date: string;
 };
 
 export type BreedDto = {
