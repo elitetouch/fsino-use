@@ -1,7 +1,7 @@
 import {
   BarChart3, Bird, CreditCard, FileText, Info, LayoutDashboard, MessageCircle,
   Package, Phone, Receipt, Settings, Snowflake, Stethoscope, Tractor,
-  TrendingUp, User, Users2, Wallet,
+  TrendingUp, User, Users2, Wallet, Warehouse,
 } from 'lucide-react';
 import { DEFAULT_VERTICAL, type Vertical } from '@/lib/vertical';
 
@@ -124,13 +124,55 @@ const COLD_CHAIN_GROUPS: NavGroup[] = [
 ];
 
 /**
+ * Greenhouse's navigation.
+ *
+ * Like cold chain, a different list rather than the poultry one with
+ * items hidden. A grower has bays and crops; they have no bird to
+ * diagnose, no breed report to run and no token to spend, and billing
+ * is on device subscription rather than per bird — so Disease check,
+ * Wallet and Sales go rather than sit greyed out.
+ *
+ * Expenses stays for the same reason it stays for cold chain: it is
+ * the cost the grower actually controls and the thing they will log.
+ */
+const GREENHOUSE_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { href: '/greenhouse', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/pens', label: 'Bays', icon: Warehouse },
+      { href: '/reports', label: 'Reports', icon: BarChart3 },
+    ],
+  },
+  {
+    heading: 'Account',
+    items: [
+      { href: '/farms', label: 'Farms', icon: Tractor },
+      { href: '/profile', label: 'Profile', icon: User },
+      { href: '/users', label: 'Users', icon: Users2 },
+      { href: '/settings', label: 'Settings', icon: Settings },
+      { href: '/expenses', label: 'Expenses', icon: Receipt },
+      { href: '/subscription', label: 'Subscription', icon: CreditCard },
+    ],
+  },
+  {
+    heading: 'Customer support',
+    items: [
+      { href: '/about', label: 'About this app', icon: Info },
+      { href: '/contact', label: 'Contact us', icon: Phone },
+      { href: '/community', label: 'WhatsApp community', icon: MessageCircle },
+    ],
+  },
+];
+
+/**
  * The navigation for a given vertical.
  *
- * Only cold chain diverges so far. Greenhouse, irrigation and
- * aquaculture keep the poultry shape because their screens are not
- * built yet, and showing a farmer a menu of links that go nowhere is
- * worse than showing them the one they already know.
+ * Irrigation and aquaculture still keep the poultry shape, because
+ * their screens are not built yet and a menu of links that go nowhere
+ * is worse than the one the farmer already knows.
  */
 export function navGroupsFor(vertical: Vertical = DEFAULT_VERTICAL): NavGroup[] {
-  return vertical === 'cold_chain' ? COLD_CHAIN_GROUPS : NAV_GROUPS;
+  if (vertical === 'cold_chain') return COLD_CHAIN_GROUPS;
+  if (vertical === 'greenhouse') return GREENHOUSE_GROUPS;
+  return NAV_GROUPS;
 }

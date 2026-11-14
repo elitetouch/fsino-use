@@ -45,6 +45,16 @@ export type VerticalConfig = {
   usesTokens: boolean;
   /** Where the unit list lives. Cold chain has its own screen. */
   unitsHref: string;
+  /**
+   * Where "Dashboard" goes.
+   *
+   * /home is the poultry dashboard — flock age, mortality, feed
+   * conversion, birds sold. A vertical with its own dashboard names it
+   * here and useVerticalRouteGuard sends it there, because /home is
+   * where login lands and a greenhouse grower should not arrive on a
+   * screen about birds.
+   */
+  dashboardHref: string;
 
   /**
    * Setup-wizard copy.
@@ -85,6 +95,7 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     hasCycles: true,
     usesTokens: true,
     unitsHref: '/pens',
+    dashboardHref: '/home',
     capacityLabel: 'Capacity (birds)',
     capacityPlaceholder: '2,500',
     namePlaceholder: 'Sunrise Poultry Farm',
@@ -106,6 +117,7 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     hasCycles: true,
     usesTokens: false,
     unitsHref: '/pens',
+    dashboardHref: '/greenhouse',
     capacityLabel: 'Growing area (m²)',
     capacityPlaceholder: '1,200',
     namePlaceholder: 'Sunrise Greenhouse',
@@ -127,6 +139,8 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     hasCycles: true,
     usesTokens: false,
     unitsHref: '/pens',
+    // No dashboard of its own yet, so it keeps the poultry one.
+    dashboardHref: '/home',
     capacityLabel: 'Area under irrigation (hectares)',
     capacityPlaceholder: '8',
     namePlaceholder: 'Sunrise Farm',
@@ -151,6 +165,8 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     hasCycles: false,
     usesTokens: false,
     unitsHref: '/cold-rooms',
+    // The room list IS the cold chain dashboard.
+    dashboardHref: '/cold-rooms',
     // Tonnes, not birds. An operator who reads "Capacity (birds)" on
     // their cold store learns the product was not built for them,
     // however good the rest of it is.
@@ -179,6 +195,8 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     hasCycles: true,
     usesTokens: false,
     unitsHref: '/pens',
+    // No dashboard of its own yet, so it keeps the poultry one.
+    dashboardHref: '/home',
     capacityLabel: 'Capacity (fish)',
     capacityPlaceholder: '5,000',
     namePlaceholder: 'Sunrise Fish Farm',
@@ -290,13 +308,25 @@ export function isCycleOnlyPath(pathname: string | null): boolean {
  */
 export function useVerticalRouteGuard(pathname: string | null): boolean {
   const router = useRouter();
-  const { hasCycles, unitsHref, isLoading } = useVertical();
+  const { hasCycles, unitsHref, dashboardHref, isLoading } = useVertical();
 
   const blocked = !isLoading && !hasCycles && isCycleOnlyPath(pathname);
 
-  useEffect(() => {
-    if (blocked) router.replace(unitsHref);
-  }, [blocked, unitsHref, router]);
+  // A vertical WITH cycles can still have its own dashboard. Greenhouse
+  // does, and /home is where login lands, so without this a grower
+  // arrives on the poultry dashboard — flock age, mortality, feed
+  // conversion — every time they sign in. The cycle guard above never
+  // catches it, because greenhouse genuinely has cycles.
+  const wrongDashboard =
+    !isLoading && pathname === '/home' && dashboardHref !== '/home';
 
-  return blocked;
+  useEffect(() => {
+    if (blocked) {
+      router.replace(unitsHref);
+      return;
+    }
+    if (wrongDashboard) router.replace(dashboardHref);
+  }, [blocked, wrongDashboard, unitsHref, dashboardHref, router]);
+
+  return blocked || wrongDashboard;
 }
