@@ -13,6 +13,7 @@ import type { CycleWriteWindow } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 import { useDailyRecordsForDate, pickRecord, pickAllRecords } from '@/lib/use-daily-record';
 import { DatePickerStep } from '@/components/record/date-picker-step';
+import { QuickRecord } from '@/components/record/quick-record';
 import { FeedStep } from '@/components/record/steps/feed-step';
 import { WaterStep } from '@/components/record/steps/water-step';
 import { VaccinationStep } from '@/components/record/steps/vaccination-step';
@@ -221,6 +222,24 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
         onContinue={goNext}
         stepCount={totalSteps - 1}
         hasRecordsOnSelectedDate={hasRecordsOnSelectedDate}
+        slot={
+          // The fast path. Saving here writes the same payloads to the
+          // same endpoints as the steps below, so a quick record and a
+          // wizard record are indistinguishable once stored — this is
+          // a second way in, not a second system.
+          <QuickRecord
+            flockId={flockId}
+            recordDate={selectedDate}
+            // Not optional-chained on purpose. `flock.current_birds` is
+            // required on the guidance DTO, and a `?.` here would turn a
+            // contract change into a silently disabled safety check —
+            // the "more birds than you have" warning would just stop
+            // firing, with nothing to notice it had.
+            currentBirds={guidance.data.flock.current_birds}
+            onSaved={() => router.replace(`/cycles/${flockId}?recorded=1`)}
+            onUseWizard={goNext}
+          />
+        }
       />
     );
   }

@@ -36,6 +36,7 @@ export function DatePickerStep({
   onContinue,
   stepCount,
   hasRecordsOnSelectedDate,
+  slot,
 }: {
   flockId: string;
   /** Selected date, YYYY-MM-DD. Always present — initialised to today. */
@@ -47,6 +48,15 @@ export function DatePickerStep({
   stepCount: number;
   /** Whether the selected date already has records (drives the CTA copy). */
   hasRecordsOnSelectedDate: boolean;
+  /**
+   * Rendered directly under the date header, above the calendar.
+   *
+   * Exists so the quick-record box can sit on this step without this
+   * component having to know what quick record is. The farmer confirms
+   * the date, then either says the whole day in one sentence or taps
+   * through to the full form — both start from the same screen.
+   */
+  slot?: React.ReactNode;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Anchor for the currently-visible month. Defaults to the selected
@@ -113,6 +123,8 @@ export function DatePickerStep({
             {headerText}
           </p>
         </div>
+
+        {slot && <div className="mb-4">{slot}</div>}
 
         {/* Calendar card */}
         <div className="rounded-2xl border border-[var(--color-brand-border)] bg-white px-3 py-4">
