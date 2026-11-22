@@ -86,6 +86,17 @@ export function QuickRecord({
   const note = keepNote ? parsed.leftover : '';
   const canSave = !saving && (kept.length > 0 || note.trim() !== '');
 
+  // The button names what pressing it will actually do. While the box is
+  // empty it must not read "Save note" — that promises an action that is
+  // neither available nor what would happen, and a disabled control that
+  // describes the wrong outcome reads as a bug rather than a prompt.
+  const saveLabel =
+    kept.length > 0
+      ? `Save ${kept.length} ${kept.length === 1 ? 'entry' : 'entries'}`
+      : note.trim() !== ''
+        ? 'Save note'
+        : 'Save record';
+
   const reset = () => {
     setText('');
     setRemoved(new Set());
@@ -214,8 +225,7 @@ export function QuickRecord({
             </>
           ) : (
             <>
-              <Check className="h-4 w-4" aria-hidden /> Save{' '}
-              {kept.length > 0 ? `${kept.length} ${kept.length === 1 ? 'entry' : 'entries'}` : 'note'}
+              <Check className="h-4 w-4" aria-hidden /> {saveLabel}
             </>
           )}
         </Button>
