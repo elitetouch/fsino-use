@@ -94,7 +94,26 @@ export async function mutateOffline<T = unknown>(input: MutateInput): Promise<Mu
         timeout: 25_000,
       });
       return { key, sentNow: true, data: res.data };
-    } catch {
+    } catch (err) {
+      // A REJECTION IS NOT A TRANSIENT FAILURE, and conflating the two
+      // silently lost people's records.
+      //
+      // Every error used to be queued. So a 422 — a validation error
+      // the server will give identically every time — was swallowed
+      // into the outbox, the caller was told the write had been saved
+      // for later, and the farmer got "Saved on your phone. It will
+      // upload by itself." It then failed eight more times and was
+      // never seen again. They had recorded water and watched the
+      // calendar stay blank.
+      //
+      // Only failures that might succeed later are queued: no network,
+      // a timeout, a 5xx, or the throttles (408/429). Anything the
+      // server has actually decided — 4xx — is thrown to the caller so
+      // it surfaces as the error it is.
+      if (isPermanentRejection(err)) {
+        throw err;
+      }
+
       // Transient failure online → queue for retry. We give it a fresh
       // outbox entry (which generates its own key, also valid) since the
       // server may have processed the first request.
@@ -123,6 +142,24 @@ export async function mutateOffline<T = unknown>(input: MutateInput): Promise<Mu
     rollback: input.rollback,
   });
   return { key: enq.entry.key, sentNow: false };
+}
+
+/**
+ * Did the server decide this, or did it merely not answer?
+ *
+ * A decision (4xx) will be the same on every retry, so queueing it
+ * hides a real error behind a success message. A non-answer — offline,
+ * timeout, 5xx — may well succeed later and belongs in the outbox.
+ *
+ * 408 and 429 are 4xx but are explicitly "try again", so they queue.
+ * 401 is included as permanent: retrying an expired session for ten
+ * minutes helps nobody, and the caller needs to send them to sign in.
+ */
+function isPermanentRejection(err: unknown): boolean {
+  const status = (err as { response?: { status?: unknown } } | null)?.response?.status;
+  if (typeof status !== 'number') return false; // no response at all → network
+  if (status === 408 || status === 429) return false;
+  return status >= 400 && status < 500;
 }
 
 export class OfflineError extends Error {
