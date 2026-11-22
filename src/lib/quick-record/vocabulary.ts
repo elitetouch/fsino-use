@@ -109,7 +109,20 @@ export const KEYWORDS: ReadonlyArray<{ kind: FieldKind; re: RegExp }> = [
     kind: 'feed',
     // "chop" is Pidgin for food. Ration names double as feed keywords
     // because farmers name the ration rather than the act.
-    re: /\b(feed|fed|feeding|mash|marsh|starter|grower|finisher|pellets?|chop|fit)\b/,
+    //
+    // THE CONTAINER IS THE RELIABLE SIGNAL, not the word "feed". One
+    // spoken "25 bags of feed" came back, across four attempts, as
+    // "25 pounds of feet", "25 packs of heat", "25 bags" and "25 bags
+    // feet" — the word feed survived none of them, and the container
+    // survived all four. So a bag-like container with a number is
+    // feed, however badly the rest was heard.
+    //
+    // This is also why "feet" and "heat" are NOT listed as feed words
+    // on their own. "Heat" is a real and important thing on a poultry
+    // farm — heat stress is a daily worry — and a farmer typing "too
+    // much heat today" must not log a feed entry. Carried by the
+    // container, those sentences are safe: no container, no feed.
+    re: /\b(feed|fed|feeding|mash|marsh|starter|grower|finisher|pellets?|chop|fit|bags?|sacks?|packs?|pounds?|lbs?)\b/,
   },
   {
     kind: 'water',
@@ -229,7 +242,12 @@ export const UNITS: ReadonlyArray<{ re: RegExp; spec: UnitSpec }> = [
   },
   {
     // Feed bags are NOT converted to kilograms — see BAG_WEIGHT_NOTE.
-    re: /\b(bags?|sacks?)\b/,
+    //
+    // MISHEARD: "packs", "pounds", "lbs" for bags, all observed from
+    // one spoken "bags". Pounds are safe to claim here because feed in
+    // Nigeria is sold by the kilogram and the bag; nobody buying
+    // poultry feed in Lagos is talking in pounds.
+    re: /\b(bags?|sacks?|packs?|pounds?|lbs?)\b/,
     spec: { apiUnit: 'bags', perUnit: null, label: 'bag' },
   },
   {

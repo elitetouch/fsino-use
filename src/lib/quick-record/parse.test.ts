@@ -250,6 +250,35 @@ describe('what the recogniser actually hears', () => {
     expect(parseQuickRecord('2 bags of layer marsh').fields[0]).toMatchObject({ kind: 'feed' });
   });
 
+  it('reads every mangling of "25 bags of feed"', () => {
+    // One spoken sentence, four attempts, four different wrong
+    // transcripts. The word "feed" survived none of them; the
+    // container survived all four, which is why the container is what
+    // the rule keys on.
+    for (const heard of [
+      '25 bags of feed',
+      '25 pounds of feet',
+      '25 packs of heat',
+      '25 bags',
+      '25 bags feet',
+    ]) {
+      const r = parseQuickRecord(heard);
+      expect(r.fields[0], heard).toMatchObject({
+        kind: 'feed',
+        value: 25,
+        unit: 'bags',
+      });
+    }
+  });
+
+  it('does NOT log feed when "heat" appears without a container', () => {
+    // Heat stress is a real daily worry. "Too much heat today" is a
+    // note, not 25 bags of anything — which is why heat is carried by
+    // the container rather than being a feed word on its own.
+    expect(parseQuickRecord('too much heat today').fields).toHaveLength(0);
+    expect(parseQuickRecord('the birds have heat stress').fields).toHaveLength(0);
+  });
+
   it('does NOT map "called" to culled', () => {
     // The tempting mishearing, and the one that must not be added:
     // "I called the vet" would silently cull birds.
