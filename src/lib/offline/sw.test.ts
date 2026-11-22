@@ -29,14 +29,23 @@ const SOURCE = readFileSync(
 /*  Fakes                                                              */
 /* ------------------------------------------------------------------ */
 
-type Keyish = string | { url: string };
+type Keyish = string | { url: string; headers?: Headers };
 
 function keyOf(k: Keyish): string {
   return new URL(typeof k === 'string' ? k : k.url, ORIGIN).href;
 }
 
+function headersOf(k: Keyish): Headers {
+  return typeof k === 'string'
+    ? new Headers()
+    : ((k as { headers?: Headers }).headers ?? new Headers());
+}
+
 class FakeCache {
   map = new Map<string, Response>();
+  /** The request each entry was stored against — Vary is compared to it. */
+  storedAgainst = new Map<string, Headers>();
+
   async put(k: Keyish, res: Response) {
     // Spec behaviour: put replaces, which moves the entry to the end of
     // insertion order. The LRU prune depends on that order, so the fake
@@ -44,14 +53,41 @@ class FakeCache {
     const key = keyOf(k);
     this.map.delete(key);
     this.map.set(key, res);
+    this.storedAgainst.set(key, headersOf(k));
   }
-  async match(k: Keyish) {
-    return this.map.get(keyOf(k));
+
+  /**
+   * Honours Vary, because the real Cache API does and it is the whole
+   * reason MATCH_OPTS exists.
+   *
+   * Next.js serves every HTML response with
+   * `Vary: RSC, Next-Router-State-Tree, ...`, so an entry is returned
+   * only when the querying request's values for those headers equal
+   * the ones it was stored against — unless the caller passes
+   * `ignoreVary`.
+   */
+  async match(k: Keyish, opts?: { ignoreVary?: boolean }) {
+    const key = keyOf(k);
+    const res = this.map.get(key);
+    if (!res) return undefined;
+    if (opts?.ignoreVary) return res;
+
+    const vary = res.headers.get('vary');
+    if (!vary) return res;
+    if (vary.trim() === '*') return undefined;
+
+    const stored = this.storedAgainst.get(key) ?? new Headers();
+    const asked = headersOf(k);
+    for (const field of vary.split(',').map((f) => f.trim().toLowerCase())) {
+      if (stored.get(field) !== asked.get(field)) return undefined;
+    }
+    return res;
   }
   async keys() {
     return [...this.map.keys()].map((url) => ({ url }));
   }
   async delete(k: Keyish) {
+    this.storedAgainst.delete(keyOf(k));
     return this.map.delete(keyOf(k));
   }
 }
@@ -86,6 +122,8 @@ interface SwHarness {
   requested: string[];
   /** Override the body a path serves, e.g. real HTML with chunk refs. */
   bodies: Map<string, string>;
+  /** Whether responses carry Next's Vary header. On by default. */
+  varyOn: { value: boolean };
   cacheNamed: (name: string) => Promise<FakeCache>;
 }
 
@@ -97,6 +135,7 @@ function load(): SwHarness {
   const requested: string[] = [];
 
   const bodies = new Map<string, string>();
+  const varyOn = { value: true };
 
   const fakeFetch = async (input: Keyish) => {
     const url = new URL(typeof input === 'string' ? input : input.url, ORIGIN);
@@ -105,7 +144,14 @@ function load(): SwHarness {
     if (!served.has(url.pathname)) {
       return new Response('not found', { status: 404 });
     }
-    return new Response(bodies.get(url.pathname) ?? `body:${url.pathname}`, { status: 200 });
+    return new Response(bodies.get(url.pathname) ?? `body:${url.pathname}`, {
+      status: 200,
+      // Exactly what Next.js serves on every HTML response. Without it
+      // here the Vary tests would prove nothing.
+      headers: varyOn.value
+        ? { vary: 'RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch' }
+        : {},
+    });
   };
 
   /**
@@ -167,6 +213,7 @@ function load(): SwHarness {
     online,
     requested,
     bodies,
+    varyOn,
     cacheNamed: (name) => fakeCaches.open(name),
   };
 }
@@ -317,6 +364,14 @@ describe('service worker — a cached page needs its code', () => {
     expect(held).not.toContain('/_next/static/media/logo-dd4.png');
   });
 
+  it('fetches each document once, not once per job', async () => {
+    // Harvesting used to re-request every document to read its HTML a
+    // second time. On a farmer's connection that is the whole precache
+    // paid for twice.
+    const homeFetches = sw.requested.filter((p) => p === '/home').length;
+    expect(homeFetches).toBe(1);
+  });
+
   it('prewarms a cycle screen with its code, not just its HTML', async () => {
     sw.served.add('/cycles/abc/record');
     sw.served.add('/_next/static/chunks/app/record-ee5.js');
@@ -370,6 +425,50 @@ describe('service worker — RSC payloads', () => {
     const keys = [...pages.map.keys()];
     expect(keys.some((k) => k.endsWith('/home?__rsc=1'))).toBe(true);
     expect(keys.some((k) => k.endsWith('/home'))).toBe(false);
+  });
+});
+
+describe('service worker — Vary does not hide the cache', () => {
+  /**
+   * Next.js serves every HTML response with
+   * `Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch,
+   * Next-Router-Segment-Prefetch`, and the Cache API honours Vary on
+   * match(). Those are the headers the App Router changes per
+   * navigation, so a cache can hold the page and still report a miss —
+   * which from outside is indistinguishable from never caching it.
+   */
+  let sw: SwHarness;
+
+  beforeEach(async () => {
+    sw = load();
+    for (const r of APP_ROUTES) sw.served.add(r);
+    await sw.fire('install', {});
+  });
+
+  it('serves a page cached under Vary to a plain navigation', async () => {
+    sw.online.value = false;
+    const res = await sw.fetchEvent(navigation('/home'));
+    expect(res?.status).toBe(200);
+    expect(await res!.text()).toBe('body:/home');
+  });
+
+  it('serves an RSC payload cached under Vary to a later RSC fetch', async () => {
+    await sw.fetchEvent(req('/cycles?_rsc=aaa', { headers: { RSC: '1' } }));
+    sw.online.value = false;
+    const res = await sw.fetchEvent(req('/cycles?_rsc=bbb', { headers: { RSC: '1' } }));
+    expect(res!.status).toBe(200);
+  });
+
+  it('the harness really does enforce Vary', async () => {
+    // Without this the two tests above would pass for the wrong reason.
+    const cache = await sw.cacheNamed('fsm-v5-pages');
+    await cache.put(
+      { url: `${ORIGIN}/probe`, headers: new Headers({ RSC: '1' }) },
+      new Response('x', { headers: { vary: 'RSC' } }),
+    );
+    const asNavigation = { url: `${ORIGIN}/probe`, headers: new Headers() };
+    expect(await cache.match(asNavigation)).toBeUndefined();
+    expect(await cache.match(asNavigation, { ignoreVary: true })).toBeDefined();
   });
 });
 

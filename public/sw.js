@@ -100,17 +100,20 @@ const PRECACHE_DOCUMENTS = [
 /**
  * The documents whose JS and CSS are pulled in at install too.
  *
- * A farmer launching with no signal lands on one of these: the
- * launcher's start_url, the sign-in page, and the two screens the app
- * forwards an authenticated session to. Without their chunks the
- * cached document renders a white page, which is a worse answer than
- * the offline page it replaced.
+ * This is every precached route, and the reason is a measurement. The
+ * shared bundle every screen loads is ~102 kB; a route's own chunk on
+ * top of it is 2–14 kB. So the first document costs the bundle and
+ * each of the seventeen after it costs a rounding error — the whole
+ * set is roughly a quarter of a megabyte, fetched once at install, and
+ * it is the same bytes the browser would download anyway the first
+ * time the farmer opens each screen.
  *
- * Kept short on purpose — a Next build is megabytes of chunks and the
- * rest of the routes cache themselves the first time they are opened
- * online. This is airtime, not disk.
+ * Caching a document without its chunk buys nothing: every screen here
+ * is a client component, so the HTML is a shell and the chunk is what
+ * draws it. Half-caching the app is how a farmer gets a white page
+ * instead of their records.
  */
-const BOOT_DOCUMENTS = ['/', '/login', '/home', '/cycles'];
+const BOOT_DOCUMENTS = PRECACHE_DOCUMENTS;
 
 /**
  * Non-document files the shell needs. Separated from the documents
@@ -139,6 +142,34 @@ const PRECACHE_ASSETS = [
  * could not start. Nothing the farmer browses is ever allowed to push a
  * chunk out again.
  */
+/**
+ * How every cache lookup in this file matches.
+ *
+ * `ignoreVary` is the one that matters. Next.js serves every HTML
+ * response with
+ *
+ *   Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch,
+ *         Next-Router-Segment-Prefetch
+ *
+ * and the Cache API honours Vary on `match()`: a stored entry is only
+ * returned when the new request's values for each of those headers
+ * equal the values on the request it was stored against. Those headers
+ * are exactly the ones the App Router varies per navigation, so an
+ * entry stored during one kind of request can be invisible to the next
+ * — a cache that holds the page and reports a miss, which from the
+ * outside is indistinguishable from never having cached it.
+ *
+ * Ignoring Vary is safe here because every lookup is keyed on a URL we
+ * build ourselves, and that key already encodes the only distinction
+ * that matters: `documentKey()` for the HTML, `?__rsc=1` for the
+ * flight payload. Nothing is stored that the key does not separate.
+ *
+ * `ignoreSearch` stays OFF deliberately: the keys already have their
+ * query strings stripped, and turning it on would let a request for
+ * one route match an entry for another.
+ */
+const MATCH_OPTS = { ignoreVary: true };
+
 const PAGES_MAX_ENTRIES = 160;
 const STATIC_MAX_ENTRIES = 500;
 const ASSET_MAX_ENTRIES = 80;
@@ -157,31 +188,40 @@ self.addEventListener('install', (event) => {
       // cached. v3 wrapped that in a catch, so a single bad URL left an
       // empty shell cache and no sign that anything was wrong. A route
       // that fails to precache should cost us that route, not the app.
+      //
       // Documents first and in parallel — they are small, and having
-      // them is the difference between the app opening and not.
+      // them is the difference between the app opening and not. Each
+      // document's HTML is kept so its chunks can be harvested below
+      // without fetching the same page a second time.
+      const html = new Map();
       await Promise.all(
         [...PRECACHE_DOCUMENTS, ...PRECACHE_ASSETS].map(async (url) => {
           try {
-            await cacheDocument(cache, url, false);
+            const body = await cacheDocument(cache, url, BOOT_DOCUMENTS.includes(url));
+            if (body !== null) html.set(url, body);
           } catch (err) {
             console.warn('[sw] precache miss:', url, err);
           }
         }),
       );
 
-      // Then the build output for the screens a farmer lands on cold.
-      // Sequential, so the chunks these share are fetched once and the
-      // rest come from the cache.
-      for (const url of BOOT_DOCUMENTS) {
+      // Controlled now, with every document in hand. The code below is
+      // still inside waitUntil, so it finishes — but activation does
+      // not wait on it. On a bad connection the alternative is a worker
+      // stuck installing while the farmer gets no offline support at
+      // all.
+      await self.skipWaiting();
+
+      // Then the build output. Sequential on purpose: these documents
+      // share one ~102 kB bundle, so the first fetch pays for it and
+      // the rest find it already cached.
+      for (const [url, body] of html) {
         try {
-          await cacheDocument(cache, url, true);
+          await cacheBuildOutputFrom(body);
         } catch (err) {
           console.warn('[sw] boot asset miss:', url, err);
         }
       }
-
-      // Activate immediately on first install so the page is controlled.
-      await self.skipWaiting();
     })(),
   );
 });
@@ -197,14 +237,23 @@ self.addEventListener('install', (event) => {
  * returns the same document whatever the search string, and the app
  * reads the parameters from `window.location` after boot.
  */
-async function cacheDocument(cache, url, withAssets) {
+async function cacheDocument(cache, url, wantHtml) {
   const response = await fetch(new Request(url, { credentials: 'same-origin' }));
   if (!response || !response.ok || response.type === 'opaqueredirect') {
     throw new Error(`bad response ${response && response.status}`);
   }
-  const copy = withAssets ? response.clone() : null;
+  // Read the copy BEFORE the put: a Response body can only be consumed
+  // once, and the cache takes ownership of the original.
+  let body = null;
+  if (wantHtml) {
+    try {
+      body = await response.clone().text();
+    } catch {
+      body = null;
+    }
+  }
   await cache.put(documentKey(url), response);
-  if (copy !== null) await cacheReferencedBuildOutput(copy);
+  return body;
 }
 
 /**
@@ -227,13 +276,8 @@ async function cacheDocument(cache, url, withAssets) {
  */
 const MAX_ASSETS_PER_DOCUMENT = 80;
 
-async function cacheReferencedBuildOutput(response) {
-  let html;
-  try {
-    html = await response.text();
-  } catch {
-    return;
-  }
+async function cacheBuildOutputFrom(html) {
+  if (typeof html !== 'string' || html === '') return;
 
   // Linear patterns only — no nested quantifiers. This runs on
   // server-sent HTML, but a regex that can backtrack exponentially is
@@ -264,7 +308,7 @@ async function cacheReferencedBuildOutput(response) {
       continue;
     }
     if (target.origin !== self.location.origin) continue;
-    if (await cache.match(target.href)) continue; // shared chunk, already held
+    if (await cache.match(target.href, MATCH_OPTS)) continue; // shared chunk, already held
     try {
       const asset = await fetch(target.href);
       if (asset && asset.ok) await cache.put(target.href, asset);
@@ -405,7 +449,7 @@ async function networkFirst(request, cacheName, key, maxEntries) {
     return response;
   } catch {
     const cache = await caches.open(cacheName);
-    const cached = await cache.match(key);
+    const cached = await cache.match(key, MATCH_OPTS);
     if (cached) return cached;
     return offlineResponse();
   }
@@ -413,7 +457,7 @@ async function networkFirst(request, cacheName, key, maxEntries) {
 
 async function cacheFirst(request, cacheName, maxEntries) {
   const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
+  const cached = await cache.match(request, MATCH_OPTS);
   if (cached) return cached;
   try {
     const response = await fetch(request);
@@ -429,7 +473,7 @@ async function cacheFirst(request, cacheName, maxEntries) {
 
 async function staleWhileRevalidate(request, cacheName, maxEntries) {
   const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
+  const cached = await cache.match(request, MATCH_OPTS);
   const fetchPromise = fetch(request)
     .then((response) => {
       if (response && response.ok) {
@@ -457,19 +501,19 @@ async function navigationStrategy(request, url) {
   } catch {
     // This route, as last seen online.
     const pages = await caches.open(PAGES_CACHE);
-    const cached = await pages.match(key);
+    const cached = await pages.match(key, MATCH_OPTS);
     if (cached) return cached;
 
     // This route, as precached at install.
     const shell = await caches.open(SHELL_CACHE);
-    const precached = await shell.match(key);
+    const precached = await shell.match(key, MATCH_OPTS);
     if (precached) return precached;
 
     // Nothing for this route. Say so honestly rather than booting the
     // app at the wrong screen: serving another route's document would
     // hydrate the farmer into a page they did not ask for, which is
     // worse than a message telling them what happened.
-    const offline = await shell.match(documentKey('/offline.html'));
+    const offline = await shell.match(documentKey('/offline.html'), MATCH_OPTS);
     if (offline) return offline;
     return offlineResponse();
   }
@@ -560,7 +604,8 @@ async function prewarm(paths) {
       // With its build output: `/cycles/<id>/record` is the screen the
       // farmer opens standing in the pen, and a document without its
       // chunk renders nothing there.
-      await cacheDocument(pages, path, true);
+      const body = await cacheDocument(pages, path, true);
+      await cacheBuildOutputFrom(body);
     } catch {
       /* route unavailable — skip it */
     }
