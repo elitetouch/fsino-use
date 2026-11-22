@@ -134,6 +134,15 @@ export interface ParseResult {
  */
 export interface ParseContext {
   readonly currentBirds?: number;
+  /**
+   * This farmer's learned aliases, token → kind.
+   *
+   * Consulted only AFTER the shipped vocabulary has failed, so a
+   * learned word can never shadow or override a known one, and a field
+   * produced from one is always low-confidence. See learning.ts for
+   * why that stays true however long the alias has existed.
+   */
+  readonly aliases?: ReadonlyMap<string, FieldKind>;
 }
 
 /** Strip anything that is not plain sentence material, then cap length. */
@@ -258,6 +267,25 @@ function classifyClause(clause: string): FieldKind | null {
     // Generic words only count when the clause also names a bird.
     if (REQUIRES_BIRD_SUBJECT.has(kind) && !BIRD_WORDS.test(clause)) continue;
     return kind;
+  }
+  return null;
+}
+
+/**
+ * Last resort: this farmer's own learned words.
+ *
+ * Runs only once the shipped vocabulary has found nothing, so learning
+ * can add understanding but never take any away or reinterpret a word
+ * the app already knows.
+ */
+function classifyByAlias(
+  clause: string,
+  aliases: ReadonlyMap<string, FieldKind> | undefined,
+): FieldKind | null {
+  if (!aliases || aliases.size === 0) return null;
+  for (const token of clause.split(' ')) {
+    const kind = aliases.get(token);
+    if (kind !== undefined) return kind;
   }
   return null;
 }
@@ -461,17 +489,38 @@ export function parseQuickRecord(
     const trimmed = clause.trim();
     if (trimmed === '') continue;
 
-    const kind = classifyClause(trimmed);
+    const known = classifyClause(trimmed);
+    const learned = known === null ? classifyByAlias(trimmed, ctx.aliases) : null;
+    const kind = known ?? learned;
     if (kind === null || seen.has(kind)) {
       unmatched.push(trimmed);
       continue;
     }
 
-    const field = buildField(trimmed, kind, ctx);
-    if (field === null) {
+    const built = buildField(trimmed, kind, ctx);
+    if (built === null) {
       unmatched.push(trimmed);
       continue;
     }
+
+    // A field recognised only through a learned word is ALWAYS flagged,
+    // no matter how long the alias has existed or how often it has been
+    // right. The farmer taught the app a word; they stay the one who
+    // confirms what it produces.
+    const field: ParsedField =
+      learned === null
+        ? built
+        : {
+            ...built,
+            confidence: 'low',
+            // Provenance OVERRIDES any other caution rather than
+            // deferring to it. "No unit heard" is useful; "this came
+            // from a word you taught the app" is the only thing the
+            // farmer cannot work out for themselves, and it is the
+            // explanation for every surprising entry a learned alias
+            // will ever produce.
+            caution: 'Understood from a word you taught this app — check it',
+          };
 
     seen.add(kind);
     fields.push(field);

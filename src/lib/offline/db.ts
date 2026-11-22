@@ -19,7 +19,7 @@ import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
  */
 
 const DB_NAME = 'fsm-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export type OutboxStatus =
   | 'pending'    // never attempted, or last attempt threw before reaching server
@@ -91,6 +91,36 @@ interface FSMSchema extends DBSchema {
     key: string;
     value: MetaEntry;
   };
+  /**
+   * Words this farmer's recogniser keeps getting wrong, and what they
+   * turned out to mean. See lib/quick-record/learning.ts — rows are
+   * re-validated on read, because a store on this origin is not a
+   * trust boundary.
+   */
+  vocabAliases: {
+    key: string; // the token
+    value: {
+      token: string;
+      kind: string;
+      hits: number;
+      createdAt: number;
+      active: boolean;
+      syncedAt?: number;
+    };
+    indexes: { 'by-active': string };
+  };
+  /** Candidate tokens, counted until they cross the promotion threshold. */
+  vocabObservations: {
+    key: string; // `${token}|${kind}`
+    value: {
+      id: string;
+      token: string;
+      kind: string;
+      hits: number;
+      lastSeen: number;
+    };
+    indexes: { 'by-lastSeen': number };
+  };
 }
 
 let dbPromise: Promise<IDBPDatabase<FSMSchema>> | null = null;
@@ -122,6 +152,17 @@ export function getDB(): Promise<IDBPDatabase<FSMSchema>> {
 
           db.createObjectStore('meta', { keyPath: 'key' });
         }
+        // v2: per-farmer learned vocabulary. Purely additive — no
+        // existing store is touched, so an upgrade cannot lose a queued
+        // record. A farmer mid-upgrade with unsynced writes keeps them.
+        if (oldVersion < 2) {
+          const aliases = db.createObjectStore('vocabAliases', { keyPath: 'token' });
+          aliases.createIndex('by-active', 'active');
+
+          const observations = db.createObjectStore('vocabObservations', { keyPath: 'id' });
+          observations.createIndex('by-lastSeen', 'lastSeen');
+        }
+
         // Future migrations: add `if (oldVersion < N) { ... }` blocks
         // BELOW this comment so they run in order without re-running old
         // migrations on subsequent upgrades.

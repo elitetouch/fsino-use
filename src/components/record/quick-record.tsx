@@ -1,9 +1,12 @@
 'use client';
 
-import { useCallback, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { AlertTriangle, Check, Loader2, Mic, Square, X } from 'lucide-react';
 import { useDictation } from '@/lib/quick-record/use-dictation';
 import { applyCarryForward, type LastFeedEntry } from '@/lib/quick-record/carry-forward';
+import { activeAliases } from '@/lib/quick-record/learning';
+import { learnFromSave } from '@/lib/quick-record/learn-from-save';
+import type { FieldKind } from '@/lib/quick-record/vocabulary';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCreateDailyRecord } from '@/lib/use-daily-record';
@@ -177,10 +180,24 @@ export function QuickRecord({
   // Parsing is a pure function over a 500-character cap, so running it
   // on every keystroke costs nothing and avoids the stale-chip window a
   // debounce would open between what is typed and what would be saved.
+  // This farmer's learned words, loaded once. Failure is silent and
+  // harmless — an empty map just means the shipped vocabulary alone.
+  const [aliases, setAliases] = useState<ReadonlyMap<string, FieldKind>>(new Map());
+  useEffect(() => {
+    let cancelled = false;
+    void activeAliases().then((rows) => {
+      if (cancelled) return;
+      setAliases(new Map(rows.map((a) => [a.token, a.kind])));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const parsed = useMemo(() => {
-    const result = parseQuickRecord(text, { currentBirds });
+    const result = parseQuickRecord(text, { currentBirds, aliases });
     return { ...result, fields: applyCarryForward(result.fields, lastFeed ?? null) };
-  }, [text, currentBirds, lastFeed]);
+  }, [text, currentBirds, lastFeed, aliases]);
 
   const moment = momentOverride ?? parsed.moment;
   const kept = parsed.fields.filter((_, i) => !removed.has(i));
@@ -227,6 +244,13 @@ export function QuickRecord({
       for (const payload of payloads) {
         await createRecord.mutateAsync(payload);
       }
+      // Learn from what was just confirmed. The leftover text is the
+      // part the app did not understand, and the kinds the farmer kept
+      // are what it should have understood it as — that pairing is the
+      // whole training signal, and it only exists at the moment of a
+      // successful save.
+      void learnFromSave(parsed.leftover, kept);
+
       reset();
       onSaved?.();
     } catch {

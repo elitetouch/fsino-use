@@ -6,6 +6,7 @@ import {
   apiErrorMessage, endpoints,
   type CreateDailyRecordPayload, type DailyRecordDto, type DailyRecordWarning,
 } from '@/lib/api';
+import { mutateOffline } from '@/lib/offline/api';
 
 /**
  * Shared create-record mutation for every event step in the wizard.
@@ -18,12 +19,74 @@ import {
  *    handling (Are-you-sure red text) and step-advance logic without
  *    re-implementing the cache plumbing.
  */
+export interface CreateDailyRecordResult {
+  record?: DailyRecordDto;
+  flockCurrentBirds?: number;
+  warnings: DailyRecordWarning[];
+  /** False when the record is queued rather than stored on the server. */
+  synced: boolean;
+}
+
+/**
+ * Create a daily record, surviving no signal.
+ *
+ * Offline the server never answers, so there are no warnings and no
+ * updated bird count to report. We return `synced: false` and an empty
+ * warning list rather than inventing either — an "all clear" the server
+ * never gave would be a lie, and a fabricated bird count would be worse.
+ */
+async function createDailyRecordOffline(
+  flockId: string,
+  payload: CreateDailyRecordPayload,
+): Promise<CreateDailyRecordResult> {
+  const res = await mutateOffline<{
+    data?: { record: DailyRecordDto; flockCurrentBirds: number; warnings: DailyRecordWarning[] };
+    record?: DailyRecordDto;
+    flockCurrentBirds?: number;
+    warnings?: DailyRecordWarning[];
+  }>({
+    method: 'POST',
+    url: `/flocks/${flockId}/daily-records`,
+    body: payload,
+    scope: `flock:${flockId}`,
+  });
+
+  if (!res.sentNow || !res.data) {
+    return { warnings: [], synced: false };
+  }
+
+  // The API wraps successful bodies in `data`; unwrap defensively rather
+  // than asserting, since this path now also carries queued replays.
+  const body = res.data.data ?? res.data;
+  return {
+    record: body.record,
+    flockCurrentBirds: body.flockCurrentBirds,
+    warnings: Array.isArray(body.warnings) ? body.warnings : [],
+    synced: true,
+  };
+}
+
 export function useCreateDailyRecord(flockId: string) {
   const qc = useQueryClient();
 
   return useMutation({
+    /**
+     * Routed through the offline outbox, NOT straight at the network.
+     *
+     * Before this, a record written with no signal threw and was lost —
+     * the farmer had typed it, the app said it failed, and that was the
+     * end of it. A farm shed is exactly where the signal goes, so the
+     * one screen that must survive it was the one screen that did not.
+     *
+     * Online it still posts immediately and returns the server's body.
+     * Offline (or on a transient failure) it is queued with an
+     * idempotency key and drains by itself — the sync engine retries on
+     * reconnect, on outbox change, on a 60-second failsafe and on the
+     * service worker's background-sync event. There is no button and
+     * there is nothing for the farmer to remember.
+     */
     mutationFn: (payload: CreateDailyRecordPayload) =>
-      endpoints.createDailyRecord(flockId, payload),
+      createDailyRecordOffline(flockId, payload),
     onSuccess: (data) => {
       // Guidance changes after every record (usual-range stats shift,
       // last-entry snapshot moves, etc) — invalidate so the next step
@@ -48,7 +111,14 @@ export function useCreateDailyRecord(flockId: string) {
       qc.invalidateQueries({ queryKey: ['flocks'] });
       // Surface any soft anomaly warnings the server returned. These
       // are advisory — the record was already saved.
-      surfaceWarnings(data.warnings);
+      // Queued records get a plain confirmation instead of warnings —
+      // the server has not seen it yet, so there is nothing to warn
+      // about and claiming otherwise would be false reassurance.
+      if (data.synced) {
+        surfaceWarnings(data.warnings);
+      } else {
+        toast.success('Saved on your phone. It will upload by itself.');
+      }
     },
     onError: (err) => {
       toast.error(apiErrorMessage(err, 'Could not save this record.'));
