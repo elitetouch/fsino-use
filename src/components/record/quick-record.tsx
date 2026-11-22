@@ -3,6 +3,7 @@
 import { useCallback, useId, useMemo, useState } from 'react';
 import { AlertTriangle, Check, Loader2, Mic, Square, X } from 'lucide-react';
 import { useDictation } from '@/lib/quick-record/use-dictation';
+import { applyCarryForward, type LastFeedEntry } from '@/lib/quick-record/carry-forward';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCreateDailyRecord } from '@/lib/use-daily-record';
@@ -42,6 +43,12 @@ interface QuickRecordProps {
   readonly recordDate: string;
   /** Drives the "more than the birds you have" check. */
   readonly currentBirds?: number;
+  /**
+   * The farmer's previous feed entry, from guidance. Used to fill in a
+   * ration or brand they didn't repeat — always shown as carried over,
+   * never applied silently.
+   */
+  readonly lastFeed?: LastFeedEntry | null;
   /** Fired after every payload saved, so the parent can refresh or exit. */
   readonly onSaved?: () => void;
   /** Escape hatch to the full wizard. */
@@ -57,11 +64,53 @@ const KIND_LABEL: Readonly<Record<ParsedField['kind'], string>> = {
   water: 'Water',
   eggs: 'Eggs',
   weight: 'Weight',
+  vaccination: 'Vaccine',
+  treatment: 'Treatment',
+  egg_weight: 'Egg weight',
 };
+
+type Moment = 'morning' | 'evening' | 'entire_day';
+
+const MOMENTS: ReadonlyArray<{ value: Moment; label: string }> = [
+  { value: 'morning', label: 'Morning' },
+  { value: 'evening', label: 'Evening' },
+  { value: 'entire_day', label: 'All day' },
+];
+
+const BRAND_LABELS: Readonly<Record<string, string>> = {
+  own_feed: 'Own feed',
+  amo_byng_feed: 'Amo Byng Feed',
+  animal_care: 'Animal Care',
+  broxwell_feeds: 'Broxwell Feeds',
+  chikun_feeds: 'Chikun Feeds',
+  hybrid_feeds: 'Hybrid Feeds',
+  livestock_feeds_plc: 'Livestock Feeds Plc',
+  stellar_feeds: 'Stellar Feeds',
+  top_feeds: 'Top Feeds',
+  vital_feed: 'Vital Feed',
+  ultima: 'Ultima',
+  other: 'Other',
+};
+
+/** The part of a chip that names what was understood beyond the number. */
+function detailText(field: ParsedField): string | null {
+  const d = field.detail;
+  if (!d) return null;
+  if (d.vaccineName) return d.vaccineName;
+  if (d.treatmentType) return d.treatmentType;
+  if (d.eggSize) return d.eggSize;
+  // Feed reads "starter · Top Feeds", either part optional.
+  const brand = d.feedBrand
+    ? (d.feedBrandLabel ?? BRAND_LABELS[d.feedBrand] ?? d.feedBrand)
+    : null;
+  const parts = [d.feedType, brand].filter((p): p is string => typeof p === 'string');
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
 
 export function QuickRecord({
   flockId,
   recordDate,
+  lastFeed,
   currentBirds,
   onSaved,
   onUseWizard,
@@ -71,19 +120,56 @@ export function QuickRecord({
   const [removed, setRemoved] = useState<ReadonlySet<number>>(new Set());
   const [keepNote, setKeepNote] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Null means "follow what the sentence said". Set once the farmer
+  // picks, so an explicit choice is never overwritten by the next edit
+  // to the text.
+  const [momentOverride, setMomentOverride] = useState<Moment | null>(null);
 
   const createRecord = useCreateDailyRecord(flockId);
 
-  // Dictated text is APPENDED, never substituted. A farmer who typed
-  // half a sentence and then reached for the mic must not watch their
-  // typing disappear.
-  const appendDictated = useCallback((chunk: string) => {
-    setText((prev) => {
-      const joined = prev.trim() === '' ? chunk : `${prev.trim()} ${chunk}`;
-      return joined.slice(0, MAX_INPUT);
-    });
-    setRemoved(new Set());
-  }, []);
+  /**
+   * Pick the alternative that is actually a farm record, then append it.
+   *
+   * THIS IS THE FIX FOR MISHEARD NIGERIAN SPEECH. The recogniser ranks
+   * its guesses by acoustic likelihood against a model trained mostly
+   * on American English, so "three crates" comes back as "three grits"
+   * at rank one — while the right words often sit at rank two or three.
+   * We cannot improve its hearing, but we can ask a question it cannot:
+   * which of these is a poultry record? Scoring each alternative by how
+   * many confident fields it yields re-ranks them on meaning instead of
+   * sound. Ties keep the recogniser's own order, so this can only ever
+   * improve on taking the first guess blindly.
+   *
+   * Text is APPENDED, never substituted — a farmer who typed half a
+   * sentence and then reached for the mic must not lose their typing.
+   */
+  const appendDictated = useCallback(
+    (alternatives: string[]) => {
+      let best = alternatives[0] ?? '';
+      let bestScore = -1;
+      for (const candidate of alternatives) {
+        const result = parseQuickRecord(candidate, { currentBirds });
+        // A confident field is worth more than a hesitant one, so a
+        // reading that produces a clean record beats one that produces
+        // the same count with a warning attached.
+        const score = result.fields.reduce(
+          (sum, f) => sum + (f.confidence === 'high' ? 2 : 1),
+          0,
+        );
+        if (score > bestScore) {
+          bestScore = score;
+          best = candidate;
+        }
+      }
+
+      setText((prev) => {
+        const joined = prev.trim() === '' ? best : `${prev.trim()} ${best}`;
+        return joined.slice(0, MAX_INPUT);
+      });
+      setRemoved(new Set());
+    },
+    [currentBirds],
+  );
 
   const dictation = useDictation(appendDictated);
   const listening = dictation.status === 'listening';
@@ -91,11 +177,12 @@ export function QuickRecord({
   // Parsing is a pure function over a 500-character cap, so running it
   // on every keystroke costs nothing and avoids the stale-chip window a
   // debounce would open between what is typed and what would be saved.
-  const parsed = useMemo(
-    () => parseQuickRecord(text, { currentBirds }),
-    [text, currentBirds],
-  );
+  const parsed = useMemo(() => {
+    const result = parseQuickRecord(text, { currentBirds });
+    return { ...result, fields: applyCarryForward(result.fields, lastFeed ?? null) };
+  }, [text, currentBirds, lastFeed]);
 
+  const moment = momentOverride ?? parsed.moment;
   const kept = parsed.fields.filter((_, i) => !removed.has(i));
   const hasLowConfidence = kept.some((f) => f.confidence === 'low');
   const note = keepNote ? parsed.leftover : '';
@@ -126,7 +213,7 @@ export function QuickRecord({
     dictation.stop();
     const payloads = buildQuickRecordPayloads(kept, {
       recordDate,
-      moment: parsed.moment,
+      moment,
       note,
     });
     if (payloads.length === 0) return;
@@ -236,6 +323,32 @@ export function QuickRecord({
         </p>
       )}
 
+      {/* Time of day, always visible once anything parsed.
+          It was being detected and silently applied — a farmer who said
+          "in the morning" had no way to see it had landed, and one who
+          forgot to say it had no way to set it. */}
+      {kept.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-[var(--color-brand-muted)]">Time:</span>
+          {MOMENTS.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              onClick={() => setMomentOverride(m.value)}
+              aria-pressed={moment === m.value}
+              className={cn(
+                'rounded-full border px-2.5 py-1 text-xs font-semibold transition',
+                moment === m.value
+                  ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white'
+                  : 'border-[var(--color-brand-input-border)] bg-white text-[var(--color-brand-muted)]',
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {kept.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-2" aria-label="What we understood">
           {parsed.fields.map((field, i) =>
@@ -321,6 +434,12 @@ export function QuickRecord({
  */
 function Chip({ field, onRemove }: { field: ParsedField; onRemove: () => void }) {
   const low = field.confidence === 'low';
+  const detail = detailText(field);
+  const inherited = field.detail?.inherited ?? [];
+  // Only the brand line is worth naming when just the type carried
+  // over — a ration follows bird age and is far less likely to be
+  // wrong than a brand the farmer may have switched.
+  const inheritedCount = inherited.includes('feedBrand') ? inherited.length : 0;
 
   return (
     <span
@@ -334,8 +453,14 @@ function Chip({ field, onRemove }: { field: ParsedField; onRemove: () => void })
       <span className="flex items-center gap-1.5 text-sm font-semibold leading-none">
         {low && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden />}
         <span>
-          {KIND_LABEL[field.kind]}: {field.value}
+          {KIND_LABEL[field.kind]}
+          {/* Vaccination and treatment are facts without counts, so a
+              bare "Vaccine: 0" would read as nonsense. */}
+          {field.value > 0 || (field.kind !== 'vaccination' && field.kind !== 'treatment')
+            ? `: ${field.value}`
+            : ''}
           {field.unit && field.unit !== 'eggs' ? ` ${field.unit}` : ''}
+          {detail ? ` · ${detail}` : ''}
           {field.amount !== undefined ? ` · ₦${field.amount}` : ''}
         </span>
         <button
@@ -351,6 +476,14 @@ function Chip({ field, onRemove }: { field: ParsedField; onRemove: () => void })
       {field.conversionNote && (
         <span className="text-[11px] text-[var(--color-brand-muted)]">
           {field.conversionNote}
+        </span>
+      )}
+      {/* Anything filled in from the last record says so. A brand the
+          farmer cannot see is how weeks of entries end up against a
+          brand they stopped buying. */}
+      {inheritedCount > 0 && (
+        <span className="text-[11px] italic text-[var(--color-brand-muted)]">
+          {inheritedCount === 2 ? 'Type and brand' : 'Brand'} kept from your last record
         </span>
       )}
       {field.caution && (

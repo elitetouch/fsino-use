@@ -67,6 +67,24 @@ const ALLOWED_UNITS: Readonly<Record<'feed' | 'water' | 'weight', readonly strin
   weight: ['kg', 'g'],
 };
 
+/**
+ * Allowlists for the two detail fields that reach a payload as strings.
+ *
+ * Same reasoning as ALLOWED_UNITS: the vocabulary file is edited often
+ * and by whoever is chasing a mis-parse, so the boundary re-checks
+ * rather than forwarding whatever a future edit happens to produce.
+ * `vaccine_name` is deliberately NOT allowlisted — it is free text on
+ * the wizard too, and the backend validates it.
+ */
+const FEED_TYPE_VALUES: readonly string[] = ['starter', 'grower', 'finisher', 'layer'];
+/** Mirrors FEED_BRANDS in feed-step.tsx — the wizard's own stored values. */
+const FEED_BRAND_VALUES: readonly string[] = [
+  'own_feed', 'amo_byng_feed', 'animal_care', 'broxwell_feeds', 'chikun_feeds',
+  'hybrid_feeds', 'livestock_feeds_plc', 'stellar_feeds', 'top_feeds',
+  'vital_feed', 'ultima', 'other',
+];
+const EGG_SIZES: readonly string[] = ['small', 'medium', 'jumbo'];
+
 function safeUnit(
   kind: 'feed' | 'water' | 'weight',
   unit: string | undefined,
@@ -101,6 +119,7 @@ export function buildQuickRecordPayloads(
   const counts = { dead: 0, culled: 0, sold: 0, lost: 0 };
   let soldAmount: number | undefined;
   let hasBirdMovement = false;
+  let eggWeightGrams: number | undefined;
 
   for (const f of fields) {
     switch (f.kind) {
@@ -124,11 +143,23 @@ export function buildQuickRecordPayloads(
           record_date: recordDate,
           quantity: f.value,
           unit: safeUnit('feed', f.unit, 'kg'),
-          // item_type and item_brand are intentionally absent. The
-          // sentence rarely names a ration reliably, and guessing one
-          // would write a brand the farmer never said into their
-          // purchase history.
-          payload: { moment },
+          payload: {
+            moment,
+            // The ration when the farmer named it ("two bags of
+            // STARTER feed"). item_brand stays absent — a brand is
+            // never reliably recoverable from speech, and writing a
+            // guessed one into their purchase history would be worse
+            // than leaving it for the wizard.
+            ...(f.detail?.feedType && FEED_TYPE_VALUES.includes(f.detail.feedType)
+              ? { item_type: f.detail.feedType }
+              : {}),
+            // Brand reaches the API only from the known list — either
+            // heard in the sentence or carried over from the farmer's
+            // last record, and in both cases shown on the chip first.
+            ...(f.detail?.feedBrand && FEED_BRAND_VALUES.includes(f.detail.feedBrand)
+              ? { item_brand: f.detail.feedBrand }
+              : {}),
+          },
         });
         break;
       }
@@ -154,7 +185,60 @@ export function buildQuickRecordPayloads(
           // validator. We never infer `bad` — a farmer who says "3
           // crates" means three good crates, and cracked eggs are a
           // separate thing they have to tell us about.
-          payload: { good: f.value, moment },
+          payload: {
+            good: f.value,
+            moment,
+            // Matches the egg-size step's payload.sizes.{key} shape.
+            ...(f.detail?.eggSize && EGG_SIZES.includes(f.detail.eggSize)
+              ? { sizes: { [f.detail.eggSize]: f.value } }
+              : {}),
+          },
+        });
+        break;
+      }
+
+      case 'egg_weight': {
+        // The egg-size step stores a per-egg average in grams, and the
+        // backend requires `good` on every eggs row — so a weight with
+        // no count cannot be posted on its own. Held back rather than
+        // posted with a fabricated count of zero eggs.
+        if (!usableQuantity(f.value) || f.value === 0) break;
+        eggWeightGrams = f.value;
+        break;
+      }
+
+      case 'vaccination': {
+        const name = f.detail?.vaccineName;
+        // The vaccine name is the record. Without one there is nothing
+        // meaningful to store, and guessing which vaccine was given is
+        // the last thing a health log should do.
+        if (typeof name !== 'string' || name === '') break;
+        payloads.push({
+          event_type: 'vaccination',
+          record_date: recordDate,
+          // Dose omitted entirely when not stated — zero ml would be a
+          // claim the farmer never made.
+          ...(usableQuantity(f.value) && f.value > 0
+            ? { quantity: f.value, unit: 'ml' }
+            : {}),
+          payload: { vaccine_name: name },
+        });
+        break;
+      }
+
+      case 'treatment': {
+        const type = f.detail?.treatmentType;
+        if (typeof type !== 'string' || type === '') break;
+        payloads.push({
+          event_type: 'treatment',
+          record_date: recordDate,
+          payload: {
+            treatment_type: type,
+            // A number in a treatment clause is the birds affected.
+            ...(usableCount(f.value) && f.value > 0
+              ? { birds_affected: f.value, all_birds: false }
+              : { all_birds: true }),
+          },
         });
         break;
       }
@@ -170,6 +254,18 @@ export function buildQuickRecordPayloads(
         });
         break;
       }
+    }
+  }
+
+  // Egg weight rides on the eggs event rather than travelling alone,
+  // because the backend's eggs validator requires `good` on every row.
+  // If the farmer gave a weight but no count there is no event to
+  // attach it to, and it is dropped rather than posted with a count of
+  // zero — the wizard's egg-size step is the right place for that.
+  if (eggWeightGrams !== undefined) {
+    const eggsPayload = payloads.find((p) => p.event_type === 'eggs');
+    if (eggsPayload && eggsPayload.payload) {
+      (eggsPayload.payload as Record<string, unknown>).weight_avg_grams = eggWeightGrams;
     }
   }
 
