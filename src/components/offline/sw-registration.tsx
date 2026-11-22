@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { startSync, requestPersistentStorage } from '@/lib/offline';
+import { prewarmCore, prewarmForPath } from '@/lib/offline/prewarm';
 import { syncVocabInBackground } from '@/lib/quick-record/vocab-sync';
 import { syncPushSubscription } from '@/lib/push';
 
@@ -16,6 +18,20 @@ import { syncPushSubscription } from '@/lib/push';
  * page because that would interrupt a farmer mid-log.
  */
 export function SwRegistration() {
+  const pathname = usePathname();
+
+  // Cache the screens this farmer will want with no signal.
+  //
+  // Runs on every navigation rather than once on mount: the core list
+  // is warmed once (the helper dedupes), and each cycle the farmer
+  // opens warms that cycle's own pages, which a build-time precache
+  // list cannot name. Deliberately outside the registration effect
+  // below — that one is keyed to mount, and this needs the path.
+  useEffect(() => {
+    prewarmCore();
+    prewarmForPath(pathname);
+  }, [pathname]);
+
   useEffect(() => {
     // Boot the offline engine regardless of SW availability — the
     // IndexedDB outbox and read cache work even without SW (just no

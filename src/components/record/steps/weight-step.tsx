@@ -111,7 +111,9 @@ function WeightPickerView({
         entries={existingList}
         summary={(r) => {
           if (r.quantity == null) return 'No weight recorded';
-          return `${Number(r.quantity).toFixed(2)} kg average`;
+          // Same reason as the form's pre-fill: read the stored unit
+          // rather than assuming kilograms.
+          return `${toKg(r.quantity, r.unit).toFixed(2)} kg average`;
         }}
         onSelect={pickRecord}
         onAddAnother={pickAddNew}
@@ -167,10 +169,21 @@ function WeightForm({
 
   // EDIT-mode pre-fill — recover the average and the raw five-bird
   // samples if present in the payload.
-  const existingAvg = existing?.quantity != null ? String(existing.quantity) : '';
+  //
+  // READ THE STORED UNIT. This form is kilograms end to end: the input
+  // is suffixed kg, the anomaly range is kg, and submit hard-codes
+  // `unit: 'kg'`. Quick-record used to be able to write a weight in
+  // grams, so a row logged by voice as "40 grams" came back here as
+  // the bare number 40 under a kg label — and saving it, which is one
+  // tap, multiplied the bird's weight by a thousand.
+  //
+  // Quick-record now converts before it posts, so no new row can be in
+  // grams. This stays for the rows written before it did.
+  const existingUnit = existing?.unit ?? null;
+  const existingAvg = existing?.quantity != null ? String(toKg(existing.quantity, existingUnit)) : '';
   const existingPayload = (existing?.payload ?? {}) as Record<string, unknown>;
   const existingSamples = Array.isArray(existingPayload.weights)
-    ? (existingPayload.weights as unknown[]).map((n) => typeof n === 'number' ? String(n) : '')
+    ? (existingPayload.weights as unknown[]).map((n) => typeof n === 'number' ? String(toKg(n, existingUnit)) : '')
     : ['', '', '', '', ''];
   const [selfAvg, setSelfAvg] = useState(existingAvg);
   const [bird1, setBird1] = useState(existingSamples[0] ?? '');
@@ -448,6 +461,21 @@ function scheduleTitle(messages: GuidanceMessage[]): string | undefined {
 
 function firstHint(messages: GuidanceMessage[]): string {
   return messages[0]?.text ?? '';
+}
+
+/**
+ * A stored weight, in kilograms.
+ *
+ * The API's `unit` column is free-form, so this converts what it knows
+ * and otherwise leaves the number alone — treating an unrecognised unit
+ * as kilograms matches what every writer in the app actually sends, and
+ * guessing a divisor for a unit we do not know would be worse than
+ * showing the farmer their own figure unchanged.
+ */
+function toKg(quantity: number, unit: string | null | undefined): number {
+  const n = Number(quantity);
+  if (!Number.isFinite(n)) return 0;
+  return unit?.toLowerCase() === 'g' ? n / 1000 : n;
 }
 
 function fmtKg(n: number): string {

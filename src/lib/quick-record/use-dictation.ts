@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isOnline } from '@/lib/offline/network';
 
 /**
  * An in-app microphone button, for the screens where the keyboard has
@@ -278,12 +279,27 @@ export function useDictation(onText: (alternatives: string[]) => void): UseDicta
         setStatus('idle');
         return;
       }
+      if (event.error === 'network') {
+        // A `network` error WHILE ONLINE does not mean the network.
+        //
+        // Browser speech recognition is not done on the device — it is
+        // a service the browser vendor provides, and some browsers do
+        // not provide one. Brave ships without Google's, so it reports
+        // `network` the instant you press the button, however good the
+        // connection is. Telling a farmer with four bars that voice
+        // "needs a connection" sends them to go and find signal they
+        // already have.
+        setStatus('error');
+        setMessage(
+          isOnline()
+            ? 'This browser can’t do voice typing. Use Chrome for the microphone, or type it here — everything else works normally.'
+            : 'Voice needs a connection. Type it instead — saving still works offline.',
+        );
+        return;
+      }
+
       setStatus('error');
-      setMessage(
-        event.error === 'network'
-          ? 'Voice needs a connection. Type it instead — saving still works offline.'
-          : 'The microphone stopped unexpectedly. Try again, or type it.',
-      );
+      setMessage('The microphone stopped unexpectedly. Try again, or type it.');
     };
 
     rec.onend = () => {
