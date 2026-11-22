@@ -84,6 +84,8 @@ interface SwHarness {
   online: { value: boolean };
   /** Every URL the worker asked the network for. */
   requested: string[];
+  /** Override the body a path serves, e.g. real HTML with chunk refs. */
+  bodies: Map<string, string>;
   cacheNamed: (name: string) => Promise<FakeCache>;
 }
 
@@ -94,6 +96,8 @@ function load(): SwHarness {
   const online = { value: true };
   const requested: string[] = [];
 
+  const bodies = new Map<string, string>();
+
   const fakeFetch = async (input: Keyish) => {
     const url = new URL(typeof input === 'string' ? input : input.url, ORIGIN);
     requested.push(url.pathname);
@@ -101,7 +105,7 @@ function load(): SwHarness {
     if (!served.has(url.pathname)) {
       return new Response('not found', { status: 404 });
     }
-    return new Response(`body:${url.pathname}`, { status: 200 });
+    return new Response(bodies.get(url.pathname) ?? `body:${url.pathname}`, { status: 200 });
   };
 
   /**
@@ -162,6 +166,7 @@ function load(): SwHarness {
     served,
     online,
     requested,
+    bodies,
     cacheNamed: (name) => fakeCaches.open(name),
   };
 }
@@ -207,7 +212,7 @@ describe('service worker — offline app shell', () => {
   it('precaches the signed-in screens, not just the signed-out ones', async () => {
     // The v3 bug in one assertion: the precache list held only the
     // logged-out routes, so every screen a farmer uses was absent.
-    const shell = await sw.cacheNamed('fsm-v4-shell');
+    const shell = await sw.cacheNamed('fsm-v5-shell');
     const cached = [...shell.map.keys()].map((u) => new URL(u).pathname);
     for (const route of ['/home', '/cycles', '/menu', '/pens-flocks', '/reports', '/settings']) {
       expect(cached, `${route} must be precached`).toContain(route);
@@ -228,7 +233,7 @@ describe('service worker — offline app shell', () => {
     for (const r of APP_ROUTES) fresh.served.add(r);
     fresh.served.delete('/sales'); // pretend this route was renamed
     await fresh.fire('install', {});
-    const shell = await fresh.cacheNamed('fsm-v4-shell');
+    const shell = await fresh.cacheNamed('fsm-v5-shell');
     const cached = [...shell.map.keys()].map((u) => new URL(u).pathname);
     expect(cached).not.toContain('/sales');
     expect(cached).toContain('/home');
@@ -255,6 +260,75 @@ describe('service worker — offline app shell', () => {
     sw.online.value = false;
     const res = await sw.fetchEvent(navigation('/cycles/abc123'));
     expect(await res!.text()).toBe('body:/cycles/abc123');
+  });
+});
+
+describe('service worker — a cached page needs its code', () => {
+  /**
+   * A cached document on its own renders nothing. Every screen here is
+   * a client component, so the HTML is a shell and the route's chunk is
+   * what draws it. Caching one without the other trades the offline
+   * page for a white page, which is a worse answer to the same problem.
+   */
+  const HOME_HTML = [
+    '<!doctype html><html><head>',
+    '<link rel="preload" href="/_next/static/css/app-7f3.css" as="style">',
+    '</head><body>',
+    '<script src="/_next/static/chunks/webpack-aa1.js"></script>',
+    '<script src="/_next/static/chunks/app/home/page-bb2.js"></script>',
+    '<script>self.__next_f.push([1,"static/chunks/app/layout-cc3.js"])</script>',
+    '<img src="/_next/static/media/logo-dd4.png">',
+    '</body></html>',
+  ].join('');
+
+  let sw: SwHarness;
+
+  beforeEach(async () => {
+    sw = load();
+    for (const r of APP_ROUTES) sw.served.add(r);
+    for (const a of [
+      '/_next/static/css/app-7f3.css',
+      '/_next/static/chunks/webpack-aa1.js',
+      '/_next/static/chunks/app/home/page-bb2.js',
+      '/_next/static/chunks/app/layout-cc3.js',
+      '/_next/static/media/logo-dd4.png',
+    ]) sw.served.add(a);
+    sw.bodies.set('/home', HOME_HTML);
+    await sw.fire('install', {});
+  });
+
+  it('pulls in the JS and CSS a boot screen references', async () => {
+    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
+    expect(held).toContain('/_next/static/chunks/webpack-aa1.js');
+    expect(held).toContain('/_next/static/chunks/app/home/page-bb2.js');
+    expect(held).toContain('/_next/static/css/app-7f3.css');
+  });
+
+  it('follows the flight payload’s relative chunk names too', async () => {
+    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
+    expect(held).toContain('/_next/static/chunks/app/layout-cc3.js');
+  });
+
+  it('leaves images alone — they are big and optional', async () => {
+    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
+    expect(held).not.toContain('/_next/static/media/logo-dd4.png');
+  });
+
+  it('prewarms a cycle screen with its code, not just its HTML', async () => {
+    sw.served.add('/cycles/abc/record');
+    sw.served.add('/_next/static/chunks/app/record-ee5.js');
+    sw.bodies.set(
+      '/cycles/abc/record',
+      '<script src="/_next/static/chunks/app/record-ee5.js"></script>',
+    );
+    await sw.fire('message', { data: { type: 'FSM_PREWARM', paths: ['/cycles/abc/record'] } });
+
+    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
+    expect(held).toContain('/_next/static/chunks/app/record-ee5.js');
   });
 });
 
@@ -292,7 +366,7 @@ describe('service worker — RSC payloads', () => {
     // One key for both would hand the router a document to parse as a
     // flight payload, or the browser a flight payload to render.
     await sw.fetchEvent(rsc('/home?_rsc=aaa'));
-    const pages = await sw.cacheNamed('fsm-v4-pages');
+    const pages = await sw.cacheNamed('fsm-v5-pages');
     const keys = [...pages.map.keys()];
     expect(keys.some((k) => k.endsWith('/home?__rsc=1'))).toBe(true);
     expect(keys.some((k) => k.endsWith('/home'))).toBe(false);
@@ -323,7 +397,7 @@ describe('service worker — cache budgets', () => {
       await sw.fetchEvent(navigation(p));
     }
 
-    const staticCache = await sw.cacheNamed('fsm-v4-static');
+    const staticCache = await sw.cacheNamed('fsm-v5-static');
     expect(await staticCache.match(new URL(boot, ORIGIN).href)).toBeDefined();
   });
 
@@ -333,15 +407,15 @@ describe('service worker — cache budgets', () => {
       sw.served.add(p);
       await sw.fetchEvent(navigation(p));
     }
-    const pages = await sw.cacheNamed('fsm-v4-pages');
+    const pages = await sw.cacheNamed('fsm-v5-pages');
     expect(pages.map.size).toBeLessThanOrEqual(160);
   });
 
   it('drops caches from an older version on activate', async () => {
-    const stale = await sw.caches.open('fsm-v3-shell');
+    const stale = await sw.caches.open('fsm-v4-shell');
     await stale.put('/old', new Response('old'));
     await sw.fire('activate', {});
-    expect(await sw.caches.keys()).not.toContain('fsm-v3-shell');
+    expect(await sw.caches.keys()).not.toContain('fsm-v4-shell');
   });
 });
 
@@ -361,7 +435,7 @@ describe('service worker — prewarm is not an open fetcher', () => {
   it('warms a real in-app path', async () => {
     sw.served.add('/cycles/abc/record');
     await prewarm(['/cycles/abc/record']);
-    const pages = await sw.cacheNamed('fsm-v4-pages');
+    const pages = await sw.cacheNamed('fsm-v5-pages');
     expect(await pages.match(new URL('/cycles/abc/record', ORIGIN).href)).toBeDefined();
   });
 

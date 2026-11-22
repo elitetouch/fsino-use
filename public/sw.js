@@ -55,7 +55,7 @@
  * even if the farmer has never reloaded on those screens.
  */
 
-const CACHE_VERSION = 'fsm-v4';
+const CACHE_VERSION = 'fsm-v5';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`; // precached documents + icons
 const PAGES_CACHE = `${CACHE_VERSION}-pages`; // runtime documents + RSC payloads
 const STATIC_CACHE = `${CACHE_VERSION}-static`; // immutable build output
@@ -96,6 +96,21 @@ const PRECACHE_DOCUMENTS = [
   '/settings',
   '/sync',
 ];
+
+/**
+ * The documents whose JS and CSS are pulled in at install too.
+ *
+ * A farmer launching with no signal lands on one of these: the
+ * launcher's start_url, the sign-in page, and the two screens the app
+ * forwards an authenticated session to. Without their chunks the
+ * cached document renders a white page, which is a worse answer than
+ * the offline page it replaced.
+ *
+ * Kept short on purpose — a Next build is megabytes of chunks and the
+ * rest of the routes cache themselves the first time they are opened
+ * online. This is airtime, not disk.
+ */
+const BOOT_DOCUMENTS = ['/', '/login', '/home', '/cycles'];
 
 /**
  * Non-document files the shell needs. Separated from the documents
@@ -142,15 +157,28 @@ self.addEventListener('install', (event) => {
       // cached. v3 wrapped that in a catch, so a single bad URL left an
       // empty shell cache and no sign that anything was wrong. A route
       // that fails to precache should cost us that route, not the app.
+      // Documents first and in parallel — they are small, and having
+      // them is the difference between the app opening and not.
       await Promise.all(
         [...PRECACHE_DOCUMENTS, ...PRECACHE_ASSETS].map(async (url) => {
           try {
-            await cacheDocument(cache, url);
+            await cacheDocument(cache, url, false);
           } catch (err) {
             console.warn('[sw] precache miss:', url, err);
           }
         }),
       );
+
+      // Then the build output for the screens a farmer lands on cold.
+      // Sequential, so the chunks these share are fetched once and the
+      // rest come from the cache.
+      for (const url of BOOT_DOCUMENTS) {
+        try {
+          await cacheDocument(cache, url, true);
+        } catch (err) {
+          console.warn('[sw] boot asset miss:', url, err);
+        }
+      }
 
       // Activate immediately on first install so the page is controlled.
       await self.skipWaiting();
@@ -169,12 +197,83 @@ self.addEventListener('install', (event) => {
  * returns the same document whatever the search string, and the app
  * reads the parameters from `window.location` after boot.
  */
-async function cacheDocument(cache, url) {
+async function cacheDocument(cache, url, withAssets) {
   const response = await fetch(new Request(url, { credentials: 'same-origin' }));
   if (!response || !response.ok || response.type === 'opaqueredirect') {
     throw new Error(`bad response ${response && response.status}`);
   }
+  const copy = withAssets ? response.clone() : null;
   await cache.put(documentKey(url), response);
+  if (copy !== null) await cacheReferencedBuildOutput(copy);
+}
+
+/**
+ * Cache the JS and CSS a document needs in order to render.
+ *
+ * A cached document on its own is a page that loads and then does
+ * nothing. Every screen here is a client component, so the HTML is a
+ * shell and the route's chunk is what draws it — cache one without the
+ * other and the farmer gets a white page offline instead of an offline
+ * page, which is a worse answer to the same problem.
+ *
+ * Build output reached the cache only when a page had actually been
+ * loaded online, so precaching a document for a route the farmer had
+ * never opened bought nothing.
+ *
+ * Scoped to the few documents a farmer lands on cold, not all of them:
+ * a Next build is several megabytes of chunks, and pulling all of it at
+ * install would spend a farmer's airtime on screens they may never
+ * open. Everything else caches itself the first time it is used online.
+ */
+const MAX_ASSETS_PER_DOCUMENT = 80;
+
+async function cacheReferencedBuildOutput(response) {
+  let html;
+  try {
+    html = await response.text();
+  } catch {
+    return;
+  }
+
+  // Linear patterns only — no nested quantifiers. This runs on
+  // server-sent HTML, but a regex that can backtrack exponentially is
+  // a hang waiting for an unusual document.
+  const refs = new Set();
+  const absolute = /\/_next\/static\/[A-Za-z0-9._%\-/]+/g;
+  const relative = /["']static\/[A-Za-z0-9._%\-/]+["']/g;
+
+  for (const m of html.matchAll(absolute)) {
+    if (refs.size >= MAX_ASSETS_PER_DOCUMENT) break;
+    refs.add(m[0]);
+  }
+  for (const m of html.matchAll(relative)) {
+    if (refs.size >= MAX_ASSETS_PER_DOCUMENT) break;
+    // The flight payload names chunks relative to /_next/.
+    refs.add(`/_next/${m[0].slice(1, -1)}`);
+  }
+
+  const cache = await caches.open(STATIC_CACHE);
+  for (const ref of refs) {
+    // Only JS and CSS. The same patterns also catch fonts and images,
+    // which are large, optional, and already cache themselves on use.
+    if (!/\.(?:js|css)$/.test(ref)) continue;
+    let target;
+    try {
+      target = new URL(ref, self.location.origin);
+    } catch {
+      continue;
+    }
+    if (target.origin !== self.location.origin) continue;
+    if (await cache.match(target.href)) continue; // shared chunk, already held
+    try {
+      const asset = await fetch(target.href);
+      if (asset && asset.ok) await cache.put(target.href, asset);
+    } catch {
+      /* one missing chunk should not fail the whole precache */
+    }
+  }
+
+  void enforceCacheLimit(STATIC_CACHE, STATIC_MAX_ENTRIES);
 }
 
 function documentKey(url) {
@@ -458,7 +557,10 @@ async function prewarm(paths) {
     // that may be on a metered connection; a burst of parallel requests
     // would compete with whatever the farmer is actually doing.
     try {
-      await cacheDocument(pages, path);
+      // With its build output: `/cycles/<id>/record` is the screen the
+      // farmer opens standing in the pen, and a document without its
+      // chunk renders nothing there.
+      await cacheDocument(pages, path, true);
     } catch {
       /* route unavailable — skip it */
     }
