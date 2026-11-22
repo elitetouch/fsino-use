@@ -73,7 +73,23 @@ export const KEYWORDS: ReadonlyArray<{ kind: FieldKind; re: RegExp }> = [
   },
   {
     kind: 'culled',
-    re: /\b(cull(?:ed|ing)?|slaughter(?:ed)?|destroy(?:ed)?)\b/,
+    // MISHEARD: one spoken "culled birds" came back as "coil bed",
+    // "coiled bed", "called the bed", "calling bed" and "quite bad",
+    // in a single session. Culling is a core entry and was completely
+    // unrecordable by voice.
+    //
+    // "called" IS LISTED HERE, having been refused once already. The
+    // reason it is safe now is the bird subject below: "I called the
+    // vet" names no bird and is not a cull, while "called the bed" is
+    // "culled bird" and is. The pair carries it, exactly as the
+    // container carries feed.
+    //
+    // "quite" is NOT listed, though "quite bad" was one of the
+    // transcripts. "3 birds are quite bad" is an ordinary thing to
+    // say about sick birds, and reading it as three culls would
+    // destroy stock on a sentence about illness. Four forms recovered
+    // is worth more than a fifth that guesses.
+    re: /\b(cull(?:ed|ing|s)?|coil(?:ed|s)?|call(?:ed|ing)s?|slaughter(?:ed)?|destroy(?:ed)?)\b/,
   },
   {
     kind: 'dead',
@@ -137,6 +153,13 @@ export const KEYWORDS: ReadonlyArray<{ kind: FieldKind; re: RegExp }> = [
  */
 export const REQUIRES_BIRD_SUBJECT: ReadonlySet<FieldKind> = new Set([
   'lost',
+  // `culled` joined this list the day "called" was added to its
+  // keywords. The misheard forms of "culled" are all ordinary English
+  // words, so the bird subject is the only thing separating "called
+  // the bed" (a cull) from "I called the vet" (not one). Removing
+  // `culled` from this set without also removing those forms would
+  // make a sentence about phoning somebody destroy stock.
+  'culled',
 ]);
 
 /**
@@ -145,9 +168,15 @@ export const REQUIRES_BIRD_SUBJECT: ReadonlySet<FieldKind> = new Set([
  * "Layer" and "broiler" are birds here and NOT feed — "20 layers died"
  * is a head count. The ration "layer mash" is matched as a two-word
  * phrase in FEED_TYPES so the two stay distinguishable.
+ *
+ * MISHEARD: "bed" and "bad" for bird, both from the same session that
+ * produced the cull mishearings. They are only ever consulted to
+ * confirm a kind that ALREADY matched a keyword — never to classify a
+ * clause on their own — so "the bed is wet" and "10 bad eggs" are
+ * untouched by them.
  */
 export const BIRD_WORDS =
-  /\b(birds?|buds?|chicken|chickens|fowls?|layers?|broilers?|cockerels?|cocks?|hens?|chicks?|pullets?|noilers?|turkeys?|ducks?)\b/;
+  /\b(birds?|buds?|beds?|bads?|chicken|chickens|fowls?|layers?|broilers?|cockerels?|cocks?|hens?|chicks?|pullets?|noilers?|turkeys?|ducks?)\b/;
 
 /**
  * Feed rations, mapped to the `item_type` the feed endpoint stores.

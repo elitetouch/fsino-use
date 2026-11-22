@@ -241,6 +241,9 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
             // quick record and a tapped-out one carry the ration and
             // brand forward identically.
             lastFeed={lastFeedFromGuidance(guidance.data.sections.feed.last_entry)}
+            // Same gate the wizard applies when it builds its step
+            // list: eggs only exist for layer and mixed flocks.
+            productionType={guidance.data.flock.production_type}
             onSaved={() => router.replace(`/cycles/${flockId}?recorded=1`)}
             onUseWizard={goNext}
           />
