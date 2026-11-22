@@ -1,7 +1,8 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Loader2, Mic, X } from 'lucide-react';
+import { useCallback, useId, useMemo, useState } from 'react';
+import { AlertTriangle, Check, Loader2, Mic, Square, X } from 'lucide-react';
+import { useDictation } from '@/lib/quick-record/use-dictation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCreateDailyRecord } from '@/lib/use-daily-record';
@@ -73,6 +74,20 @@ export function QuickRecord({
 
   const createRecord = useCreateDailyRecord(flockId);
 
+  // Dictated text is APPENDED, never substituted. A farmer who typed
+  // half a sentence and then reached for the mic must not watch their
+  // typing disappear.
+  const appendDictated = useCallback((chunk: string) => {
+    setText((prev) => {
+      const joined = prev.trim() === '' ? chunk : `${prev.trim()} ${chunk}`;
+      return joined.slice(0, MAX_INPUT);
+    });
+    setRemoved(new Set());
+  }, []);
+
+  const dictation = useDictation(appendDictated);
+  const listening = dictation.status === 'listening';
+
   // Parsing is a pure function over a 500-character cap, so running it
   // on every keystroke costs nothing and avoids the stale-chip window a
   // debounce would open between what is typed and what would be saved.
@@ -98,12 +113,17 @@ export function QuickRecord({
         : 'Save record';
 
   const reset = () => {
+    dictation.stop();
     setText('');
     setRemoved(new Set());
   };
 
   const save = async () => {
     if (!canSave) return;
+    // Close the microphone before the save round-trip. Leaving it open
+    // across a navigation is how a hot mic outlives the screen that
+    // opened it.
+    dictation.stop();
     const payloads = buildQuickRecordPayloads(kept, {
       recordDate,
       moment: parsed.moment,
@@ -140,28 +160,81 @@ export function QuickRecord({
         Say what happened today
       </label>
 
-      <textarea
-        id={inputId}
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value.slice(0, MAX_INPUT));
-          setRemoved(new Set());
-        }}
-        maxLength={MAX_INPUT}
-        rows={3}
-        // Plain text input. The keyboard's own mic does the speech, so
-        // nothing here asks for a microphone or touches an audio API.
-        inputMode="text"
-        autoComplete="off"
-        autoCorrect="on"
-        spellCheck={false}
-        placeholder="15 birds died and I gave them 2 bags of feed"
-        className="mt-2 w-full resize-none rounded-xl border-2 border-[var(--color-brand-input-border)] bg-white p-3 text-base leading-snug outline-none focus:border-[var(--color-brand-primary)]"
-      />
+      <div className="relative mt-2">
+        <textarea
+          id={inputId}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value.slice(0, MAX_INPUT));
+            setRemoved(new Set());
+          }}
+          maxLength={MAX_INPUT}
+          rows={3}
+          inputMode="text"
+          autoComplete="off"
+          autoCorrect="on"
+          spellCheck={false}
+          placeholder="15 birds died and I gave them 2 bags of feed"
+          className={cn(
+            // Right padding clears the mic button so long text never
+            // runs underneath it.
+            'w-full resize-none rounded-xl border-2 bg-white p-3 pr-14 text-base leading-snug outline-none',
+            listening
+              ? 'border-red-500'
+              : 'border-[var(--color-brand-input-border)] focus:border-[var(--color-brand-primary)]',
+          )}
+        />
 
-      <p className="mt-1.5 text-xs text-[var(--color-brand-muted)]">
-        Tap the microphone on your keyboard and talk, or type it. Pidgin is fine.
+        {dictation.isAvailable && (
+          <button
+            type="button"
+            onClick={listening ? dictation.stop : dictation.start}
+            aria-label={listening ? 'Stop recording' : 'Record what happened'}
+            aria-pressed={listening}
+            className={cn(
+              'absolute bottom-2.5 right-2.5 grid h-10 w-10 place-items-center rounded-full transition',
+              listening
+                ? 'bg-red-600 text-white'
+                : 'bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-primary-deep)]',
+            )}
+          >
+            {listening ? (
+              <Square className="h-4 w-4 fill-current" aria-hidden />
+            ) : (
+              <Mic className="h-5 w-5" aria-hidden />
+            )}
+            {/* A live microphone must be impossible to miss. */}
+            {listening && (
+              <span className="absolute inset-0 animate-ping rounded-full bg-red-500/60" />
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Live region: what the recogniser has heard but not settled on.
+          Shown so the farmer can see it is working, never saved — only
+          final text reaches the box. */}
+      <p aria-live="polite" className="sr-only">
+        {listening ? 'Recording' : ''}
       </p>
+      {listening && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-red-600">
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-600" />
+          Listening{dictation.interim ? `: ${dictation.interim}` : '… say what happened'}
+        </p>
+      )}
+
+      {dictation.message && !listening && (
+        <p className="mt-1.5 text-xs font-medium text-amber-700">{dictation.message}</p>
+      )}
+
+      {!listening && !dictation.message && (
+        <p className="mt-1.5 text-xs text-[var(--color-brand-muted)]">
+          {dictation.isAvailable
+            ? 'Tap the microphone and talk, or just type. Pidgin is fine.'
+            : 'Type what happened, or use the microphone on your keyboard. Pidgin is fine.'}
+        </p>
+      )}
 
       {kept.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-2" aria-label="What we understood">
