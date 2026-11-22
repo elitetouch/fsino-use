@@ -59,6 +59,11 @@ export default function SettingsHubPage() {
               label="Finance preferences"
               hint="Show or hide finance summaries on your dashboard."
             />
+            <MenuRow
+              href="/settings/learned-words"
+              label="Words this app learned from you"
+              hint="See and remove words the microphone kept hearing wrongly."
+            />
           </Section>
 
           <Section
