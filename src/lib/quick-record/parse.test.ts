@@ -619,6 +619,49 @@ describe('payload building', () => {
   });
 });
 
+describe('feed brand', () => {
+  const LAST = { itemType: 'finisher', itemBrand: 'vital_feed' };
+
+  it('recognises New Hope', () => {
+    const r = parseQuickRecord('5 bags of finisher new hope feed');
+    const feed = r.fields.find((f) => f.kind === 'feed');
+    expect(feed?.detail?.feedBrand).toBe('new_hope');
+  });
+
+  it('never inherits a brand over one the farmer named', () => {
+    // The reported bug: "new hope feed" matched nothing, so the last
+    // record's brand was filled in and the chip read "Vital Feed —
+    // brand kept from your last record". The app replaced a brand the
+    // farmer had just typed with a different one.
+    const r = parseQuickRecord('5 bags of finisher zaria gold feed');
+    const [feed] = applyCarryForward(r.fields, LAST).filter((f) => f.kind === 'feed');
+    expect(feed?.detail?.feedBrand).toBeUndefined();
+    expect(feed?.detail?.inherited ?? []).not.toContain('feedBrand');
+  });
+
+  it('still carries the brand forward when none was named', () => {
+    // The feature has to keep working: a farmer feeding the same bag
+    // for weeks should not have to name it every evening.
+    const r = parseQuickRecord('5 bags of finisher feed');
+    const [feed] = applyCarryForward(r.fields, LAST).filter((f) => f.kind === 'feed');
+    expect(feed?.detail?.feedBrand).toBe('vital_feed');
+    expect(feed?.detail?.inherited).toContain('feedBrand');
+  });
+
+  it('treats a bare "bags of feed" as naming nothing', () => {
+    const r = parseQuickRecord('2 bags of feed');
+    const [feed] = applyCarryForward(r.fields, LAST).filter((f) => f.kind === 'feed');
+    expect(feed?.detail?.feedBrand).toBe('vital_feed');
+  });
+
+  it('keeps a recognised brand instead of the inherited one', () => {
+    const r = parseQuickRecord('5 bags of top feeds');
+    const [feed] = applyCarryForward(r.fields, LAST).filter((f) => f.kind === 'feed');
+    expect(feed?.detail?.feedBrand).toBe('top_feeds');
+    expect(feed?.detail?.inherited ?? []).not.toContain('feedBrand');
+  });
+});
+
 describe('bird weight is always kilograms on the wire', () => {
   /**
    * The wizard's weight step reads `quantity` and writes `unit: 'kg'`
@@ -652,7 +695,7 @@ describe('bird weight is always kilograms on the wire', () => {
     // with it.
     for (const unit of ['g', 'kg', 'lbs', 'bags', '']) {
       const forged = [
-        { kind: 'weight' as const, value: 2, unit, confidence: 'high' as const, raw: '', detail: {} },
+        { kind: 'weight' as const, value: 2, unit, confidence: 'high' as const, sourceText: '', detail: {} },
       ];
       const weight = buildQuickRecordPayloads(forged, OPTS)
         .find((p) => p.event_type === 'weight');

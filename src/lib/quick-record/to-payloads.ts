@@ -80,8 +80,8 @@ const FEED_TYPE_VALUES: readonly string[] = ['starter', 'grower', 'finisher', 'l
 /** Mirrors FEED_BRANDS in feed-step.tsx — the wizard's own stored values. */
 const FEED_BRAND_VALUES: readonly string[] = [
   'own_feed', 'amo_byng_feed', 'animal_care', 'broxwell_feeds', 'chikun_feeds',
-  'hybrid_feeds', 'livestock_feeds_plc', 'stellar_feeds', 'top_feeds',
-  'vital_feed', 'ultima', 'other',
+  'hybrid_feeds', 'livestock_feeds_plc', 'new_hope', 'agrited', 'stellar_feeds',
+  'top_feeds', 'vital_feed', 'ultima', 'other',
 ];
 const EGG_SIZES: readonly string[] = ['small', 'medium', 'jumbo'];
 

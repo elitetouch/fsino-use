@@ -34,6 +34,7 @@ import {
   CLAUSE_SPLIT,
   EGG_SIZES,
   FEED_BRANDS,
+  NON_BRAND_WORDS,
   FEED_TYPES,
   KEYWORDS,
   MOMENT_WORDS,
@@ -101,6 +102,13 @@ export interface ParsedField {
     readonly feedBrand?: string;
     /** feed — the brand's display name, for the chip. */
     readonly feedBrandLabel?: string;
+    /**
+     * feed — the farmer named a brand we could not match. Set only
+     * when `feedBrand` is absent, and it means "leave this empty"
+     * rather than "fill it in from last time": carry-forward must not
+     * answer a question the farmer has already answered.
+     */
+    readonly brandStated?: boolean;
     /**
      * Keys in this detail that were carried over from the farmer's last
      * record rather than heard in this sentence. The UI must mark these
@@ -259,6 +267,31 @@ function readBrand(
     if (re.test(clause)) return { value, label, uncertain: uncertain === true };
   }
   return null;
+}
+
+/**
+ * Did the farmer name a brand, even one we do not recognise?
+ *
+ * Only consulted when `readBrand` found nothing, and it exists to stop
+ * the carry-forward layer from answering a question the farmer already
+ * answered. "5 bags of finisher new hope feed" matched no brand in the
+ * table, so the previous record's brand was filled in and the chip read
+ * "Vital Feed · brand kept from your last record" — the app quietly
+ * replacing a brand the farmer had just typed with a different one.
+ *
+ * A blank is recoverable and a wrong brand is not, so a name we cannot
+ * place must leave the field empty rather than inherited.
+ *
+ * Looks at the one or two words directly in front of "feed", which is
+ * where a brand goes in every phrasing we have seen. Anything that is
+ * ordinary speech is listed in NON_BRAND_WORDS; a word that is not is
+ * treated as a name.
+ */
+function statesUnrecognisedBrand(clause: string): boolean {
+  const m = /\b([a-z]+)(?:\s+([a-z]+))?\s+feeds?\b/.exec(clause);
+  if (m === null) return false;
+  const words = [m[1], m[2]].filter((w): w is string => typeof w === 'string');
+  return words.some((w) => !NON_BRAND_WORDS.has(w));
 }
 
 /**
@@ -504,10 +537,20 @@ function buildField(
     caution = caution ?? `Heard brand "${brand.label}" — confirm it before saving`;
   }
 
+  // A brand was named and we could not place it. Recorded so the
+  // carry-forward layer leaves the field alone instead of substituting
+  // the last record's brand, and so the farmer is told rather than
+  // left to notice.
+  const brandStated = kind === 'feed' && brand === null && statesUnrecognisedBrand(clause);
+  if (brandStated) {
+    caution = caution ?? 'Brand not recognised — pick it in the wizard before saving';
+  }
+
   const detail = {
     feedType: kind === 'feed' ? readFrom(clause, FEED_TYPES) : undefined,
     feedBrand: brand?.value,
     feedBrandLabel: brand?.label,
+    brandStated: brandStated ? true : undefined,
     eggSize: kind === 'eggs' ? readFrom(clause, EGG_SIZES) : undefined,
     treatmentType: kind === 'treatment' ? readFrom(clause, TREATMENT_TYPES) : undefined,
   };

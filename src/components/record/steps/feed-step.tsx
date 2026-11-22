@@ -67,6 +67,8 @@ const FEED_BRANDS = [
   { value: 'chikun_feeds',       label: 'Chikun Feeds' },
   { value: 'hybrid_feeds',       label: 'Hybrid Feeds' },
   { value: 'livestock_feeds_plc', label: 'Livestock Feeds Plc' },
+  { value: 'new_hope',           label: 'New Hope' },
+  { value: 'agrited',            label: 'Agrited' },
   { value: 'stellar_feeds',      label: 'Stellar Feeds' },
   { value: 'top_feeds',          label: 'Top Feeds' },
   { value: 'vital_feed',         label: 'Vital Feed' },

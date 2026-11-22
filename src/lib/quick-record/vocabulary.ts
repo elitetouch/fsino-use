@@ -185,6 +185,48 @@ export const BIRD_WORDS =
  * fourth thing farmers say constantly; it maps to layer feed and is
  * matched before the bare word "layer" can be read as a bird.
  */
+/**
+ * Words that can sit in front of "feed" without being a brand name.
+ *
+ * Used to tell "finisher feed" (a ration, no brand named) from
+ * "new hope feed" (a brand named, which we may or may not know). The
+ * distinction matters because of what happens next: when no brand is
+ * recognised the carry-forward layer fills one in from the farmer's
+ * last record, and a farmer who says "new hope feed" and gets
+ * "Vital Feed · brand kept from your last record" has had the app
+ * overwrite something they explicitly said.
+ *
+ * So this list exists to be conservative in one direction only. A
+ * brand wrongly treated as filler gets silently replaced; filler
+ * wrongly treated as a brand merely costs one tap. Everything a farmer
+ * plausibly says around the word "feed" belongs here.
+ */
+export const NON_BRAND_WORDS: ReadonlySet<string> = new Set([
+  // Rations.
+  'starter', 'grower', 'finisher', 'layer', 'layers', 'mash', 'pellet',
+  'pellets', 'crumble', 'crumbs', 'concentrate',
+  // Containers and measures.
+  'bag', 'bags', 'sack', 'sacks', 'kg', 'kgs', 'kilo', 'kilos', 'kilogram',
+  'kilograms', 'ton', 'tons', 'tonne', 'tonnes', 'cup', 'cups', 'paint',
+  'rubber', 'bowl', 'bowls', 'measure', 'measures',
+  // Birds — "chicken feed" is handled as a brand candidate elsewhere,
+  // deliberately and with a confirmation.
+  'bird', 'birds', 'broiler', 'broilers', 'chick', 'chicks', 'pullet',
+  'pullets', 'cockerel', 'cockerels', 'hen', 'hens', 'turkey', 'turkeys',
+  // Grammar and the verbs farmers use.
+  'of', 'the', 'a', 'an', 'some', 'more', 'my', 'our', 'their', 'this',
+  'that', 'these', 'those', 'and', 'with', 'for', 'to', 'in', 'on', 'at',
+  'gave', 'give', 'given', 'giving', 'used', 'use', 'using', 'bought',
+  'buy', 'added', 'add', 'fed', 'feeding', 'served', 'serve', 'poured',
+  'finished', 'left', 'remaining', 'today', 'morning', 'evening', 'night',
+  'new', 'old', 'fresh', 'same', 'another', 'last', 'first', 'total',
+  'them', 'it', 'they', 'we', 'i',
+  // Numbers as words.
+  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+  'ten', 'eleven', 'twelve', 'twenty', 'thirty', 'forty', 'fifty',
+  'hundred', 'half',
+]);
+
 export const FEED_TYPES: ReadonlyArray<{ re: RegExp; value: string }> = [
   { re: /\bstarter\b/, value: 'starter' },
   { re: /\bgrower\b/, value: 'grower' },
@@ -223,9 +265,14 @@ export const FEED_BRANDS: ReadonlyArray<{
   { re: /\b(chikun|chickun|chikin)\b/, value: 'chikun_feeds', label: 'Chikun Feeds' },
   { re: /\bhybrid\b/, value: 'hybrid_feeds', label: 'Hybrid Feeds' },
   { re: /\blivestock\s*feeds?\b/, value: 'livestock_feeds_plc', label: 'Livestock Feeds Plc' },
+  // MISHEARD: "new hop", "nu hope", "new hoop".
+  { re: /\b(new|nu|knew)\s*(hope?s?|hoops?)\b/, value: 'new_hope', label: 'New Hope' },
+  { re: /\bagrited\b/, value: 'agrited', label: 'Agrited' },
   { re: /\bstellar\b/, value: 'stellar_feeds', label: 'Stellar Feeds' },
   { re: /\btop\s*feeds?\b/, value: 'top_feeds', label: 'Top Feeds' },
-  { re: /\bvital\b/, value: 'vital_feed', label: 'Vital Feed' },
+  // Grand Cereals is the mill; Vital Feed is its brand, and farmers use
+  // both names for the same bag.
+  { re: /\b(vital|grand\s*cereals?)\b/, value: 'vital_feed', label: 'Vital Feed' },
   // MISHEARD: "ultimate" for Ultima.
   { re: /\b(ultima|ultimate)\b/, value: 'ultima', label: 'Ultima' },
   // "I mixed it myself" — a real and common answer.

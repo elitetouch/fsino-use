@@ -67,8 +67,20 @@ export function applyCarryForward(
       inherited.push('feedType');
     }
 
-    const feedBrand = field.detail?.feedBrand ?? (last.itemBrand || undefined);
-    if (feedBrand !== undefined && field.detail?.feedBrand === undefined) {
+    // A brand the farmer named but we could not place is NOT a missing
+    // brand. Inheriting over it was the module's documented invariant
+    // being broken in the one case it was written for: "new hope feed"
+    // matched nothing in the table, so the chip showed the previous
+    // record's "Vital Feed · brand kept from your last record" — the
+    // app replacing a brand the farmer had just typed.
+    //
+    // `brandStated` is only ever set when no brand matched, so this
+    // blocks inheritance without affecting a recognised one.
+    const brandStated = field.detail?.brandStated === true;
+    const feedBrand = brandStated
+      ? field.detail?.feedBrand
+      : field.detail?.feedBrand ?? (last.itemBrand || undefined);
+    if (!brandStated && feedBrand !== undefined && field.detail?.feedBrand === undefined) {
       inherited.push('feedBrand');
     }
 
