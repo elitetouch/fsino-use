@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { startSync, requestPersistentStorage } from '@/lib/offline';
+import { syncVocabInBackground } from '@/lib/quick-record/vocab-sync';
 import { syncPushSubscription } from '@/lib/push';
 
 /**
@@ -23,6 +24,13 @@ export function SwRegistration() {
 
     // Persistent storage request — fire & forget; failure is fine.
     void requestPersistentStorage();
+
+    // Carry the farmer's learned quick-record vocabulary between their
+    // devices. Fire-and-forget on purpose: the pull rides the offline
+    // GET cache and the push rides the same outbox as a daily record,
+    // so there is no button, nothing to wait on, and nothing lost when
+    // there is no signal.
+    syncVocabInBackground();
 
     if (
       typeof window === 'undefined' ||
