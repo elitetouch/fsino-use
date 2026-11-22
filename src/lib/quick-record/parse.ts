@@ -32,11 +32,15 @@
 import {
   BIRD_WORDS,
   CLAUSE_SPLIT,
+  EGG_SIZES,
+  FEED_TYPES,
   KEYWORDS,
   MOMENT_WORDS,
   NUMBER_WORDS,
   REQUIRES_BIRD_SUBJECT,
+  TREATMENT_TYPES,
   UNITS,
+  VACCINES,
   type FieldKind,
   type UnitSpec,
 } from './vocabulary';
@@ -85,6 +89,20 @@ export interface ParsedField {
   readonly sourceText: string;
   /** Set when a container count was converted, e.g. crates to eggs. */
   readonly conversionNote?: string;
+  /**
+   * Kind-specific extras the wizard steps also capture: which ration,
+   * which vaccine, which egg size. Absent when the sentence did not say.
+   */
+  readonly detail?: {
+    /** feed — starter / grower / finisher / layer. */
+    readonly feedType?: string;
+    /** vaccination — correctly spelled, whatever was heard. */
+    readonly vaccineName?: string;
+    /** treatment — antibiotic / dewormer / vitamin / coccidiostat. */
+    readonly treatmentType?: string;
+    /** eggs — small / medium / jumbo. */
+    readonly eggSize?: string;
+  };
 }
 
 export interface ParseResult {
@@ -175,7 +193,44 @@ function readUnit(clause: string): UnitSpec | null {
   return null;
 }
 
+/** First match from a {re, value} table, or undefined. */
+function readFrom(
+  clause: string,
+  table: ReadonlyArray<{ re: RegExp; value: string }>,
+): string | undefined {
+  for (const { re, value } of table) {
+    if (re.test(clause)) return value;
+  }
+  return undefined;
+}
+
+/**
+ * "2 bags of 25kg" — the one case where a bag becomes kilograms.
+ *
+ * We refuse to guess a bag weight (see BAG_WEIGHT_NOTE), but when the
+ * farmer states it themselves there is nothing left to guess. Returns
+ * the total kilograms, or null when the clause is not that shape.
+ */
+function readBagsTimesWeight(clause: string): number | null {
+  const m = clause.match(
+    /\b(\d{1,4})\s*(?:bags?|sacks?)\s*(?:of|at|x|times)?\s*(\d{1,4})\s*(?:kgs?|kilos?|kilogram(?:me)?s?)\b/,
+  );
+  if (!m) return null;
+  const bags = Number.parseInt(m[1] as string, 10);
+  const each = Number.parseInt(m[2] as string, 10);
+  const total = bags * each;
+  return isUsable(total) && total > 0 ? total : null;
+}
+
 function classifyClause(clause: string): FieldKind | null {
+  // VACCINES is the single source of truth for what counts as a
+  // vaccination, checked before the keyword table rather than
+  // duplicated into it. The misheard forms ("la so", "gum borrow")
+  // live there, and a keyword list that had to be kept in step with
+  // them would silently fall behind the first time someone added a
+  // mishearing — which is exactly what happened before this check.
+  if (VACCINES.some(({ re }) => re.test(clause))) return 'vaccination';
+
   for (const { kind, re } of KEYWORDS) {
     if (!re.test(clause)) continue;
     // Generic words only count when the clause also names a bird.
@@ -201,12 +256,81 @@ function buildField(
   kind: FieldKind,
   ctx: ParseContext,
 ): ParsedField | null {
+  // A vaccination is the one kind that is a complete record WITHOUT a
+  // number. "Gave Lasota" is the whole fact — the dose is optional and
+  // most farmers never say it. Requiring a count here would reject the
+  // commonest health entry on a Nigerian poultry farm.
+  if (kind === 'vaccination') {
+    const vaccineName = readFrom(clause, VACCINES);
+    const dose = readNumber(clause);
+    const doseUnit = readUnit(clause);
+    return {
+      kind,
+      // Dose in ml when stated; 0 means "not stated" and the payload
+      // builder omits the quantity entirely rather than claiming zero.
+      value: dose !== null && doseUnit?.apiUnit === 'ml' ? dose : 0,
+      unit: doseUnit?.apiUnit === 'ml' ? 'ml' : undefined,
+      confidence: vaccineName ? 'high' : 'low',
+      caution: vaccineName ? undefined : 'Vaccine name not recognised — check it before saving',
+      sourceText: clause,
+      detail: vaccineName ? { vaccineName } : undefined,
+    };
+  }
+
   const raw = readNumber(clause);
-  if (raw === null) return null;
+  if (raw === null) {
+    // Treatment, like vaccination, is a fact without a count: "treated
+    // for coccidiosis" names no number and is still a record.
+    if (kind === 'treatment') {
+      const treatmentType = readFrom(clause, TREATMENT_TYPES);
+      return {
+        kind,
+        value: 0,
+        confidence: treatmentType ? 'high' : 'low',
+        caution: treatmentType
+          ? undefined
+          : 'Treatment type not recognised — check it before saving',
+        sourceText: clause,
+        detail: treatmentType ? { treatmentType } : undefined,
+      };
+    }
+    return null;
+  }
+
+  // "egg weight 60 grams" contains the word "egg", which the unit
+  // table matches before it reaches grams — so the chip read "60 eggs"
+  // for a weight. An egg weight is always grams; nothing else is
+  // plausible for a single egg.
+  if (kind === 'egg_weight') {
+    return {
+      kind,
+      value: raw,
+      unit: 'g',
+      confidence: 'high',
+      sourceText: clause,
+    };
+  }
 
   const unitSpec = readUnit(clause);
   let value = raw;
   let conversionNote: string | undefined;
+
+  // "2 bags of 25kg" — the farmer stated the bag weight, so kilograms
+  // are theirs rather than ours.
+  if (kind === 'feed') {
+    const kg = readBagsTimesWeight(clause);
+    if (kg !== null) {
+      return {
+        kind,
+        value: kg,
+        unit: 'kg',
+        confidence: 'high',
+        sourceText: clause,
+        conversionNote: `${clause.match(/\d{1,4}/)?.[0] ?? ''} bags at the weight you said`,
+        detail: { feedType: readFrom(clause, FEED_TYPES) },
+      };
+    }
+  }
 
   // Container to base unit, e.g. 3 crates to 90 eggs. Only done where
   // the vocabulary says a conversion exists, and always surfaced.
@@ -250,6 +374,15 @@ function buildField(
     caution = 'No unit heard — confirm the unit before saving';
   }
 
+  // Kind-specific extras, so "two bags of starter feed" keeps the
+  // ration and "30 medium eggs" keeps the size.
+  const detail = {
+    feedType: kind === 'feed' ? readFrom(clause, FEED_TYPES) : undefined,
+    eggSize: kind === 'eggs' ? readFrom(clause, EGG_SIZES) : undefined,
+    treatmentType: kind === 'treatment' ? readFrom(clause, TREATMENT_TYPES) : undefined,
+  };
+  const hasDetail = Object.values(detail).some((v) => v !== undefined);
+
   return {
     kind,
     value,
@@ -259,6 +392,7 @@ function buildField(
     caution,
     sourceText: clause,
     conversionNote,
+    detail: hasDetail ? detail : undefined,
   };
 }
 

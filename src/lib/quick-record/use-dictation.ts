@@ -94,6 +94,15 @@ const LANG = 'en-NG';
  */
 const MAX_LISTEN_MS = 30_000;
 
+/**
+ * How many guesses to ask the recogniser for.
+ *
+ * Three is the useful range: the correct reading of a misheard word is
+ * usually in the top few, and past that the alternatives degrade into
+ * noise that would only give the parser more chances to be wrong.
+ */
+const MAX_ALTERNATIVES = 3;
+
 export type DictationStatus =
   | 'unsupported'
   | 'insecure-context'
@@ -123,11 +132,22 @@ function getCtor(): SpeechRecognitionCtor | null {
 }
 
 /**
- * @param onText Called with each FINAL transcript chunk. Interim results
- *               never reach it — a farmer should not watch a number
- *               rewrite itself as the recogniser changes its mind.
+ * @param onText Called with each FINAL result as a list of the
+ *               recogniser's ALTERNATIVES, best-guess first. Interim
+ *               results never reach it — a farmer should not watch a
+ *               number rewrite itself as the recogniser changes its
+ *               mind.
+ *
+ *               The caller is expected to parse each alternative and
+ *               keep whichever yields a real record. This is the main
+ *               defence against a recogniser trained on American
+ *               English mishearing Nigerian speech: when "three crates"
+ *               comes back as "three grits", the correct words are
+ *               often sitting in alternative two or three, and the
+ *               parser can tell which one is a farm record when the
+ *               recogniser cannot.
  */
-export function useDictation(onText: (text: string) => void): UseDictation {
+export function useDictation(onText: (alternatives: string[]) => void): UseDictation {
   const [status, setStatus] = useState<DictationStatus>('idle');
   const [interim, setInterim] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -208,7 +228,11 @@ export function useDictation(onText: (text: string) => void): UseDictation {
     // posture we do not want and a way to run up someone's data.
     rec.continuous = false;
     rec.interimResults = true;
-    rec.maxAlternatives = 1;
+    // Several guesses, not one. The recogniser ranks by acoustic
+    // likelihood against a model that has not heard much Nigerian
+    // English; we re-rank by "which of these is actually a farm
+    // record", which is a judgement it cannot make and we can.
+    rec.maxAlternatives = MAX_ALTERNATIVES;
 
     rec.onstart = () => {
       setStatus('listening');
@@ -220,12 +244,17 @@ export function useDictation(onText: (text: string) => void): UseDictation {
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
         if (!result) continue;
-        const text = result[0]?.transcript ?? '';
         if (result.isFinal) {
-          // Only final text is handed upward and parsed.
-          if (text.trim() !== '') onTextRef.current(text.trim());
+          // Hand up every alternative, best-guess first, de-duplicated
+          // and trimmed. The caller decides which one is a record.
+          const alternatives: string[] = [];
+          for (let a = 0; a < result.length && a < MAX_ALTERNATIVES; a += 1) {
+            const t = (result[a]?.transcript ?? '').trim();
+            if (t !== '' && !alternatives.includes(t)) alternatives.push(t);
+          }
+          if (alternatives.length > 0) onTextRef.current(alternatives);
         } else {
-          pending += text;
+          pending += result[0]?.transcript ?? '';
         }
       }
       setInterim(pending);

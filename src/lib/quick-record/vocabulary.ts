@@ -1,24 +1,33 @@
 /**
- * The words Nigerian poultry farmers actually use.
+ * The words Nigerian poultry farmers actually use — and, just as
+ * importantly, the words the speech recogniser actually hears when they
+ * say them.
  *
  * This file is the asset. The parser in ./parse.ts is a small amount of
  * mechanical logic wrapped around these lists, and almost every future
  * improvement to accuracy is a word added here rather than code changed
  * there. Keep it that way.
  *
- * TWO RULES FOR EDITING.
+ * THREE RULES FOR EDITING.
  *
  * 1. Pidgin is not a second-class dialect to bolt on later. "15 birds
  *    don die" is how the sentence is actually said, and a parser that
- *    only reads "15 birds died" fails the farmer it was built for. Add
- *    the Pidgin form in the same breath as the English one.
+ *    only reads "15 birds died" fails the farmer it was built for.
  *
- * 2. Never add a word that can mean two things. "lost" looks like a
- *    mortality word and is listed as one, but "I lost the key" is not a
- *    record — which is why mortality also requires a bird-ish subject or
- *    a bare number, see parse.ts. If a word is ambiguous and you cannot
- *    constrain it, leave it out. A missed entry costs one wizard tap; a
- *    wrong entry costs trust.
+ * 2. MISHEARINGS ARE VOCABULARY. Chrome's recogniser is trained on
+ *    American and British English. A Nigerian farmer saying "crate"
+ *    gets back "grit"; "Lasota" comes back "la so". Both were observed
+ *    in real use, not imagined. We cannot retrain the recogniser, so
+ *    the misheard form is simply another word meaning the same thing.
+ *    Every one tagged MISHEARD below came from someone actually
+ *    speaking into the app — add to them as reports come in.
+ *
+ * 3. Never add a word that can mean two things. The temptation with
+ *    mishearings is to map "called" to "culled" — but "I called the
+ *    vet" is a real sentence, and silently culling birds because of it
+ *    is far worse than missing the entry. Where a misheard form is a
+ *    common English word, leave it out or constrain it. A missed entry
+ *    costs one wizard tap; a wrong entry costs trust.
  */
 
 /** Event kinds the quick-record parser can produce. */
@@ -30,23 +39,36 @@ export type FieldKind =
   | 'feed'
   | 'water'
   | 'eggs'
-  | 'weight';
+  | 'weight'
+  | 'vaccination'
+  | 'treatment'
+  | 'egg_weight';
 
 /**
  * Keyword sets, most specific first.
  *
  * Order matters: `classifyClause` tries these in array order and takes
  * the first hit, so a clause mentioning both "sold" and "birds" is a
- * sale, not a head count.
+ * sale, not a head count, and a clause naming a vaccine is a
+ * vaccination rather than a treatment.
  */
 export const KEYWORDS: ReadonlyArray<{ kind: FieldKind; re: RegExp }> = [
+  // ── Health, before everything ───────────────────────────────────────
+  // A vaccine name is the strongest signal in any sentence, so it is
+  // tested before the bird-movement verbs that often sit beside it.
+  {
+    kind: 'vaccination',
+    re: /\b(vaccinat(?:e|ed|ion)|vaccine|jab|dose[ds]?|lasota|gumboro|newcastle|marek|debeak)\b/,
+  },
+  {
+    kind: 'treatment',
+    re: /\b(treat(?:ed|ment|ing)?|antibiotic?s?|medicat(?:e|ed|ion)|drugs?|dewormer?|deworm(?:ed|ing)?|vitamins?|coccidiosta(?:t|ts)|coccidiosis|glucose|antistress|anti\s*stress)\b/,
+  },
+
   // ── Bird-count movements ────────────────────────────────────────────
-  // Checked before everything else because "sold 20 birds" and "20 birds
-  // died" share a subject and differ only by verb.
   {
     kind: 'sold',
-    // "comot" is Pidgin for removed/taken out; in a sales context it is
-    // how a farmer describes birds leaving the pen.
+    // "comot" is Pidgin for removed/taken out.
     re: /\b(sold|sell|sells|selling|sale|comot(?:ed)?)\b/,
   },
   {
@@ -55,47 +77,50 @@ export const KEYWORDS: ReadonlyArray<{ kind: FieldKind; re: RegExp }> = [
   },
   {
     kind: 'dead',
-    // "don die" / "don kpai" are Pidgin perfect forms. "kpai" is slang
-    // for die and is common in spoken Nigerian English.
+    // "don die" / "don kpai" are Pidgin perfect forms.
     re: /\b(died?|dead|death|deaths|dying|mortality|mortalities|expired|don\s+die|kpai(?:ed)?|perish(?:ed)?)\b/,
   },
   {
     kind: 'lost',
-    // Deliberately narrow. Bare "lost" is handled here only because the
-    // clause must ALSO carry a bird subject — see requiresBirdSubject.
+    // Narrow by design — also requires a bird subject, see below.
     re: /\b(lost|missing|stolen|thief|theft|disappear(?:ed)?)\b/,
+  },
+
+  // ── Production ──────────────────────────────────────────────────────
+  // Egg WEIGHT before eggs, so "egg weight 60 grams" is not a count.
+  {
+    kind: 'egg_weight',
+    re: /\begg[s]?\s+(?:weigh(?:t|ed|s)?|size)\b|\bweigh(?:t|ed|s)?\s+of\s+(?:the\s+)?eggs?\b/,
+  },
+  {
+    kind: 'eggs',
+    // MISHEARD: "grit", "great", "grade", "crates" for crate — all
+    // observed. "great" is a real word but is only reached here when a
+    // number sits in the same clause and nothing earlier matched.
+    re: /\b(eggs?|crates?|trays?|collect(?:ed|ion)?|grit|grits|greats?|grades?|kreyts?)\b/,
+  },
+  {
+    kind: 'weight',
+    re: /\b(weigh(?:ed|t|s|ing)?|kilos?|kgs?)\b/,
   },
 
   // ── Consumables ─────────────────────────────────────────────────────
   {
     kind: 'feed',
-    // "chop" is Pidgin for food. Feed brands and types (starter, grower,
-    // finisher, layer mash) double as feed keywords because farmers name
-    // the ration rather than the act: "2 bags of grower".
-    re: /\b(feed|fed|feeding|mash|starter|grower|finisher|layer\s+mash|pellets?|chop)\b/,
+    // "chop" is Pidgin for food. Ration names double as feed keywords
+    // because farmers name the ration rather than the act.
+    re: /\b(feed|fed|feeding|mash|marsh|starter|grower|finisher|pellets?|chop|fit)\b/,
   },
   {
     kind: 'water',
-    re: /\b(water|watered|drank|drink|drinking|litres?|liters?)\b/,
-  },
-
-  // ── Production ──────────────────────────────────────────────────────
-  {
-    kind: 'eggs',
-    re: /\b(eggs?|crates?|trays?|collect(?:ed|ion)?|pick(?:ed)?\s+egg)\b/,
-  },
-  {
-    kind: 'weight',
-    re: /\b(weigh(?:ed|t|s|ing)?|kilos?|kgs?)\b/,
+    // MISHEARD: "leaders"/"later" for litres.
+    re: /\b(water|watered|drank|drink|drinking|litres?|liters?|leaders?)\b/,
   },
 ];
 
 /**
  * Kinds whose keyword is too generic to stand on its own. A clause must
  * also mention a bird before these count.
- *
- * Without this, "lost 2 bags" parses as two birds lost AND two bags of
- * feed, and the farmer's flock silently shrinks by two.
  */
 export const REQUIRES_BIRD_SUBJECT: ReadonlySet<FieldKind> = new Set([
   'lost',
@@ -104,54 +129,106 @@ export const REQUIRES_BIRD_SUBJECT: ReadonlySet<FieldKind> = new Set([
 /**
  * Anything a Nigerian farmer calls the animals in the pen.
  *
- * "Layer" and "broiler" appear here and NOT in the feed keywords on
- * purpose — "20 layers died" is a bird count. The feed list carries
- * "layer mash" as a two-word phrase so the ration stays distinguishable
- * from the bird.
+ * "Layer" and "broiler" are birds here and NOT feed — "20 layers died"
+ * is a head count. The ration "layer mash" is matched as a two-word
+ * phrase in FEED_TYPES so the two stay distinguishable.
  */
 export const BIRD_WORDS =
-  /\b(birds?|chicken|chickens|fowls?|layers?|broilers?|cockerels?|cocks?|hens?|chicks?|pullets?|noilers?|turkeys?|ducks?)\b/;
+  /\b(birds?|buds?|chicken|chickens|fowls?|layers?|broilers?|cockerels?|cocks?|hens?|chicks?|pullets?|noilers?|turkeys?|ducks?)\b/;
+
+/**
+ * Feed rations, mapped to the `item_type` the feed endpoint stores.
+ *
+ * The wizard offers starter / grower / finisher. "Layer mash" is a
+ * fourth thing farmers say constantly; it maps to layer feed and is
+ * matched before the bare word "layer" can be read as a bird.
+ */
+export const FEED_TYPES: ReadonlyArray<{ re: RegExp; value: string }> = [
+  { re: /\bstarter\b/, value: 'starter' },
+  { re: /\bgrower\b/, value: 'grower' },
+  { re: /\bfinisher\b/, value: 'finisher' },
+  { re: /\blayer\s*(?:mash|marsh|feed)\b/, value: 'layer' },
+];
+
+/**
+ * Vaccines, with the forms the recogniser produces.
+ *
+ * LASOTA IS THE REASON THIS LIST EXISTS. Said aloud by a Nigerian
+ * farmer it comes back as "la so", "la sota", "lassota" or "the sorta",
+ * never as the spelling. It is the most-administered vaccine in
+ * Nigerian poultry, so getting it wrong fails the commonest case.
+ *
+ * `value` is what reaches payload.vaccine_name, so it is the correct
+ * spelling regardless of what was heard.
+ */
+export const VACCINES: ReadonlyArray<{ re: RegExp; value: string }> = [
+  {
+    // MISHEARD: every form below was produced by the recogniser for
+    // one spoken "Lasota".
+    re: /\b(lasota|la\s*sota|la\s*so|lassota|la\s*soda|lasotta|the\s*sorta)\b/,
+    value: 'Lasota',
+  },
+  {
+    // MISHEARD: "gumbo", "gum borrow".
+    re: /\b(gumboro|gumbo(?:ro)?|gum\s*borrow|ibd)\b/,
+    value: 'Gumboro (IBD)',
+  },
+  {
+    re: /\b(newcastle|new\s*castle|ndv?|nd\s*vaccine)\b/,
+    value: 'Newcastle',
+  },
+  { re: /\b(marek'?s?)\b/, value: "Marek's" },
+  { re: /\b(fowl\s*pox|pox)\b/, value: 'Fowl pox' },
+  { re: /\b(infectious\s*bronchitis|bronchitis|ib)\b/, value: 'Infectious bronchitis' },
+  { re: /\b(fowl\s*typhoid|typhoid)\b/, value: 'Fowl typhoid' },
+  { re: /\b(coryza)\b/, value: 'Infectious coryza' },
+];
+
+/** Treatment categories, mapped to `treatment_type`. */
+export const TREATMENT_TYPES: ReadonlyArray<{ re: RegExp; value: string }> = [
+  { re: /\b(antibiotic?s?)\b/, value: 'antibiotic' },
+  { re: /\b(dewormer?|deworm(?:ed|ing)?)\b/, value: 'dewormer' },
+  { re: /\b(vitamins?|glucose|antistress|anti\s*stress)\b/, value: 'vitamin' },
+  { re: /\b(coccidiosta(?:t|ts)|coccidiosis)\b/, value: 'coccidiostat' },
+];
+
+/** Egg sizes the backend stores under payload.sizes.{key}. */
+export const EGG_SIZES: ReadonlyArray<{ re: RegExp; value: string }> = [
+  { re: /\bsmall\b/, value: 'small' },
+  { re: /\bmedium\b/, value: 'medium' },
+  // MISHEARD: "jumbo" often returns as "gumbo", which also appears in
+  // the Gumboro vaccine list — vaccination is classified first, so a
+  // sentence naming the vaccine never reaches here.
+  { re: /\b(jumbo|jumbo\s*size)\b/, value: 'jumbo' },
+];
 
 /**
  * Units, mapped to what the backend's daily-record validators expect.
  *
  * `perUnit` converts a count of containers into the base unit the API
- * stores. Where it is null the container IS the stored unit — the feed
- * endpoint accepts unit:'bags' directly, so a bag of feed needs no
- * conversion and no guess about its weight.
+ * stores. Where it is null the container IS the stored unit.
  */
 export interface UnitSpec {
-  /** What the API should receive in `unit`, or for eggs the base count. */
   readonly apiUnit: string;
-  /** Multiplier to the base unit, or null when no conversion applies. */
   readonly perUnit: number | null;
-  /** Shown on the confirmation chip when a conversion happened. */
   readonly label: string;
 }
 
-/**
- * A crate of eggs is thirty, everywhere in Nigeria. This is the one
- * conversion the parser performs silently, and the chip always shows
- * its working ("3 crates = 90 eggs") so a farmer who means something
- * else can see it before saving.
- */
+/** A crate of eggs is thirty, everywhere in Nigeria. */
 export const EGGS_PER_CRATE = 30;
 
 export const UNITS: ReadonlyArray<{ re: RegExp; spec: UnitSpec }> = [
-  // Eggs. Crates and trays are the same thing in practice.
   {
-    re: /\b(crates?|trays?)\b/,
+    // MISHEARD forms included, same as the eggs keyword.
+    re: /\b(crates?|trays?|grit|grits|greats?|grades?|kreyts?)\b/,
     spec: { apiUnit: 'eggs', perUnit: EGGS_PER_CRATE, label: 'crate' },
   },
   {
     re: /\b(eggs?|pieces?|pcs?)\b/,
     spec: { apiUnit: 'eggs', perUnit: 1, label: 'egg' },
   },
-
-  // Feed. 'bags' is a unit the feed endpoint already accepts, so we do
-  // NOT convert to kilograms — converting would mean guessing the bag
-  // weight, and Nigerian feed bags are not all 25kg.
   {
+    // Feed bags are NOT converted to kilograms — see BAG_WEIGHT_NOTE.
     re: /\b(bags?|sacks?)\b/,
     spec: { apiUnit: 'bags', perUnit: null, label: 'bag' },
   },
@@ -163,27 +240,39 @@ export const UNITS: ReadonlyArray<{ re: RegExp; spec: UnitSpec }> = [
     re: /\b(g|grams?|grammes?)\b/,
     spec: { apiUnit: 'g', perUnit: null, label: 'g' },
   },
-
-  // Water.
   {
-    re: /\b(litres?|liters?|l)\b/,
+    re: /\b(litres?|liters?|leaders?|l)\b/,
     spec: { apiUnit: 'liters', perUnit: null, label: 'litre' },
   },
+  { re: /\b(ml|millilitres?|milliliters?)\b/, spec: { apiUnit: 'ml', perUnit: null, label: 'ml' } },
 ];
+
+/**
+ * Why a bag of feed is never turned into kilograms.
+ *
+ * Nigerian feed bags are commonly 25kg, but they are not reliably so —
+ * brands sell 10, 15, 20, 25 and 50kg sacks, and a farmer who mixes
+ * their own fills whatever they have. Converting "2 bags" to "50kg"
+ * would invent a figure the farmer never said and then feed it into
+ * the feed-conversion ratio, which is exactly the kind of quiet wrong
+ * number this parser is built to avoid.
+ *
+ * So bags stay bags — the feed endpoint accepts unit:'bags' natively.
+ * A farmer who wants kilograms says kilograms ("50kg of feed"), and one
+ * who wants both says "2 bags of 25kg", which is read as 50kg because
+ * at that point they have told us the bag weight themselves.
+ */
+export const BAG_WEIGHT_NOTE = 'Bags are saved as bags — say "50kg" or "2 bags of 25kg" for weight.';
 
 /**
  * Number words, because dictation writes "fifteen" as often as "15".
  *
- * Stops at twenty plus the tens. Beyond that, speech-to-text reliably
- * produces digits, and a farmer saying "three hundred and forty-two"
- * is better served by the wizard than by a parser pretending to be sure.
- *
- * A Map, NOT a plain object, and this is a security choice rather than a
- * style one. The lookup key comes from the farmer's dictated text, and
- * on a plain object `NUMBER_WORDS["constructor"]` returns the Object
+ * A Map, NOT a plain object, and this is a security choice rather than
+ * a style one. The lookup key comes from the farmer's dictated text,
+ * and on a plain object NUMBER_WORDS["constructor"] returns the Object
  * constructor instead of undefined — a truthy non-number flowing into
- * arithmetic from untrusted input. A Map has no prototype chain to walk,
- * so an unknown word can only ever miss.
+ * arithmetic from untrusted input. A Map has no prototype chain to
+ * walk, so an unknown word can only ever miss.
  */
 export const NUMBER_WORDS: ReadonlyMap<string, number> = new Map([
   ['zero', 0], ['one', 1], ['two', 2], ['three', 3], ['four', 4], ['five', 5],
@@ -193,47 +282,46 @@ export const NUMBER_WORDS: ReadonlyMap<string, number> = new Map([
   ['nineteen', 19], ['twenty', 20], ['thirty', 30], ['forty', 40],
   ['fifty', 50], ['sixty', 60], ['seventy', 70], ['eighty', 80],
   ['ninety', 90], ['hundred', 100],
-  // Spoken quantifiers that carry a number.
+  // MISHEARD: "to" for two and "for" for four are the commonest number
+  // confusions in dictated speech. They are NOT listed — both are real
+  // words that appear constantly ("gave it to them", "for 15000"), and
+  // reading "sold for 15000" as "sold four" would be a wrong number in
+  // the ledger. Rule 3 at the top of this file.
   ['a', 1], ['an', 1], ['none', 0],
 ]);
 
 /**
- * Time-of-day words. The daily-record steps all accept a `moment`, and
- * getting it from the sentence saves the farmer a tap.
+ * Time-of-day words.
  *
- * Afternoon counts as evening because the wizard offers only two halves
- * of the day plus "entire day"; an afternoon collection belongs to the
+ * Afternoon counts as evening because the wizard offers two halves of
+ * the day plus "entire day"; an afternoon collection belongs to the
  * later one.
  */
 export const MOMENT_WORDS: ReadonlyArray<{
   re: RegExp;
   moment: 'morning' | 'evening' | 'entire_day';
 }> = [
-  { re: /\b(morning|am|early|dawn)\b/, moment: 'morning' },
+  { re: /\b(all\s+day|whole\s+day|entire\s+day|today\s+total|for\s+the\s+day)\b/, moment: 'entire_day' },
+  { re: /\b(morning|mornin|am|early|dawn)\b/, moment: 'morning' },
   { re: /\b(evening|afternoon|night|pm|late)\b/, moment: 'evening' },
-  { re: /\b(all\s+day|whole\s+day|entire\s+day|today\s+total)\b/, moment: 'entire_day' },
 ];
 
 /**
  * Clause separators.
  *
- * Farmers chain observations in one breath — "15 died and I gave them 2
- * bags and collected 3 crates". Splitting on these and classifying each
- * piece independently is both more accurate and far easier to reason
- * about than one regex trying to see the whole sentence at once.
+ * Farmers chain observations in one breath, and splitting on these then
+ * classifying each piece independently is both more accurate and far
+ * easier to reason about than one regex reading the whole sentence.
  *
- * "for" is NOT a separator: "sold 20 birds for 15000" is a single fact,
- * and the money belongs to the sale.
+ * "for" is NOT a separator: "sold 20 birds for 15000" is a single fact.
  *
- * A FULL STOP ONLY SEPARATES WHEN IT IS NOT A DECIMAL POINT. Without the
- * `(?!\d)`, "2.5 birds died" splits into "2" and "5 birds died" and the
- * parser proposes five deaths from a sentence that said two and a half —
- * the decimal guard in parse.ts never gets to run, because by then there
- * is no decimal left to see. Caught by a test; keep the test.
+ * A FULL STOP ONLY SEPARATES WHEN IT IS NOT A DECIMAL POINT. Without
+ * the `(?!\d)`, "2.5 birds died" splits into "2" and "5 birds died" and
+ * the parser proposes five deaths from a sentence that said two and a
+ * half. Caught by a test; keep the test.
  *
  * Lookahead only, never lookbehind: Safari did not support lookbehind
  * until 16.4, and an unsupported group in a regex LITERAL is a parse
- * error that takes down the whole module on load. On the phones this app
- * is actually used on, that is a blank screen rather than a bad parse.
+ * error that blanks the whole page on load.
  */
 export const CLAUSE_SPLIT = /\s*(?:,|;|\band\b|\bthen\b|\balso\b|\bplus\b|\.(?!\d))\s*/i;

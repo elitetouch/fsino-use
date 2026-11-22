@@ -199,6 +199,158 @@ describe('hostile and malformed input', () => {
   });
 });
 
+/**
+ * Every case below came from a farmer speaking into the app and getting
+ * the wrong thing back. They are regressions, not hypotheticals.
+ */
+describe('what the recogniser actually hears', () => {
+  it('reads "grit" as crate, because that is what comes back', () => {
+    // Reported: saying "crate" returns "grit" every time.
+    for (const said of ['3 grits', 'collected 3 grit', '3 greats', '3 grades']) {
+      const r = parseQuickRecord(said);
+      expect(r.fields[0], said).toMatchObject({ kind: 'eggs', value: 90 });
+    }
+  });
+
+  it('reads every misheard form of Lasota', () => {
+    // Reported: "lasota vaccine" came back as "la so".
+    for (const said of ['la so vaccine', 'gave la sota', 'lasota', 'lassota today', 'la soda vaccine']) {
+      const r = parseQuickRecord(said);
+      expect(r.fields[0], said).toMatchObject({
+        kind: 'vaccination',
+        detail: { vaccineName: 'Lasota' },
+      });
+    }
+  });
+
+  it('spells the vaccine correctly whatever it heard', () => {
+    // What reaches the health log must be the real name, not the
+    // mishearing — this record is read back months later.
+    const r = parseQuickRecord('gave them la so');
+    expect(r.fields[0]?.detail?.vaccineName).toBe('Lasota');
+  });
+
+  it('reads the other vaccines farmers name', () => {
+    const cases: ReadonlyArray<[string, string]> = [
+      ['gumboro vaccine', 'Gumboro (IBD)'],
+      ['gum borrow', 'Gumboro (IBD)'],
+      ['new castle vaccine', 'Newcastle'],
+      ['fowl pox', 'Fowl pox'],
+    ];
+    for (const [said, expected] of cases) {
+      expect(parseQuickRecord(said).fields[0]?.detail?.vaccineName, said).toBe(expected);
+    }
+  });
+
+  it('reads misheard litres and mash', () => {
+    expect(parseQuickRecord('25 leaders of water').fields[0]).toMatchObject({
+      kind: 'water',
+      value: 25,
+    });
+    expect(parseQuickRecord('2 bags of layer marsh').fields[0]).toMatchObject({ kind: 'feed' });
+  });
+
+  it('does NOT map "called" to culled', () => {
+    // The tempting mishearing, and the one that must not be added:
+    // "I called the vet" would silently cull birds.
+    const r = parseQuickRecord('I called the vet about 3 birds');
+    expect(r.fields.some((f) => f.kind === 'culled')).toBe(false);
+  });
+
+  it('does NOT read "for" as four', () => {
+    // "sold 20 birds for 15000" must stay one sale, not a count of 4.
+    const r = parseQuickRecord('sold 20 birds for 15000');
+    expect(r.fields).toHaveLength(1);
+    expect(r.fields[0]).toMatchObject({ kind: 'sold', value: 20, amount: 15000 });
+  });
+});
+
+describe('the things the wizard captures and this was missing', () => {
+  it('keeps the feed ration', () => {
+    const r = parseQuickRecord('two bags of starter feed');
+    expect(r.fields[0]).toMatchObject({
+      kind: 'feed',
+      value: 2,
+      unit: 'bags',
+      detail: { feedType: 'starter' },
+    });
+  });
+
+  it('tells layer mash the ration from layers the birds', () => {
+    expect(parseQuickRecord('3 bags of layer mash').fields[0]?.detail?.feedType).toBe('layer');
+    expect(parseQuickRecord('20 layers died').fields[0]?.kind).toBe('dead');
+  });
+
+  it('records a vaccination with no dose, because farmers rarely say one', () => {
+    const r = parseQuickRecord('gave them lasota');
+    expect(r.fields[0]).toMatchObject({ kind: 'vaccination', confidence: 'high' });
+    const [p] = buildQuickRecordPayloads(r.fields, OPTS);
+    expect(p).toMatchObject({ event_type: 'vaccination', payload: { vaccine_name: 'Lasota' } });
+    // No dose stated means no quantity claimed.
+    expect(p).not.toHaveProperty('quantity');
+  });
+
+  it('keeps a dose when one is given', () => {
+    const r = parseQuickRecord('lasota 5 ml');
+    const [p] = buildQuickRecordPayloads(r.fields, OPTS);
+    expect(p).toMatchObject({ quantity: 5, unit: 'ml' });
+  });
+
+  it('records a treatment', () => {
+    const r = parseQuickRecord('treated 20 birds with antibiotics');
+    const [p] = buildQuickRecordPayloads(r.fields, OPTS);
+    expect(p).toMatchObject({
+      event_type: 'treatment',
+      payload: { treatment_type: 'antibiotic', birds_affected: 20, all_birds: false },
+    });
+  });
+
+  it('treats the whole flock when no count is given', () => {
+    const r = parseQuickRecord('gave them vitamins');
+    const [p] = buildQuickRecordPayloads(r.fields, OPTS);
+    expect(p).toMatchObject({ payload: { treatment_type: 'vitamin', all_birds: true } });
+  });
+
+  it('keeps the egg size', () => {
+    const r = parseQuickRecord('collected 30 medium eggs');
+    const [p] = buildQuickRecordPayloads(r.fields, OPTS);
+    expect(p?.payload).toMatchObject({ good: 30, sizes: { medium: 30 } });
+  });
+
+  it('attaches egg weight to the egg count', () => {
+    const r = parseQuickRecord('collected 2 crates and egg weight 60 grams');
+    const payloads = buildQuickRecordPayloads(r.fields, OPTS);
+    const eggs = payloads.find((p) => p.event_type === 'eggs');
+    expect(eggs?.payload).toMatchObject({ good: 60, weight_avg_grams: 60 });
+  });
+
+  it('drops an egg weight with no count rather than inventing one', () => {
+    // The backend requires `good` on every eggs row. Posting a weight
+    // with zero eggs would be a fabricated count.
+    const r = parseQuickRecord('egg weight 60 grams');
+    expect(buildQuickRecordPayloads(r.fields, OPTS)).toHaveLength(0);
+  });
+
+  it('converts bags to kg ONLY when the farmer states the bag weight', () => {
+    // We never guess a bag weight — Nigerian feed bags are not all 25kg.
+    expect(parseQuickRecord('2 bags of feed').fields[0]).toMatchObject({
+      unit: 'bags',
+      value: 2,
+    });
+    expect(parseQuickRecord('2 bags of 25kg feed').fields[0]).toMatchObject({
+      unit: 'kg',
+      value: 50,
+    });
+  });
+
+  it('carries the time of day through to the payload', () => {
+    const r = parseQuickRecord('25 litres of water in the morning');
+    expect(r.moment).toBe('morning');
+    const [p] = buildQuickRecordPayloads(r.fields, { ...OPTS, moment: r.moment });
+    expect(p?.payload).toMatchObject({ moment: 'morning' });
+  });
+});
+
 describe('payload building', () => {
   it('collapses bird movements into one bird_count event', () => {
     // Four separate events would each debit flock.current_birds.
