@@ -164,6 +164,50 @@ export const FEED_TYPES: ReadonlyArray<{ re: RegExp; value: string }> = [
 ];
 
 /**
+ * Feed brands, mapped to the values the feed step already stores.
+ *
+ * Brands are a known, finite list in Nigeria, which is what makes this
+ * possible at all — the same trick as VACCINES. `value` must stay in
+ * step with FEED_BRANDS in components/record/steps/feed-step.tsx; the
+ * payload builder allowlists against the same set so a drift here
+ * cannot reach the API.
+ *
+ * WHY "CHICKEN" IS TREATED CAREFULLY. Chikun Feeds is a major brand and
+ * the recogniser renders it "chicken" every time — but "chicken feed"
+ * is also just what feed is called. The brand only matches with a
+ * container present and is marked low-confidence so the farmer
+ * confirms, because attributing the wrong brand quietly corrupts
+ * cost-per-bag and feed-conversion comparisons.
+ */
+export const FEED_BRANDS: ReadonlyArray<{
+  re: RegExp;
+  value: string;
+  label: string;
+  /** True when the match is plausible enough to need confirming. */
+  uncertain?: boolean;
+}> = [
+  // MISHEARD: "amo bing", "amour bing", "ammo byng".
+  { re: /\b(amo|ammo|amour)\s*(byng|bing|being)\b/, value: 'amo_byng_feed', label: 'Amo Byng Feed' },
+  { re: /\banimal\s*care\b/, value: 'animal_care', label: 'Animal Care' },
+  // MISHEARD: "brockwell", "brooks well".
+  { re: /\b(broxwell|brockwell|brooks\s*well|box\s*well)\b/, value: 'broxwell_feeds', label: 'Broxwell Feeds' },
+  { re: /\b(chikun|chickun|chikin)\b/, value: 'chikun_feeds', label: 'Chikun Feeds' },
+  { re: /\bhybrid\b/, value: 'hybrid_feeds', label: 'Hybrid Feeds' },
+  { re: /\blivestock\s*feeds?\b/, value: 'livestock_feeds_plc', label: 'Livestock Feeds Plc' },
+  { re: /\bstellar\b/, value: 'stellar_feeds', label: 'Stellar Feeds' },
+  { re: /\btop\s*feeds?\b/, value: 'top_feeds', label: 'Top Feeds' },
+  { re: /\bvital\b/, value: 'vital_feed', label: 'Vital Feed' },
+  // MISHEARD: "ultimate" for Ultima.
+  { re: /\b(ultima|ultimate)\b/, value: 'ultima', label: 'Ultima' },
+  // "I mixed it myself" — a real and common answer.
+  { re: /\b(own\s*feed|my\s*own|mixed?\s*(?:it\s*)?my\s*self|home\s*made|self\s*mix)\b/, value: 'own_feed', label: 'Own feed' },
+  // Must sit LAST: "chicken" is the commonest rendering of Chikun and
+  // also the ordinary word for feed, so it only wins when no better
+  // brand matched, and it always asks the farmer to confirm.
+  { re: /\bchicken\s*feeds?\b/, value: 'chikun_feeds', label: 'Chikun Feeds', uncertain: true },
+];
+
+/**
  * Vaccines, with the forms the recogniser produces.
  *
  * LASOTA IS THE REASON THIS LIST EXISTS. Said aloud by a Nigerian

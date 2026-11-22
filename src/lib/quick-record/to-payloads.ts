@@ -77,6 +77,12 @@ const ALLOWED_UNITS: Readonly<Record<'feed' | 'water' | 'weight', readonly strin
  * the wizard too, and the backend validates it.
  */
 const FEED_TYPE_VALUES: readonly string[] = ['starter', 'grower', 'finisher', 'layer'];
+/** Mirrors FEED_BRANDS in feed-step.tsx — the wizard's own stored values. */
+const FEED_BRAND_VALUES: readonly string[] = [
+  'own_feed', 'amo_byng_feed', 'animal_care', 'broxwell_feeds', 'chikun_feeds',
+  'hybrid_feeds', 'livestock_feeds_plc', 'stellar_feeds', 'top_feeds',
+  'vital_feed', 'ultima', 'other',
+];
 const EGG_SIZES: readonly string[] = ['small', 'medium', 'jumbo'];
 
 function safeUnit(
@@ -146,6 +152,12 @@ export function buildQuickRecordPayloads(
             // than leaving it for the wizard.
             ...(f.detail?.feedType && FEED_TYPE_VALUES.includes(f.detail.feedType)
               ? { item_type: f.detail.feedType }
+              : {}),
+            // Brand reaches the API only from the known list — either
+            // heard in the sentence or carried over from the farmer's
+            // last record, and in both cases shown on the chip first.
+            ...(f.detail?.feedBrand && FEED_BRAND_VALUES.includes(f.detail.feedBrand)
+              ? { item_brand: f.detail.feedBrand }
               : {}),
           },
         });

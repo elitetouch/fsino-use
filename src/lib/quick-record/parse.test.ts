@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { parseQuickRecord, MAX_INPUT } from './parse';
 import { buildQuickRecordPayloads, MAX_NOTE } from './to-payloads';
+import { applyCarryForward, lastFeedFromGuidance } from './carry-forward';
 
 /**
  * The tests that matter most here are the ones under "refuses" and
@@ -377,6 +378,91 @@ describe('the things the wizard captures and this was missing', () => {
     expect(r.moment).toBe('morning');
     const [p] = buildQuickRecordPayloads(r.fields, { ...OPTS, moment: r.moment });
     expect(p?.payload).toMatchObject({ moment: 'morning' });
+  });
+});
+
+describe('feed brand, heard and carried forward', () => {
+  it('reads brands from the known list', () => {
+    const cases: ReadonlyArray<[string, string]> = [
+      ['2 bags of top feeds', 'top_feeds'],
+      ['3 bags vital feed', 'vital_feed'],
+      ['2 bags of animal care starter', 'animal_care'],
+      ['4 bags ultimate', 'ultima'],
+      ['2 bags amo bing', 'amo_byng_feed'],
+      ['5 bags I mixed it myself', 'own_feed'],
+    ];
+    for (const [said, expected] of cases) {
+      expect(parseQuickRecord(said).fields[0]?.detail?.feedBrand, said).toBe(expected);
+    }
+  });
+
+  it('asks about "chicken feed", because it is also just what feed is called', () => {
+    // Chikun is a real brand the recogniser renders as "chicken", but
+    // "chicken feed" is the generic term too. Proposed, never assumed.
+    const r = parseQuickRecord('2 bags of chicken feed');
+    expect(r.fields[0]).toMatchObject({
+      confidence: 'low',
+      detail: { feedBrand: 'chikun_feeds' },
+    });
+    expect(r.fields[0]?.caution).toContain('confirm');
+  });
+
+  it('carries the brand forward when the sentence did not say one', () => {
+    const r = parseQuickRecord('3 bags of feed');
+    const withLast = applyCarryForward(r.fields, {
+      itemType: 'starter',
+      itemBrand: 'top_feeds',
+    });
+    expect(withLast[0]?.detail).toMatchObject({
+      feedType: 'starter',
+      feedBrand: 'top_feeds',
+      inherited: ['feedType', 'feedBrand'],
+    });
+  });
+
+  it('never overwrites what the farmer actually said', () => {
+    // The whole risk of carry-forward: a farmer who switched brand and
+    // said so must not have last week's brand put back.
+    const r = parseQuickRecord('3 bags of grower vital feed');
+    const withLast = applyCarryForward(r.fields, {
+      itemType: 'starter',
+      itemBrand: 'top_feeds',
+    });
+    expect(withLast[0]?.detail).toMatchObject({
+      feedType: 'grower',
+      feedBrand: 'vital_feed',
+    });
+    expect(withLast[0]?.detail?.inherited ?? []).toHaveLength(0);
+  });
+
+  it('marks what was inherited so the UI can show it', () => {
+    // An inherited brand the farmer cannot see is how weeks of records
+    // end up against a brand they stopped buying.
+    const r = parseQuickRecord('3 bags of feed');
+    const withLast = applyCarryForward(r.fields, { itemBrand: 'top_feeds' });
+    expect(withLast[0]?.detail?.inherited).toContain('feedBrand');
+  });
+
+  it('carries nothing forward when there is no previous entry', () => {
+    const r = parseQuickRecord('3 bags of feed');
+    expect(applyCarryForward(r.fields, null)[0]?.detail?.feedBrand).toBeUndefined();
+    expect(lastFeedFromGuidance(null)).toBeNull();
+    expect(lastFeedFromGuidance({})).toBeNull();
+  });
+
+  it('only lets a known brand reach the API', () => {
+    const forged = [
+      { kind: 'feed', value: 1, unit: 'bags', confidence: 'high', sourceText: '',
+        detail: { feedBrand: 'DROP TABLE flocks' } },
+    ] as const;
+    const [p] = buildQuickRecordPayloads(forged, OPTS);
+    expect(p?.payload).not.toHaveProperty('item_brand');
+  });
+
+  it('carries forward only onto feed, never onto a bird count', () => {
+    const r = parseQuickRecord('10 birds died');
+    const withLast = applyCarryForward(r.fields, { itemBrand: 'top_feeds' });
+    expect(withLast[0]?.detail?.feedBrand).toBeUndefined();
   });
 });
 

@@ -14,6 +14,7 @@ import { fmtDate } from '@/lib/format';
 import { useDailyRecordsForDate, pickRecord, pickAllRecords } from '@/lib/use-daily-record';
 import { DatePickerStep } from '@/components/record/date-picker-step';
 import { QuickRecord } from '@/components/record/quick-record';
+import { lastFeedFromGuidance } from '@/lib/quick-record/carry-forward';
 import { FeedStep } from '@/components/record/steps/feed-step';
 import { WaterStep } from '@/components/record/steps/water-step';
 import { VaccinationStep } from '@/components/record/steps/vaccination-step';
@@ -236,6 +237,10 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
             // the "more birds than you have" warning would just stop
             // firing, with nothing to notice it had.
             currentBirds={guidance.data.flock.current_birds}
+            // Same source the wizard's feed step pre-fills from, so a
+            // quick record and a tapped-out one carry the ration and
+            // brand forward identically.
+            lastFeed={lastFeedFromGuidance(guidance.data.sections.feed.last_entry)}
             onSaved={() => router.replace(`/cycles/${flockId}?recorded=1`)}
             onUseWizard={goNext}
           />

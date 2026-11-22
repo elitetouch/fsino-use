@@ -33,6 +33,7 @@ import {
   BIRD_WORDS,
   CLAUSE_SPLIT,
   EGG_SIZES,
+  FEED_BRANDS,
   FEED_TYPES,
   KEYWORDS,
   MOMENT_WORDS,
@@ -96,6 +97,17 @@ export interface ParsedField {
   readonly detail?: {
     /** feed — starter / grower / finisher / layer. */
     readonly feedType?: string;
+    /** feed — the stored brand value, e.g. 'top_feeds'. */
+    readonly feedBrand?: string;
+    /** feed — the brand's display name, for the chip. */
+    readonly feedBrandLabel?: string;
+    /**
+     * Keys in this detail that were carried over from the farmer's last
+     * record rather than heard in this sentence. The UI must mark these
+     * — an inherited brand the farmer cannot see is how weeks of
+     * records get attributed to a brand they stopped buying.
+     */
+    readonly inherited?: readonly string[];
     /** vaccination — correctly spelled, whatever was heard. */
     readonly vaccineName?: string;
     /** treatment — antibiotic / dewormer / vitamin / coccidiostat. */
@@ -202,6 +214,16 @@ function readFrom(
     if (re.test(clause)) return value;
   }
   return undefined;
+}
+
+/** First brand whose pattern matches, preserving table order. */
+function readBrand(
+  clause: string,
+): { value: string; label: string; uncertain: boolean } | null {
+  for (const { re, value, label, uncertain } of FEED_BRANDS) {
+    if (re.test(clause)) return { value, label, uncertain: uncertain === true };
+  }
+  return null;
 }
 
 /**
@@ -376,8 +398,16 @@ function buildField(
 
   // Kind-specific extras, so "two bags of starter feed" keeps the
   // ration and "30 medium eggs" keeps the size.
+  const brand = kind === 'feed' ? readBrand(clause) : null;
+  if (brand?.uncertain) {
+    confidence = 'low';
+    caution = caution ?? `Heard brand "${brand.label}" — confirm it before saving`;
+  }
+
   const detail = {
     feedType: kind === 'feed' ? readFrom(clause, FEED_TYPES) : undefined,
+    feedBrand: brand?.value,
+    feedBrandLabel: brand?.label,
     eggSize: kind === 'eggs' ? readFrom(clause, EGG_SIZES) : undefined,
     treatmentType: kind === 'treatment' ? readFrom(clause, TREATMENT_TYPES) : undefined,
   };

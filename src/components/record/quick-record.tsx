@@ -3,6 +3,7 @@
 import { useCallback, useId, useMemo, useState } from 'react';
 import { AlertTriangle, Check, Loader2, Mic, Square, X } from 'lucide-react';
 import { useDictation } from '@/lib/quick-record/use-dictation';
+import { applyCarryForward, type LastFeedEntry } from '@/lib/quick-record/carry-forward';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCreateDailyRecord } from '@/lib/use-daily-record';
@@ -42,6 +43,12 @@ interface QuickRecordProps {
   readonly recordDate: string;
   /** Drives the "more than the birds you have" check. */
   readonly currentBirds?: number;
+  /**
+   * The farmer's previous feed entry, from guidance. Used to fill in a
+   * ration or brand they didn't repeat — always shown as carried over,
+   * never applied silently.
+   */
+  readonly lastFeed?: LastFeedEntry | null;
   /** Fired after every payload saved, so the parent can refresh or exit. */
   readonly onSaved?: () => void;
   /** Escape hatch to the full wizard. */
@@ -70,16 +77,40 @@ const MOMENTS: ReadonlyArray<{ value: Moment; label: string }> = [
   { value: 'entire_day', label: 'All day' },
 ];
 
+const BRAND_LABELS: Readonly<Record<string, string>> = {
+  own_feed: 'Own feed',
+  amo_byng_feed: 'Amo Byng Feed',
+  animal_care: 'Animal Care',
+  broxwell_feeds: 'Broxwell Feeds',
+  chikun_feeds: 'Chikun Feeds',
+  hybrid_feeds: 'Hybrid Feeds',
+  livestock_feeds_plc: 'Livestock Feeds Plc',
+  stellar_feeds: 'Stellar Feeds',
+  top_feeds: 'Top Feeds',
+  vital_feed: 'Vital Feed',
+  ultima: 'Ultima',
+  other: 'Other',
+};
+
 /** The part of a chip that names what was understood beyond the number. */
 function detailText(field: ParsedField): string | null {
   const d = field.detail;
   if (!d) return null;
-  return d.vaccineName ?? d.feedType ?? d.treatmentType ?? d.eggSize ?? null;
+  if (d.vaccineName) return d.vaccineName;
+  if (d.treatmentType) return d.treatmentType;
+  if (d.eggSize) return d.eggSize;
+  // Feed reads "starter · Top Feeds", either part optional.
+  const brand = d.feedBrand
+    ? (d.feedBrandLabel ?? BRAND_LABELS[d.feedBrand] ?? d.feedBrand)
+    : null;
+  const parts = [d.feedType, brand].filter((p): p is string => typeof p === 'string');
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
 export function QuickRecord({
   flockId,
   recordDate,
+  lastFeed,
   currentBirds,
   onSaved,
   onUseWizard,
@@ -146,10 +177,10 @@ export function QuickRecord({
   // Parsing is a pure function over a 500-character cap, so running it
   // on every keystroke costs nothing and avoids the stale-chip window a
   // debounce would open between what is typed and what would be saved.
-  const parsed = useMemo(
-    () => parseQuickRecord(text, { currentBirds }),
-    [text, currentBirds],
-  );
+  const parsed = useMemo(() => {
+    const result = parseQuickRecord(text, { currentBirds });
+    return { ...result, fields: applyCarryForward(result.fields, lastFeed ?? null) };
+  }, [text, currentBirds, lastFeed]);
 
   const moment = momentOverride ?? parsed.moment;
   const kept = parsed.fields.filter((_, i) => !removed.has(i));
@@ -404,6 +435,11 @@ export function QuickRecord({
 function Chip({ field, onRemove }: { field: ParsedField; onRemove: () => void }) {
   const low = field.confidence === 'low';
   const detail = detailText(field);
+  const inherited = field.detail?.inherited ?? [];
+  // Only the brand line is worth naming when just the type carried
+  // over — a ration follows bird age and is far less likely to be
+  // wrong than a brand the farmer may have switched.
+  const inheritedCount = inherited.includes('feedBrand') ? inherited.length : 0;
 
   return (
     <span
@@ -440,6 +476,14 @@ function Chip({ field, onRemove }: { field: ParsedField; onRemove: () => void })
       {field.conversionNote && (
         <span className="text-[11px] text-[var(--color-brand-muted)]">
           {field.conversionNote}
+        </span>
+      )}
+      {/* Anything filled in from the last record says so. A brand the
+          farmer cannot see is how weeks of entries end up against a
+          brand they stopped buying. */}
+      {inheritedCount > 0 && (
+        <span className="text-[11px] italic text-[var(--color-brand-muted)]">
+          {inheritedCount === 2 ? 'Type and brand' : 'Brand'} kept from your last record
         </span>
       )}
       {field.caution && (
