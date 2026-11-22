@@ -133,6 +133,20 @@ export function QuickRecord({
 
   const createRecord = useCreateDailyRecord(flockId);
 
+  // This farmer's learned words, loaded once. Failure is silent and
+  // harmless — an empty map just means the shipped vocabulary alone.
+  const [aliases, setAliases] = useState<ReadonlyMap<string, FieldKind>>(new Map());
+  useEffect(() => {
+    let cancelled = false;
+    void activeAliases().then((rows) => {
+      if (cancelled) return;
+      setAliases(new Map(rows.map((a) => [a.token, a.kind])));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   /**
    * Pick the alternative that is actually a farm record, then append it.
    *
@@ -151,17 +165,30 @@ export function QuickRecord({
    */
   const appendDictated = useCallback(
     (alternatives: string[]) => {
+      // Score with the SAME context the real parse uses. Scoring with
+      // different rules was a bug: in a broiler cycle an alternative
+      // containing "eggs" scored well here and was then rejected by
+      // the actual parse, so the reading that mentioned eggs could
+      // beat the one that mentioned the vaccine, and the vaccine was
+      // lost.
+      const ctx = { currentBirds, aliases, productionType };
+
+      // ONLY high-confidence fields count, and alternative 0 has to be
+      // beaten outright to be displaced.
+      //
+      // Counting every field let a garbled alternative that produced
+      // three uncertain readings beat the recogniser's own best guess
+      // carrying one clean one — which is how "100ml of Lasota
+      // vaccine" stopped being recognised after alternatives were
+      // added. The recogniser's ranking is good; this only overrides
+      // it when another reading is unambiguously a better record.
+      const scoreOf = (candidate: string) =>
+        parseQuickRecord(candidate, ctx).fields.filter((f) => f.confidence === 'high').length;
+
       let best = alternatives[0] ?? '';
-      let bestScore = -1;
-      for (const candidate of alternatives) {
-        const result = parseQuickRecord(candidate, { currentBirds });
-        // A confident field is worth more than a hesitant one, so a
-        // reading that produces a clean record beats one that produces
-        // the same count with a warning attached.
-        const score = result.fields.reduce(
-          (sum, f) => sum + (f.confidence === 'high' ? 2 : 1),
-          0,
-        );
+      let bestScore = scoreOf(best);
+      for (const candidate of alternatives.slice(1)) {
+        const score = scoreOf(candidate);
         if (score > bestScore) {
           bestScore = score;
           best = candidate;
@@ -175,7 +202,7 @@ export function QuickRecord({
       setRemoved(new Set());
     setEdited(new Map());
     },
-    [currentBirds],
+    [currentBirds, aliases, productionType],
   );
 
   const dictation = useDictation(appendDictated);
@@ -184,19 +211,6 @@ export function QuickRecord({
   // Parsing is a pure function over a 500-character cap, so running it
   // on every keystroke costs nothing and avoids the stale-chip window a
   // debounce would open between what is typed and what would be saved.
-  // This farmer's learned words, loaded once. Failure is silent and
-  // harmless — an empty map just means the shipped vocabulary alone.
-  const [aliases, setAliases] = useState<ReadonlyMap<string, FieldKind>>(new Map());
-  useEffect(() => {
-    let cancelled = false;
-    void activeAliases().then((rows) => {
-      if (cancelled) return;
-      setAliases(new Map(rows.map((a) => [a.token, a.kind])));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const parsed = useMemo(() => {
     const result = parseQuickRecord(text, { currentBirds, aliases, productionType });

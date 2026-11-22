@@ -31,6 +31,7 @@ import { ShieldOff, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { endpoints, type FarmDto } from './api';
 import { useCurrentFarmId } from './farm-context';
+import { listFarmsOffline } from './offline/farms';
 import { normalisePermissions, type FarmRole } from './permissions';
 
 /* ------------------------------------------------------------------ */
@@ -154,6 +155,12 @@ export function ruleForPath(pathname: string | null | undefined): AccessRule | n
 export interface MembershipState {
   /** True while the farms query is in flight — UI should defer decisions. */
   loading: boolean;
+  /**
+   * True when membership could not be determined at all — typically
+   * offline with nothing cached. NOT the same as `outsider`, which
+   * means we asked and the answer was no.
+   */
+  unknown: boolean;
   /** True if the user has NO membership at all on the active farm. */
   outsider: boolean;
   /** Active farm (current farm id matched against farms list). */
@@ -196,8 +203,25 @@ export function usePermissions(): MembershipState {
   const farmId = useCurrentFarmId();
   const farms = useQuery({
     queryKey: ['farms'],
-    queryFn: () => endpoints.listFarms(),
+    /**
+     * Offline-aware, and this is load-bearing rather than an
+     * optimisation.
+     *
+     * This call decides whether the farmer may see ANY permission-
+     * gated page. When it was a plain network request, going offline
+     * made it fail, which left `farm` undefined, which made
+     * `satisfies()` return false, which showed "You don't have access
+     * to this page" on every screen. An app that queues records
+     * offline was locking people out of the screens that write them.
+     *
+     * Served from the offline cache instead, so the last known
+     * membership keeps answering while there is no signal.
+     */
+    queryFn: () => listFarmsOffline(),
     staleTime: 60_000,
+    // Retrying a request that cannot succeed just delays the fall
+    // back to cache.
+    retry: false,
   });
 
   return useMemo<MembershipState>(() => {
@@ -232,6 +256,16 @@ export function usePermissions(): MembershipState {
 
     return {
       loading: farms.isLoading || farms.isFetching && !farms.data,
+      /**
+       * We could not find out, as opposed to we found out and the
+       * answer is no.
+       *
+       * Collapsing these two was the bug: offline with nothing cached,
+       * the lookup fails and the farmer is told they lack permission,
+       * which is both false and unfixable from their end. A guard must
+       * never report a missing answer as a refusal.
+       */
+      unknown: !farms.data && !farms.isLoading,
       outsider: !!farms.data && !farm,
       farm,
       role,
@@ -308,10 +342,40 @@ export function AccessGuard({ perm, anyOf, ownerOnly, rule, children }: AccessGu
   const inSetupFarm = pathname === '/setup/farm' || pathname?.startsWith('/setup/farm/');
 
   useEffect(() => {
-    if (!p.loading && p.outsider && !inSetupFarm) {
+    // `unknown` must not trigger this. Bouncing an offline farmer with
+    // a cold cache into farm setup would look like their farm had
+    // vanished.
+    if (!p.loading && !p.unknown && p.outsider && !inSetupFarm) {
       router.replace('/setup/farm');
     }
-  }, [p.loading, p.outsider, inSetupFarm, router]);
+  }, [p.loading, p.unknown, p.outsider, inSetupFarm, router]);
+
+  // Offline and nothing cached: say so, and offer a retry. Telling
+  // someone they lack permission when we simply could not ask is both
+  // false and impossible for them to act on.
+  if (p.unknown) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center p-6">
+        <div className="max-w-sm rounded-2xl bg-white p-6 text-center shadow-sm">
+          <p className="text-base font-bold text-[var(--color-brand-fg)]">
+            Can&rsquo;t load this page offline yet
+          </p>
+          <p className="mt-2 text-sm text-[var(--color-brand-muted)]">
+            Open this page once while you have signal and it will work offline
+            afterwards. Anything you have already recorded is safe and will
+            upload by itself.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.refresh()}
+            className="mt-4 rounded-full bg-[var(--color-brand-primary)] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (p.loading) {
     return (
