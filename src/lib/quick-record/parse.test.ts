@@ -619,6 +619,48 @@ describe('payload building', () => {
   });
 });
 
+describe('bird weight is always kilograms on the wire', () => {
+  /**
+   * The wizard's weight step reads `quantity` and writes `unit: 'kg'`
+   * without looking at what it loaded. So a row stored in grams opened
+   * for editing as the bare number under a kg label — "40.000 kg" for
+   * a 40 g chick — and one tap on Save changes multiplied the bird's
+   * weight by a thousand.
+   *
+   * The unit is normalised here, at the boundary, so there is only one
+   * unit in the column and the wizard's assumption is true.
+   */
+  it('converts a weight spoken in grams to kilograms', () => {
+    const r = parseQuickRecord('bird weight 40 grams');
+    const payloads = buildQuickRecordPayloads(r.fields, OPTS);
+    const weight = payloads.find((p) => p.event_type === 'weight');
+    expect(weight?.quantity).toBeCloseTo(0.04, 5);
+    expect(weight?.unit).toBe('kg');
+  });
+
+  it('leaves a weight spoken in kilograms alone', () => {
+    const r = parseQuickRecord('bird weight 1.8 kg');
+    const payloads = buildQuickRecordPayloads(r.fields, OPTS);
+    const weight = payloads.find((p) => p.event_type === 'weight');
+    expect(weight?.quantity).toBeCloseTo(1.8, 5);
+    expect(weight?.unit).toBe('kg');
+  });
+
+  it('never emits a weight in any unit but kg, whatever it was handed', () => {
+    // The forged-field path: a caller (or a future vocabulary edit)
+    // handing the builder an arbitrary unit must not reach the API
+    // with it.
+    for (const unit of ['g', 'kg', 'lbs', 'bags', '']) {
+      const forged = [
+        { kind: 'weight' as const, value: 2, unit, confidence: 'high' as const, raw: '', detail: {} },
+      ];
+      const weight = buildQuickRecordPayloads(forged, OPTS)
+        .find((p) => p.event_type === 'weight');
+      expect(weight?.unit).toBe('kg');
+    }
+  });
+});
+
 describe('module invariants', () => {
   it('is pure — same input, same output, no clock', () => {
     const a = parseQuickRecord('15 died and 2 bags of feed');

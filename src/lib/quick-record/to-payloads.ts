@@ -245,11 +245,23 @@ export function buildQuickRecordPayloads(
 
       case 'weight': {
         if (!usableQuantity(f.value) || f.value === 0) break;
+        // Bird weight is kilograms EVERYWHERE else in the app: the
+        // wizard writes kg, the dashboard reads latestAvgWeightKg, the
+        // FCR is computed from kg, and the guidance's usual range is in
+        // kg. A farmer who says "forty grams" means 0.04 kg, so the
+        // conversion happens here rather than letting a second unit
+        // into the column.
+        //
+        // Letting `g` through cost us a real row: a weight logged by
+        // voice as 40 g opened in the wizard as "40.000 kg", because
+        // that form reads the number and ignores the unit. One tap on
+        // Save changes and the bird weighed forty kilograms.
+        const unit = safeUnit('weight', f.unit, 'kg');
         payloads.push({
           event_type: 'weight',
           record_date: recordDate,
-          quantity: f.value,
-          unit: safeUnit('weight', f.unit, 'kg'),
+          quantity: unit === 'g' ? f.value / 1000 : f.value,
+          unit: 'kg',
           payload: { moment },
         });
         break;
