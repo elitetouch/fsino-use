@@ -52,6 +52,8 @@ interface QuickRecordProps {
    * never applied silently.
    */
   readonly lastFeed?: LastFeedEntry | null;
+  /** Gates egg entries — broilers do not lay. */
+  readonly productionType?: 'broiler' | 'layer' | 'mixed';
   /** Fired after every payload saved, so the parent can refresh or exit. */
   readonly onSaved?: () => void;
   /** Escape hatch to the full wizard. */
@@ -114,6 +116,7 @@ export function QuickRecord({
   flockId,
   recordDate,
   lastFeed,
+  productionType,
   currentBirds,
   onSaved,
   onUseWizard,
@@ -170,6 +173,7 @@ export function QuickRecord({
         return joined.slice(0, MAX_INPUT);
       });
       setRemoved(new Set());
+    setEdited(new Map());
     },
     [currentBirds],
   );
@@ -195,12 +199,46 @@ export function QuickRecord({
   }, []);
 
   const parsed = useMemo(() => {
-    const result = parseQuickRecord(text, { currentBirds, aliases });
+    const result = parseQuickRecord(text, { currentBirds, aliases, productionType });
     return { ...result, fields: applyCarryForward(result.fields, lastFeed ?? null) };
-  }, [text, currentBirds, lastFeed, aliases]);
+  }, [text, currentBirds, lastFeed, aliases, productionType]);
 
   const moment = momentOverride ?? parsed.moment;
-  const kept = parsed.fields.filter((_, i) => !removed.has(i));
+
+  /**
+   * Values the farmer corrected by hand.
+   *
+   * Needed because a badly misheard sentence gets the KIND right and
+   * the NUMBER wrong far more often than the reverse — one spoken
+   * "25 culled birds" came back as "1 coil bed 25 coiled bed 25...",
+   * where the first number is 1 and the real count is buried. Without
+   * this they would have to re-dictate the whole sentence to fix a
+   * digit, which on a destructive field like culling is the moment
+   * they give up and guess.
+   *
+   * Keyed by index into parsed.fields, cleared whenever the text
+   * changes, because the indices then mean something else.
+   */
+  const [edited, setEdited] = useState<ReadonlyMap<number, number>>(new Map());
+
+  /**
+   * Accept a hand-typed value, or ignore it.
+   *
+   * The same bounds the parser applies, applied again — a typed value
+   * reaches the payload builder by the identical path as a spoken one
+   * and must not be able to carry anything a spoken one could not.
+   */
+  const setValueAt = (index: number, raw: string) => {
+    const n = Number.parseFloat(raw);
+    if (!Number.isFinite(n) || n < 0 || n > 1_000_000) return;
+    setEdited((prev) => new Map(prev).set(index, n));
+  };
+
+  const withEdits = parsed.fields.map((f, i) => {
+    const override = edited.get(i);
+    return override === undefined ? f : { ...f, value: override };
+  });
+  const kept = withEdits.filter((_, i) => !removed.has(i));
   const hasLowConfidence = kept.some((f) => f.confidence === 'low');
   const note = keepNote ? parsed.leftover : '';
   const canSave = !saving && (kept.length > 0 || note.trim() !== '');
@@ -220,6 +258,7 @@ export function QuickRecord({
     dictation.stop();
     setText('');
     setRemoved(new Set());
+    setEdited(new Map());
   };
 
   const save = async () => {
@@ -278,6 +317,7 @@ export function QuickRecord({
           onChange={(e) => {
             setText(e.target.value.slice(0, MAX_INPUT));
             setRemoved(new Set());
+    setEdited(new Map());
           }}
           maxLength={MAX_INPUT}
           rows={3}
@@ -375,7 +415,10 @@ export function QuickRecord({
 
       {kept.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-2" aria-label="What we understood">
-          {parsed.fields.map((field, i) =>
+          {/* withEdits, NOT parsed.fields — rendering the unedited
+              list is how the number input silently ignored every
+              correction the farmer typed into it. */}
+          {withEdits.map((field, i) =>
             removed.has(i) ? null : (
               <li key={`${field.kind}-${i}`}>
                 <Chip
@@ -383,12 +426,25 @@ export function QuickRecord({
                   onRemove={() =>
                     setRemoved((prev) => new Set(prev).add(i))
                   }
+                  onValue={(raw) => setValueAt(i, raw)}
                 />
               </li>
             ),
           )}
         </ul>
       )}
+
+      {/* Understood, then declined. Said plainly, because a farmer who
+          sees nothing happen learns only that the app is unreliable. */}
+      {parsed.rejected.map((r) => (
+        <p
+          key={`${r.kind}-${r.sourceText}`}
+          className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-700"
+        >
+          <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+          {r.reason}
+        </p>
+      ))}
 
       {hasLowConfidence && (
         <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[var(--color-brand-warning,#b45309)]">
@@ -456,8 +512,19 @@ export function QuickRecord({
  * produced this number — that is what makes a wrong parse obvious at a
  * glance instead of after the flock count drifts.
  */
-function Chip({ field, onRemove }: { field: ParsedField; onRemove: () => void }) {
+function Chip({
+  field,
+  onRemove,
+  onValue,
+}: {
+  field: ParsedField;
+  onRemove: () => void;
+  /** Raw input string; the caller validates before accepting it. */
+  onValue: (raw: string) => void;
+}) {
   const low = field.confidence === 'low';
+  const showsValue =
+    field.value > 0 || (field.kind !== 'vaccination' && field.kind !== 'treatment');
   const detail = detailText(field);
   const inherited = field.detail?.inherited ?? [];
   // Only the brand line is worth naming when just the type carried
@@ -476,13 +543,30 @@ function Chip({ field, onRemove }: { field: ParsedField; onRemove: () => void })
     >
       <span className="flex items-center gap-1.5 text-sm font-semibold leading-none">
         {low && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden />}
-        <span>
+        <span className="flex items-center gap-1">
           {KIND_LABEL[field.kind]}
           {/* Vaccination and treatment are facts without counts, so a
               bare "Vaccine: 0" would read as nonsense. */}
-          {field.value > 0 || (field.kind !== 'vaccination' && field.kind !== 'treatment')
-            ? `: ${field.value}`
-            : ''}
+          {showsValue && (
+            <>
+              :
+              {/* The number is editable in place. A badly misheard
+                  sentence gets the kind right and the count wrong far
+                  more often than the reverse, and making the farmer
+                  re-dictate to fix one digit is where they give up and
+                  guess instead. */}
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={1_000_000}
+                value={field.value}
+                onChange={(e) => onValue(e.target.value)}
+                aria-label={`${KIND_LABEL[field.kind]} amount`}
+                className="w-[5.5ch] rounded border border-transparent bg-white/70 px-0.5 text-center font-semibold tabular-nums underline decoration-dotted underline-offset-2 focus:border-[var(--color-brand-primary)] focus:outline-none"
+              />
+            </>
+          )}
           {field.unit && field.unit !== 'eggs' ? ` ${field.unit}` : ''}
           {detail ? ` · ${detail}` : ''}
           {field.amount !== undefined ? ` · ₦${field.amount}` : ''}

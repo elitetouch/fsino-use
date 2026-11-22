@@ -117,8 +117,24 @@ export interface ParsedField {
   };
 }
 
+/**
+ * Something understood, then declined because this flock cannot have
+ * it.
+ *
+ * Surfaced rather than dropped. A farmer who says "3 crates" and sees
+ * nothing happen learns only that the app is unreliable; one who is
+ * told broilers do not lay eggs learns something true about their own
+ * records, and stops trying.
+ */
+export interface RejectedField {
+  readonly kind: FieldKind;
+  readonly reason: string;
+  readonly sourceText: string;
+}
+
 export interface ParseResult {
   readonly fields: readonly ParsedField[];
+  readonly rejected: readonly RejectedField[];
   /** Clauses we could not classify. Offered as a note, never guessed at. */
   readonly leftover: string;
   readonly moment: 'morning' | 'evening' | 'entire_day';
@@ -134,6 +150,16 @@ export interface ParseResult {
  */
 export interface ParseContext {
   readonly currentBirds?: number;
+  /**
+   * What this flock is for.
+   *
+   * The wizard only shows the eggs step to layer and mixed flocks, so
+   * quick record has to respect the same rule — otherwise saying "3
+   * crates" in a broiler cycle writes an egg harvest for birds that
+   * do not lay, and the farmer's production figures are quietly wrong
+   * in a way nothing on the dashboard would explain.
+   */
+  readonly productionType?: 'broiler' | 'layer' | 'mixed';
   /**
    * This farmer's learned aliases, token → kind.
    *
@@ -253,6 +279,35 @@ function readBagsTimesWeight(clause: string): number | null {
   return isUsable(total) && total > 0 ? total : null;
 }
 
+/**
+ * Distance, in words, between a misheard cull word and the nearest
+ * bird word.
+ *
+ * WHY THIS EXISTS. "culled birds" is two adjacent words, so however
+ * badly it is heard the pieces stay next to each other — "coil bed",
+ * "coiled bed", "called the bed", "calling bed". A real sentence that
+ * happens to contain both does not: "I called the vet about 3 birds"
+ * puts five words between them.
+ *
+ * The bird subject alone was not enough to tell those apart, and that
+ * sentence would otherwise have proposed culling three birds. Nearness
+ * is what separates a mangled phrase from a coincidence.
+ */
+const MAX_CULL_GAP = 3;
+
+function misheardCullIsAdjacent(clause: string): boolean {
+  const words = clause.split(' ');
+  const cullAt: number[] = [];
+  const birdAt: number[] = [];
+
+  words.forEach((word, i) => {
+    if (/^(coil(?:ed|s)?|call(?:ed|ing)s?)$/.test(word)) cullAt.push(i);
+    if (BIRD_WORDS.test(word)) birdAt.push(i);
+  });
+
+  return cullAt.some((c) => birdAt.some((b) => Math.abs(b - c) <= MAX_CULL_GAP));
+}
+
 function classifyClause(clause: string): FieldKind | null {
   // VACCINES is the single source of truth for what counts as a
   // vaccination, checked before the keyword table rather than
@@ -266,6 +321,13 @@ function classifyClause(clause: string): FieldKind | null {
     if (!re.test(clause)) continue;
     // Generic words only count when the clause also names a bird.
     if (REQUIRES_BIRD_SUBJECT.has(kind) && !BIRD_WORDS.test(clause)) continue;
+    // A cull inferred from an ordinary word needs the bird word NEXT
+    // to it, not merely somewhere in the sentence. See the note on
+    // misheardCullIsAdjacent — without this, "I called the vet about
+    // 3 birds" proposes culling three birds.
+    if (kind === 'culled' && !/\bcull/.test(clause) && !misheardCullIsAdjacent(clause)) {
+      continue;
+    }
     return kind;
   }
   return null;
@@ -418,6 +480,16 @@ function buildField(
     }
   }
 
+  // A cull recovered from a misheard word is always confirmed, even
+  // when the count looks ordinary. "called", "coil" and "calling" are
+  // all ordinary English, so a clause that reached `culled` without
+  // actually containing "cull" was recovered by inference — and an
+  // inferred cull removes birds from the flock. The farmer sees it.
+  if (kind === 'culled' && !/\bcull/.test(clause)) {
+    confidence = 'low';
+    caution = caution ?? 'Heard this as culling — check the count before saving';
+  }
+
   // A number with no unit where a unit is expected is a guess.
   if ((kind === 'feed' || kind === 'water' || kind === 'weight') && !unitSpec) {
     confidence = 'low';
@@ -466,18 +538,19 @@ export function parseQuickRecord(
   ctx: ParseContext = {},
 ): ParseResult {
   if (typeof input !== 'string') {
-    return { fields: [], leftover: '', moment: 'entire_day', understoodNothing: false };
+    return { fields: [], rejected: [], leftover: '', moment: 'entire_day', understoodNothing: false };
   }
 
   const text = normalise(input);
   if (text === '') {
-    return { fields: [], leftover: '', moment: 'entire_day', understoodNothing: false };
+    return { fields: [], rejected: [], leftover: '', moment: 'entire_day', understoodNothing: false };
   }
 
   const moment = readMoment(text);
   const clauses = text.split(CLAUSE_SPLIT).slice(0, MAX_CLAUSES);
 
   const fields: ParsedField[] = [];
+  const rejected: RejectedField[] = [];
   const unmatched: string[] = [];
   // One field per kind. If a farmer says "10 died and 5 died", the
   // second clause is almost certainly a correction or a repeat from
@@ -494,6 +567,22 @@ export function parseQuickRecord(
     const kind = known ?? learned;
     if (kind === null || seen.has(kind)) {
       unmatched.push(trimmed);
+      continue;
+    }
+
+    // Broilers do not lay. The wizard shows the eggs step only to
+    // layer and mixed flocks, and quick record has to hold the same
+    // line — an egg harvest recorded against meat birds is a number
+    // nothing on the dashboard could ever explain.
+    if (
+      ctx.productionType === 'broiler' &&
+      (kind === 'eggs' || kind === 'egg_weight')
+    ) {
+      rejected.push({
+        kind,
+        reason: 'This is a broiler cycle, so there are no eggs to record.',
+        sourceText: trimmed,
+      });
       continue;
     }
 
@@ -528,8 +617,13 @@ export function parseQuickRecord(
 
   return {
     fields,
+    rejected,
     leftover: unmatched.join(', '),
     moment,
-    understoodNothing: fields.length === 0,
+    // A rejection IS understanding — the app knew what was said and
+    // declined it. Saying "that didn't include a number we
+    // recognised" on top of "broilers don't lay eggs" would be two
+    // messages contradicting each other.
+    understoodNothing: fields.length === 0 && rejected.length === 0,
   };
 }

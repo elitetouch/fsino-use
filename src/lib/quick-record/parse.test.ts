@@ -280,6 +280,47 @@ describe('what the recogniser actually hears', () => {
     expect(parseQuickRecord('the birds have heat stress').fields).toHaveLength(0);
   });
 
+  it('reads every mangling of "culled birds"', () => {
+    // One spoken "culled birds" came back as all of these in a single
+    // session. Culling was completely unrecordable by voice.
+    for (const heard of [
+      '25 culled birds',
+      '25 coil bed',
+      '25 coiled bed',
+      '25 called the bed',
+      '25 calling bed',
+    ]) {
+      const r = parseQuickRecord(heard, { currentBirds: 500 });
+      expect(r.fields[0], heard).toMatchObject({ kind: 'culled', value: 25 });
+    }
+  });
+
+  it('always asks about a cull it had to infer', () => {
+    // An inferred cull removes birds from the flock. "called" and
+    // "coil" are ordinary English, so a clause that reached `culled`
+    // without containing "cull" was guessed at, and the farmer sees it.
+    const inferred = parseQuickRecord('25 called the bed', { currentBirds: 500 });
+    expect(inferred.fields[0]?.confidence).toBe('low');
+    // Said plainly, it stays high-confidence.
+    const plain = parseQuickRecord('25 culled birds', { currentBirds: 500 });
+    expect(plain.fields[0]?.confidence).toBe('high');
+  });
+
+  it('does NOT cull anything when no bird is mentioned', () => {
+    // The bird subject is the ONLY thing separating "called the bed"
+    // (a cull) from "I called the vet" (a phone call). Without it,
+    // adding "called" to the cull words would destroy stock on a
+    // sentence about phoning somebody.
+    for (const said of [
+      'I called the vet',
+      'called the supplier 3 times',
+      'coil of wire 5',
+    ]) {
+      const r = parseQuickRecord(said, { currentBirds: 500 });
+      expect(r.fields.some((f) => f.kind === 'culled'), said).toBe(false);
+    }
+  });
+
   it('does NOT map "called" to culled', () => {
     // The tempting mishearing, and the one that must not be added:
     // "I called the vet" would silently cull birds.
@@ -378,6 +419,56 @@ describe('the things the wizard captures and this was missing', () => {
     expect(r.moment).toBe('morning');
     const [p] = buildQuickRecordPayloads(r.fields, { ...OPTS, moment: r.moment });
     expect(p?.payload).toMatchObject({ moment: 'morning' });
+  });
+});
+
+describe('a cycle only records what it can produce', () => {
+  it('refuses eggs in a broiler cycle', () => {
+    // Broilers do not lay. The wizard shows the eggs step only to
+    // layer and mixed flocks; quick record has to hold the same line,
+    // or an egg harvest lands against meat birds and nothing on the
+    // dashboard can explain it.
+    const r = parseQuickRecord('3 crates of eggs', { productionType: 'broiler' });
+    expect(r.fields).toHaveLength(0);
+    expect(r.rejected[0]).toMatchObject({ kind: 'eggs' });
+    expect(r.rejected[0]?.reason).toContain('broiler');
+  });
+
+  it('says so rather than silently dropping it', () => {
+    // A farmer who sees nothing happen learns the app is unreliable.
+    // One who is told why learns something true and stops trying.
+    const r = parseQuickRecord('3 crates', { productionType: 'broiler' });
+    expect(r.understoodNothing).toBe(false);
+    expect(r.rejected).toHaveLength(1);
+  });
+
+  it('allows eggs for layers and mixed flocks', () => {
+    for (const productionType of ['layer', 'mixed'] as const) {
+      const r = parseQuickRecord('3 crates of eggs', { productionType });
+      expect(r.fields[0], productionType).toMatchObject({ kind: 'eggs', value: 90 });
+      expect(r.rejected, productionType).toHaveLength(0);
+    }
+  });
+
+  it('allows everything else in a broiler cycle', () => {
+    // The gate is eggs, not a general restriction.
+    const r = parseQuickRecord('10 birds died and 2 bags of feed', {
+      productionType: 'broiler',
+      currentBirds: 500,
+    });
+    expect(r.fields).toHaveLength(2);
+    expect(r.rejected).toHaveLength(0);
+  });
+
+  it('refuses egg weight too, not just the count', () => {
+    const r = parseQuickRecord('egg weight 60 grams', { productionType: 'broiler' });
+    expect(r.fields).toHaveLength(0);
+    expect(r.rejected[0]?.kind).toBe('egg_weight');
+  });
+
+  it('records eggs normally when no production type is known', () => {
+    // Absent context must not silently block a real entry.
+    expect(parseQuickRecord('3 crates').fields[0]).toMatchObject({ kind: 'eggs' });
   });
 });
 
