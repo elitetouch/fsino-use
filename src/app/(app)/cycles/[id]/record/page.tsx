@@ -7,6 +7,7 @@ import { Loader2, Lock } from 'lucide-react';
 import { endpoints, type DailyRecordDto, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
 import { useCurrentFarmId } from '@/lib/farm-context';
+import { useOnline } from '@/lib/offline';
 import { flocksKey } from '@/lib/query-keys';
 import { CycleWindowBanner } from '@/components/app/cycle-window-banner';
 import type { CycleWriteWindow } from '@/lib/api';
@@ -48,6 +49,7 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   const { id: flockId } = use(params);
   const router = useRouter();
   const farmId = useCurrentFarmId();
+  const online = useOnline();
 
   // Selected date — defaults to today, drives both the calendar
   // selection and every step's POST payload (record_date).
@@ -203,10 +205,18 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   }
 
   if (guidance.isError || !guidance.data) {
+    // Offline needs its own words. "Try refreshing" is advice a farmer
+    // in a pen with no signal cannot act on, and it reads as the app
+    // being broken rather than as the one thing it genuinely cannot do
+    // yet. The app warms this data in the background whenever it has
+    // signal, so the honest instruction is simply: open it once with
+    // signal and it will be here next time.
     return (
       <FullPageError
-        title="Couldn't load this cycle"
-        message="We couldn't fetch the cycle's guidance. Try refreshing, or open this cycle from the cycles list."
+        title={online ? "Couldn't load this cycle" : 'This cycle isn\u2019t saved for offline yet'}
+        message={online
+          ? "We couldn't fetch the cycle's guidance. Try refreshing, or open this cycle from the cycles list."
+          : 'Open it once while you have signal and it will work offline afterwards. Anything you have already recorded is safe and will upload by itself.'}
         onBack={() => router.push(`/cycles/${flockId}`)}
       />
     );
