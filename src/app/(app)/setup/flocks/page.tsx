@@ -166,11 +166,31 @@ export default function SetupFlocksPage() {
 
   const currentBalance: TokenBalanceDto | undefined =
     balances.data?.balances.find((b) => b.tokenType === tokenType && b.tier === selectedTier);
+
+  /**
+   * We could not ask, which is not the same as the answer being zero.
+   *
+   * `balance` falls back to 0 when the query has no data, and with no
+   * signal that rendered "You have no broiler / basic tokens yet" to a
+   * farmer who may hold thousands. Same mistake as the permissions
+   * lookup that told offline farmers they had no access to their own
+   * farm: a failed question answered as a definite no.
+   *
+   * Token balances are deliberately never persisted — they are money,
+   * and a figure from last week is one a farmer would act on — so
+   * offline this is always unknown, and the screen has to say so.
+   */
+  // Keyed on the query having FAILED, not on data being absent. Absent
+  // also covers "still fetching" and "not enabled yet", and treating
+  // those as unknown would flash this message at an online farmer
+  // every time the page opened.
+  const balanceUnknown = balances.isError;
+  const balanceLoading = !balances.data && !balances.isError;
   const balance = currentBalance?.balance ?? 0;
   const shortBy = Math.max(0, placedBirds - balance);
   const freemiumLeft =
     balances.data?.freemium?.enabled && !balances.data.freemium.used && placedBirds <= 100;
-  const blocked = shortBy > 0 && !freemiumLeft;
+  const blocked = !balanceUnknown && !balanceLoading && shortBy > 0 && !freemiumLeft;
 
   const breeds = useQuery({
     queryKey: ['breeds', { production_type: productionType }],
@@ -482,7 +502,22 @@ export default function SetupFlocksPage() {
                     {blocked ? <AlertTriangle className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    {blocked ? (
+                    {balanceLoading ? (
+                      <p className="text-[0.8125rem] font-bold text-[var(--color-brand-muted)]">
+                        Checking your token balance&hellip;
+                      </p>
+                    ) : balanceUnknown ? (
+                      <>
+                        <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
+                          Can&rsquo;t check your token balance right now
+                        </p>
+                        <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
+                          Starting a cycle needs a connection, because tokens are
+                          charged when the birds are placed. Your existing cycles and
+                          today&rsquo;s records are unaffected.
+                        </p>
+                      </>
+                    ) : blocked ? (
                       <>
                         <p className="text-[0.8125rem] font-bold text-amber-900">
                           {balance === 0
@@ -593,7 +628,15 @@ export default function SetupFlocksPage() {
             <Button
               type="submit"
               className="sm:flex-1"
-              disabled={create.isPending || (step === 'tokens' && blocked)}
+              // `balanceUnknown` blocks too. Placing birds charges
+              // tokens and is not an offline-capable write, so letting
+              // it through would trade a clear explanation for a
+              // generic network error after the farmer had filled in
+              // the whole wizard.
+              disabled={
+                create.isPending
+                || (step === 'tokens' && (blocked || balanceUnknown || balanceLoading))
+              }
             >
               {create.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
               {step === 'tokens' ? (

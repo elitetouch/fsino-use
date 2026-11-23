@@ -14,6 +14,8 @@ import {
   TOKEN_TYPES,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useOnline } from '@/lib/offline';
+import { NeedsConnection } from '@/components/offline/needs-connection';
 
 /**
  * Buy tokens dialog — choose token type × tier × quantity × gateway,
@@ -49,6 +51,7 @@ export function BuyTokensDialog({
   initial?: { tokenType?: TokenType; tier?: TokenTier; quantity?: number };
 }) {
   const qc = useQueryClient();
+  const online = useOnline();
 
   const [tokenType, setTokenType] = useState<TokenType>(initial?.tokenType ?? 'broiler');
   const [tier, setTier] = useState<TokenTier>(initial?.tier ?? 'basic');
@@ -143,7 +146,18 @@ export function BuyTokensDialog({
   // returns a structured error which we toast — don't gate the button
   // on the price feed, because that hides the real problem from the
   // user when the prices endpoint is down or unseeded.
-  const canSubmit = qty >= 1 && qty <= 10_000_000 && !buy.isPending;
+  // Offline is a hard no, and it is checked here rather than left to
+  // fail at the network.
+  //
+  // Buying ends in a redirect to the payment provider's hosted
+  // checkout, which cannot happen without a connection. The existing
+  // gate deliberately ignores the price feed — right, because a down
+  // prices endpoint should surface the server's real error rather than
+  // be hidden behind a disabled button — but no signal is different:
+  // there is no server error to surface, and letting a farmer pick a
+  // quantity and press Buy only to be told "Could not start payment"
+  // tells them nothing they can act on.
+  const canSubmit = online && qty >= 1 && qty <= 10_000_000 && !buy.isPending;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
@@ -285,6 +299,16 @@ export function BuyTokensDialog({
                     configured. Try another tier or contact support.
                   </>
                 )}
+              </div>
+            )}
+
+            {!online && (
+              <div className="mt-3">
+                <NeedsConnection title="You need a connection to buy tokens">
+                  Checkout happens on {capitalize(provider)}&rsquo;s own secure page,
+                  which we can&rsquo;t open without signal. Nothing has been charged.
+                  Your records keep saving in the meantime.
+                </NeedsConnection>
               </div>
             )}
 

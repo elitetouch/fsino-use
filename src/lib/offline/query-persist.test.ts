@@ -91,6 +91,21 @@ describe('what reaches disk', () => {
     expect(keys).toEqual(['["flocks"]']);
   });
 
+  it('never persists a price, a balance or anything else billing', async () => {
+    // Not secrets — money the farmer is about to spend. A price or a
+    // token balance restored from last week is a figure they would act
+    // on, and billing is an online-only part of the app anyway.
+    const qc = clientWith([
+      [['token-prices'], [{ unitPriceMinor: 5000 }]],
+      [['token-balances'], [{ balance: 900 }]],
+      [['device-offers'], [{ price: 1 }]],
+      [['token-purchases'], []],
+      [['subscription'], { plan: 'premium' }],
+      [['flocks'], [{ id: 1 }]],
+    ]);
+    expect(keysIn(await persistedPayload(qc))).toEqual(['["flocks"]']);
+  });
+
   it('catches a sensitive segment wherever it sits in the key', async () => {
     const qc = clientWith([
       [['farm', 'auth'], { x: 1 }],

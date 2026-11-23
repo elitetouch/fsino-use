@@ -68,6 +68,12 @@ const DO_NOT_PERSIST: readonly string[] = [
   'auth', 'token', 'tokens', 'session', 'password', 'otp', 'verify',
   'card', 'cards', 'payment', 'paystack', 'flutterwave', 'wallet-pin',
   'invite', 'secret',
+  // Billing figures. Not secret — but money the farmer is about to
+  // spend, and a price or balance restored from last week is a number
+  // they would act on. Billing is an online-only part of the app, so
+  // there is nothing lost by making it say so.
+  'price', 'prices', 'offer', 'offers', 'purchase', 'purchases',
+  'billing', 'subscription', 'balance', 'balances',
 ];
 
 /** Writes are coalesced — a burst of queries settling is one write. */

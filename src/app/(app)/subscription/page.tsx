@@ -18,6 +18,8 @@ import {
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useVertical } from '@/lib/vertical';
+import { useOnline } from '@/lib/offline';
+import { NeedsConnection } from '@/components/offline/needs-connection';
 
 /**
  * Subscription page — the "what am I paying for" view.
@@ -76,6 +78,7 @@ export default function SubscriptionPage() {
   // for it and the hardware half — which is its actual billing —
   // stays.
   const { usesTokens } = useVertical();
+  const online = useOnline();
   const [openBuy, setOpenBuy] = useState(false);
   const [buyDefaults, setBuyDefaults] = useState<{ tokenType?: TokenType; tier?: TokenTier } | undefined>();
 
@@ -117,6 +120,21 @@ export default function SubscriptionPage() {
           ? 'One token, one bird, one tracked cycle. Choose the plan that matches how you run your farm.'
           : 'Your PENKEEP devices and what they cost to run.'}
       />
+
+      {/*
+        Billing is the one part of this app that cannot work offline,
+        and it has to say so itself.
+
+        Everything below is a live figure — prices, token balances —
+        and buying ends in a redirect to a payment provider. None of it
+        can be answered from a cache, and none of it is persisted, so
+        with no signal this page would otherwise render plan cards with
+        no prices and a Buy button that fails on tap, after the farmer
+        had already chosen a quantity.
+      */}
+      {!online && (
+        <NeedsConnection title="Subscription needs a connection" />
+      )}
 
       {/* Current balance strip. Silent until we have real data so the
           page doesn't flash zeros while the query fetches. */}
