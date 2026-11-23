@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
+import { useHydrated } from '@/lib/use-hydrated';
 import { clearToken, readUser } from '@/lib/auth';
 import { useVertical } from '@/lib/vertical';
 import { writeCurrentFarmId } from '@/lib/farm-context';
@@ -33,7 +34,13 @@ export function Topbar({
 }) {
   const router = useRouter();
   const online = useOnline();
-  const user = readUser();
+  // Hydration-gated: localStorage does not exist on the server, so
+  // rendering from it on the first client pass is a text mismatch —
+  // React #418, which throws the server markup away and re-runs the
+  // tree. Offline, that recovery is what turned a working page into
+  // "a client-side exception has occurred".
+  const __hydrated = useHydrated();
+  const user = __hydrated ? readUser() : null;
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Close the dropdown on outside click — simple but covers the case.

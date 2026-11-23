@@ -16,6 +16,7 @@ import {
   type FarmMemberDto, type StaffInviteDto,
 } from '@/lib/api';
 import { Gate } from '@/lib/access';
+import { useHydrated } from '@/lib/use-hydrated';
 import { readUser } from '@/lib/auth';
 import { readCurrentFarmId, useCurrentFarmId } from '@/lib/farm-context';
 import { fmtDate } from '@/lib/format';
@@ -116,7 +117,13 @@ export default function UsersPage() {
 function MemberRow({ member, divider }: { member: FarmMemberDto; divider: boolean }) {
   const qc = useQueryClient();
   const farmId = readCurrentFarmId();
-  const me = readUser();
+  // Hydration-gated: localStorage does not exist on the server, so
+  // rendering from it on the first client pass is a text mismatch —
+  // React #418, which throws the server markup away and re-runs the
+  // tree. Offline, that recovery is what turned a working page into
+  // "a client-side exception has occurred".
+  const __hydrated = useHydrated();
+  const me = __hydrated ? readUser() : null;
   const isSelf = me && String(me.id) === String(member.userId);
 
   const [menuOpen, setMenuOpen] = useState(false);

@@ -37,7 +37,13 @@ import { flocksKey } from '@/lib/query-keys';
 export default function HomePage() {
   const hydrated = useHydrated();
   const router = useRouter();
-  const user = readUser();
+  // Hydration-gated: localStorage does not exist on the server, so
+  // rendering from it on the first client pass is a text mismatch —
+  // React #418, which throws the server markup away and re-runs the
+  // tree. Offline, that recovery is what turned a working page into
+  // "a client-side exception has occurred".
+  const __hydrated = useHydrated();
+  const user = __hydrated ? readUser() : null;
 
   const farms = useQuery({ queryKey: ['farms'], queryFn: () => endpoints.listFarms() });
 

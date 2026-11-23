@@ -413,6 +413,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // The network probe. Must reach the network or fail; an answer from
+  // this cache would tell the app it is online while it is not, which
+  // is exactly what it did before this line existed.
+  if (url.searchParams.has('__net_probe')) return;
+
   // Cross-origin requests (the API host, fonts, analytics) — bypass.
   // The API lives on another origin and has its own IndexedDB read
   // cache in the app; duplicating it here would mean two caches with

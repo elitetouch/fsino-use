@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 import { MenuList } from '@/components/app/menu-list';
+import { useHydrated } from '@/lib/use-hydrated';
 import { readUser } from '@/lib/auth';
 import { useVertical } from '@/lib/vertical';
 
@@ -15,7 +16,13 @@ import { useVertical } from '@/lib/vertical';
  * overview without scanning a sidebar.
  */
 export default function MenuPage() {
-  const user = readUser();
+  // Hydration-gated: localStorage does not exist on the server, so
+  // rendering from it on the first client pass is a text mismatch —
+  // React #418, which throws the server markup away and re-runs the
+  // tree. Offline, that recovery is what turned a working page into
+  // "a client-side exception has occurred".
+  const __hydrated = useHydrated();
+  const user = __hydrated ? readUser() : null;
   const firstName = user?.name?.split(' ')[0] ?? 'Farmer';
 
   // A poultry farmer — which is nearly every user — sees exactly the

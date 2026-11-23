@@ -446,6 +446,34 @@ describe('service worker — a deploy must reach the cached shell', () => {
   });
 });
 
+describe('service worker — the network probe must reach the network', () => {
+  /**
+   * The probe decides whether the app believes it is online. Answering
+   * it from cache told the app it was online with the network cut —
+   * confirmed in a real browser, where the banner read "Back online —
+   * all changes synced" and the topbar said ONLINE while offline.
+   */
+  it('never answers a probe from the cache', async () => {
+    const sw = load();
+    for (const r of APP_ROUTES) sw.served.add(r);
+    await sw.fire('install', {});
+    sw.online.value = false;
+    // Undefined means the worker did not call respondWith at all, so
+    // the request goes straight to the network and fails as it should.
+    const res = await sw.fetchEvent(req('/?__net_probe=1'));
+    expect(res).toBeUndefined();
+  });
+
+  it('still serves the same path normally without the marker', async () => {
+    const sw = load();
+    for (const r of APP_ROUTES) sw.served.add(r);
+    await sw.fire('install', {});
+    sw.online.value = false;
+    const res = await sw.fetchEvent(navigation('/'));
+    expect(res?.status).toBe(200);
+  });
+});
+
 describe('service worker — RSC payloads', () => {
   let sw: SwHarness;
 
