@@ -1,12 +1,13 @@
 'use client';
 
-import { use, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Lock } from 'lucide-react';
 import { endpoints, type DailyRecordDto, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
 import { useCurrentFarmId } from '@/lib/farm-context';
+import { useOnline } from '@/lib/offline';
 import { flocksKey } from '@/lib/query-keys';
 import { CycleWindowBanner } from '@/components/app/cycle-window-banner';
 import type { CycleWriteWindow } from '@/lib/api';
@@ -48,10 +49,28 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   const { id: flockId } = use(params);
   const router = useRouter();
   const farmId = useCurrentFarmId();
+  const online = useOnline();
 
   // Selected date — defaults to today, drives both the calendar
   // selection and every step's POST payload (record_date).
-  const [selectedDate, setSelectedDate] = useState<string>(() => todayYmd());
+  /*
+   * Empty until after hydration, NOT `todayYmd()`.
+   *
+   * Initialising from the clock during render means the server HTML
+   * carries the date it was generated on — and the service worker now
+   * serves that HTML back on later days, so a document cached
+   * yesterday hydrated against today's clock. React calls that a
+   * mismatch (#418), throws the server markup away and re-runs the
+   * tree; on a page whose data has not loaded that surfaces as
+   * "Application error: a client-side exception has occurred".
+   *
+   * Empty renders the same on the server and on the first client pass,
+   * so there is nothing to recover from.
+   */
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  useEffect(() => {
+    setSelectedDate((d) => (d === '' ? todayYmd() : d));
+  }, []);
 
   // Current step index. 0 = date picker; 1..N = event steps.
   const [stepIdx, setStepIdx] = useState(0);
@@ -198,15 +217,26 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  if (guidance.isLoading || prefs.isLoading || !stepList) {
+  // `selectedDate === ''` is the pre-hydration pass — see the state
+  // declaration. It must render the same thing the server did, and the
+  // server took this branch too.
+  if (selectedDate === '' || guidance.isLoading || prefs.isLoading || !stepList) {
     return <FullPageSpinner />;
   }
 
   if (guidance.isError || !guidance.data) {
+    // Offline needs its own words. "Try refreshing" is advice a farmer
+    // in a pen with no signal cannot act on, and it reads as the app
+    // being broken rather than as the one thing it genuinely cannot do
+    // yet. The app warms this data in the background whenever it has
+    // signal, so the honest instruction is simply: open it once with
+    // signal and it will be here next time.
     return (
       <FullPageError
-        title="Couldn't load this cycle"
-        message="We couldn't fetch the cycle's guidance. Try refreshing, or open this cycle from the cycles list."
+        title={online ? "Couldn't load this cycle" : 'This cycle isn\u2019t saved for offline yet'}
+        message={online
+          ? "We couldn't fetch the cycle's guidance. Try refreshing, or open this cycle from the cycles list."
+          : 'Open it once while you have signal and it will work offline afterwards. Anything you have already recorded is safe and will upload by itself.'}
         onBack={() => router.push(`/cycles/${flockId}`)}
       />
     );

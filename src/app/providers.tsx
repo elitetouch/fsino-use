@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, IsRestoringProvider } from '@tanstack
 import { Toaster } from 'sonner';
 import { useEffect, useState } from 'react';
 import { restoreQueryCache, startQueryPersistence } from '@/lib/offline/query-persist';
+import { DataWarmer } from '@/components/offline/data-warmer';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [qc] = useState(
@@ -90,6 +91,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={qc}>
       <IsRestoringProvider value={!restored}>
         {children}
+        {/* Mounted after the restore gate so warming cannot race the
+            cache coming back off disk and refetch what we just had. */}
+        {restored && <DataWarmer />}
         <Toaster position="top-center" richColors closeButton />
       </IsRestoringProvider>
     </QueryClientProvider>
