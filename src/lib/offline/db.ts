@@ -137,7 +137,7 @@ export function getDB(): Promise<IDBPDatabase<FSMSchema>> {
     return Promise.reject(new Error('IndexedDB unavailable in this browser'));
   }
   if (!dbPromise) {
-    dbPromise = openDB<FSMSchema>(DB_NAME, DB_VERSION, {
+    dbPromise = withTimeout(openDB<FSMSchema>(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion) {
         // v1: initial schema
         if (oldVersion < 1) {
@@ -168,9 +168,15 @@ export function getDB(): Promise<IDBPDatabase<FSMSchema>> {
         // migrations on subsequent upgrades.
       },
       blocked() {
-        // Another tab has an older DB version open — surface to console
-        // but don't crash. The user will pick up the new schema on next
-        // navigation.
+        // Another tab has an older DB version open.
+        //
+        // NOTE THAT THIS CALLBACK DOES NOT UNBLOCK ANYTHING. The open
+        // request stays pending until that tab closes, so everything
+        // awaiting IndexedDB waits with it — which, once the query
+        // cache restore began gating every React Query fetch, meant
+        // gated screens reporting "Can't load this page offline yet"
+        // on a working connection. The timeout wrapping this open is
+        // what actually bounds it; this only records why.
         console.warn('[fsm-offline] DB upgrade blocked by another tab.');
       },
       blocking() {
@@ -185,9 +191,41 @@ export function getDB(): Promise<IDBPDatabase<FSMSchema>> {
         // Storage was wiped or the connection was killed — re-open lazily.
         dbPromise = null;
       },
+    }), OPEN_TIMEOUT_MS, 'IndexedDB open timed out');
+    // A rejected open must not be cached, or one bad moment disables
+    // offline storage for the life of the tab.
+    dbPromise.catch(() => {
+      dbPromise = null;
     });
   }
   return dbPromise;
+}
+
+/**
+ * How long to wait for the database to open before giving up.
+ *
+ * Opening is normally instantaneous. It hangs when another tab holds
+ * an older version, and an IndexedDB request that never settles is
+ * indistinguishable from one that is merely slow — so the only way
+ * back is a clock. Callers all treat a rejection as "no offline
+ * storage this session", which degrades; waiting forever does not.
+ */
+const OPEN_TIMEOUT_MS = 3_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
 }
 
 // ─────────────── Meta helpers ───────────────

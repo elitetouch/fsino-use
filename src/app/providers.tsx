@@ -6,6 +6,14 @@ import { useEffect, useState } from 'react';
 import { restoreQueryCache, startQueryPersistence } from '@/lib/offline/query-persist';
 import { DataWarmer } from '@/components/offline/data-warmer';
 
+/**
+ * How long the restore may hold queries before the app proceeds
+ * without it. Reading a few hundred kilobytes from IndexedDB is tens
+ * of milliseconds; anything approaching this means the database is
+ * blocked or broken, and waiting longer helps nobody.
+ */
+const RESTORE_TIMEOUT_MS = 2_000;
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [qc] = useState(
     () =>
@@ -71,18 +79,43 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    let settled = false;
     let stopPersisting: (() => void) | null = null;
 
-    void restoreQueryCache(qc).finally(() => {
-      if (cancelled) return;
+    /*
+     * THE RESTORE MUST NEVER BE ABLE TO HOLD THE APP OPEN-ENDEDLY.
+     *
+     * While `isRestoring` is true React Query fetches nothing, and
+     * `usePermissions` is a query — so a restore that never settles
+     * leaves every gated screen reporting "Can't load this page
+     * offline yet" with a perfectly good connection. That is a worse
+     * failure than having no persisted cache at all, and it is what
+     * shipped: `openDB` has no timeout, and IndexedDB blocks
+     * indefinitely when another tab holds an older version of the
+     * database, which is ordinary on a phone with the app open twice.
+     *
+     * So the gate opens on whichever comes first, the restore or the
+     * deadline. Losing the cache costs offline reads for one session;
+     * losing the gate costs the whole app.
+     */
+    const settle = () => {
+      if (cancelled || settled) return;
+      settled = true;
       // Persistence starts AFTER the restore, so a partially hydrated
       // cache can never be written back over the complete one.
       stopPersisting = startQueryPersistence(qc);
       setRestored(true);
+    };
+
+    const deadline = setTimeout(settle, RESTORE_TIMEOUT_MS);
+    void restoreQueryCache(qc).finally(() => {
+      clearTimeout(deadline);
+      settle();
     });
 
     return () => {
       cancelled = true;
+      clearTimeout(deadline);
       stopPersisting?.();
     };
   }, [qc]);
