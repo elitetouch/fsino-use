@@ -55,7 +55,7 @@
  * even if the farmer has never reloaded on those screens.
  */
 
-const CACHE_VERSION = 'fsm-v5';
+const CACHE_VERSION = 'fsm-v6';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`; // precached documents + icons
 const PAGES_CACHE = `${CACHE_VERSION}-pages`; // runtime documents + RSC payloads
 const STATIC_CACHE = `${CACHE_VERSION}-static`; // immutable build output
@@ -180,51 +180,85 @@ const API_MAX_ENTRIES = 100;
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
-      const cache = await caches.open(SHELL_CACHE);
-
-      // One at a time, not addAll.
-      //
-      // addAll is atomic: one 404 anywhere in the list and NOTHING is
-      // cached. v3 wrapped that in a catch, so a single bad URL left an
-      // empty shell cache and no sign that anything was wrong. A route
-      // that fails to precache should cost us that route, not the app.
-      //
-      // Documents first and in parallel — they are small, and having
-      // them is the difference between the app opening and not. Each
-      // document's HTML is kept so its chunks can be harvested below
-      // without fetching the same page a second time.
-      const html = new Map();
-      await Promise.all(
-        [...PRECACHE_DOCUMENTS, ...PRECACHE_ASSETS].map(async (url) => {
-          try {
-            const body = await cacheDocument(cache, url, BOOT_DOCUMENTS.includes(url));
-            if (body !== null) html.set(url, body);
-          } catch (err) {
-            console.warn('[sw] precache miss:', url, err);
-          }
-        }),
-      );
-
-      // Controlled now, with every document in hand. The code below is
-      // still inside waitUntil, so it finishes — but activation does
-      // not wait on it. On a bad connection the alternative is a worker
-      // stuck installing while the farmer gets no offline support at
-      // all.
+      // Controlled as soon as the documents are in hand. The assets
+      // below still finish inside waitUntil, but activation does not
+      // wait on them: on a bad connection the alternative is a worker
+      // stuck installing while the farmer gets no offline support.
+      const html = await precacheDocuments();
       await self.skipWaiting();
-
-      // Then the build output. Sequential on purpose: these documents
-      // share one ~102 kB bundle, so the first fetch pays for it and
-      // the rest find it already cached.
-      for (const [url, body] of html) {
-        try {
-          await cacheBuildOutputFrom(body);
-        } catch (err) {
-          console.warn('[sw] boot asset miss:', url, err);
-        }
-      }
+      await precacheBuildOutput(html);
     })(),
   );
 });
+
+/**
+ * Fetch every precached document and return their HTML by URL.
+ *
+ * One at a time, not addAll. addAll is atomic: one 404 anywhere in the
+ * list and NOTHING is cached. v3 wrapped that in a catch, so a single
+ * bad URL left an empty shell cache and no sign anything was wrong. A
+ * route that fails to precache should cost us that route, not the app.
+ *
+ * Documents first and in parallel — they are small, and having them is
+ * the difference between the app opening and not. Each document's HTML
+ * is kept so its chunks can be harvested without fetching the same
+ * page a second time.
+ */
+async function precacheDocuments() {
+  const cache = await caches.open(SHELL_CACHE);
+  const html = new Map();
+  await Promise.all(
+    [...PRECACHE_DOCUMENTS, ...PRECACHE_ASSETS].map(async (url) => {
+      try {
+        const body = await cacheDocument(cache, url, BOOT_DOCUMENTS.includes(url));
+        if (body !== null) html.set(url, body);
+      } catch (err) {
+        console.warn('[sw] precache miss:', url, err);
+      }
+    }),
+  );
+  return html;
+}
+
+/**
+ * Sequential on purpose: these documents share one ~102 kB bundle, so
+ * the first fetch pays for it and the rest find it already cached.
+ */
+async function precacheBuildOutput(html) {
+  for (const [url, body] of html) {
+    try {
+      await cacheBuildOutputFrom(body);
+    } catch (err) {
+      console.warn('[sw] boot asset miss:', url, err);
+    }
+  }
+}
+
+/**
+ * Re-fetch the precached shell, because the site has been deployed
+ * since it was cached.
+ *
+ * THIS IS THE BUG THIS FUNCTION EXISTS FOR. The shell documents are
+ * written once, at install, and install only runs when sw.js itself
+ * changes. Three deploys went out without this file changing, so the
+ * cached HTML stayed frozen at the build it was first installed
+ * against while the hashed JS chunks moved on.
+ *
+ * Online that is invisible: navigations are network-first, so the
+ * farmer gets fresh HTML. Offline it is the whole problem — the shell
+ * hands back a document from an old build, the app boots the code that
+ * document names, and a fix shipped hours ago simply is not running.
+ * Worse, when the document and the chunks come from different builds
+ * the markup does not match what the new code renders, which is React
+ * error #418 and the "client-side exception" behind it.
+ *
+ * Called by the app once per session while it still has signal, so the
+ * offline copy is never more than one session behind a deploy.
+ */
+async function refreshShell() {
+  const html = await precacheDocuments();
+  await precacheBuildOutput(html);
+}
 
 /**
  * Fetch a URL and store it under its pathname, with the query string
@@ -654,6 +688,9 @@ self.addEventListener('message', (event) => {
   }
   if (data.type === 'FSM_PREWARM') {
     event.waitUntil(prewarm(data.paths));
+  }
+  if (data.type === 'FSM_REFRESH_SHELL') {
+    event.waitUntil(refreshShell());
   }
   if (data.type === 'CLEAR_ALL_CACHES') {
     event.waitUntil(
