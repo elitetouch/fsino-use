@@ -259,7 +259,7 @@ describe('service worker — offline app shell', () => {
   it('precaches the signed-in screens, not just the signed-out ones', async () => {
     // The v3 bug in one assertion: the precache list held only the
     // logged-out routes, so every screen a farmer uses was absent.
-    const shell = await sw.cacheNamed('fsm-v5-shell');
+    const shell = await sw.cacheNamed('fsm-v6-shell');
     const cached = [...shell.map.keys()].map((u) => new URL(u).pathname);
     for (const route of ['/home', '/cycles', '/menu', '/pens-flocks', '/reports', '/settings']) {
       expect(cached, `${route} must be precached`).toContain(route);
@@ -280,7 +280,7 @@ describe('service worker — offline app shell', () => {
     for (const r of APP_ROUTES) fresh.served.add(r);
     fresh.served.delete('/sales'); // pretend this route was renamed
     await fresh.fire('install', {});
-    const shell = await fresh.cacheNamed('fsm-v5-shell');
+    const shell = await fresh.cacheNamed('fsm-v6-shell');
     const cached = [...shell.map.keys()].map((u) => new URL(u).pathname);
     expect(cached).not.toContain('/sales');
     expect(cached).toContain('/home');
@@ -345,7 +345,7 @@ describe('service worker — a cached page needs its code', () => {
   });
 
   it('pulls in the JS and CSS a boot screen references', async () => {
-    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const staticCache = await sw.cacheNamed('fsm-v6-static');
     const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
     expect(held).toContain('/_next/static/chunks/webpack-aa1.js');
     expect(held).toContain('/_next/static/chunks/app/home/page-bb2.js');
@@ -353,13 +353,13 @@ describe('service worker — a cached page needs its code', () => {
   });
 
   it('follows the flight payload’s relative chunk names too', async () => {
-    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const staticCache = await sw.cacheNamed('fsm-v6-static');
     const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
     expect(held).toContain('/_next/static/chunks/app/layout-cc3.js');
   });
 
   it('leaves images alone — they are big and optional', async () => {
-    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const staticCache = await sw.cacheNamed('fsm-v6-static');
     const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
     expect(held).not.toContain('/_next/static/media/logo-dd4.png');
   });
@@ -381,9 +381,96 @@ describe('service worker — a cached page needs its code', () => {
     );
     await sw.fire('message', { data: { type: 'FSM_PREWARM', paths: ['/cycles/abc/record'] } });
 
-    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const staticCache = await sw.cacheNamed('fsm-v6-static');
     const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
     expect(held).toContain('/_next/static/chunks/app/record-ee5.js');
+  });
+});
+
+describe('service worker — a deploy must reach the cached shell', () => {
+  /**
+   * The shell is written at install, and install only runs when sw.js
+   * itself changes. Three deploys went out without touching this file,
+   * so the cached HTML stayed frozen at the build it was first
+   * installed against while the hashed JS chunks moved on.
+   *
+   * Online it is invisible — navigations are network-first. Offline it
+   * is the whole problem: the farmer boots a document from an old
+   * build, so a fix shipped hours earlier is simply not running, and a
+   * document whose markup no longer matches the code is React #418.
+   */
+  let sw: SwHarness;
+
+  beforeEach(async () => {
+    sw = load();
+    for (const r of APP_ROUTES) sw.served.add(r);
+    sw.bodies.set('/home', 'build-1');
+    await sw.fire('install', {});
+  });
+
+  it('serves the old build until told, which is the bug', async () => {
+    sw.bodies.set('/home', 'build-2'); // a deploy happens
+    sw.online.value = false;
+    const res = await sw.fetchEvent(navigation('/home'));
+    expect(await res!.text()).toBe('build-1');
+  });
+
+  it('picks up the new build when the app asks it to', async () => {
+    sw.bodies.set('/home', 'build-2');
+    await sw.fire('message', { data: { type: 'FSM_REFRESH_SHELL' } });
+
+    sw.online.value = false;
+    const res = await sw.fetchEvent(navigation('/home'));
+    expect(await res!.text()).toBe('build-2');
+  });
+
+  it('refreshes the build output alongside the documents', async () => {
+    // A fresh document naming chunks we do not hold is the same
+    // failure wearing a different hat.
+    sw.bodies.set('/home', '<script src="/_next/static/chunks/new-build.js"></script>');
+    sw.served.add('/_next/static/chunks/new-build.js');
+    await sw.fire('message', { data: { type: 'FSM_REFRESH_SHELL' } });
+
+    const staticCache = await sw.cacheNamed('fsm-v6-static');
+    const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);
+    expect(held).toContain('/_next/static/chunks/new-build.js');
+  });
+
+  it('keeps the old shell when the refresh cannot reach the network', async () => {
+    // Half a shell is worse than a stale one: a farmer offline with a
+    // partially replaced cache has neither build intact.
+    sw.online.value = false;
+    await sw.fire('message', { data: { type: 'FSM_REFRESH_SHELL' } });
+    const res = await sw.fetchEvent(navigation('/home'));
+    expect(await res!.text()).toBe('build-1');
+  });
+});
+
+describe('service worker — the network probe must reach the network', () => {
+  /**
+   * The probe decides whether the app believes it is online. Answering
+   * it from cache told the app it was online with the network cut —
+   * confirmed in a real browser, where the banner read "Back online —
+   * all changes synced" and the topbar said ONLINE while offline.
+   */
+  it('never answers a probe from the cache', async () => {
+    const sw = load();
+    for (const r of APP_ROUTES) sw.served.add(r);
+    await sw.fire('install', {});
+    sw.online.value = false;
+    // Undefined means the worker did not call respondWith at all, so
+    // the request goes straight to the network and fails as it should.
+    const res = await sw.fetchEvent(req('/?__net_probe=1'));
+    expect(res).toBeUndefined();
+  });
+
+  it('still serves the same path normally without the marker', async () => {
+    const sw = load();
+    for (const r of APP_ROUTES) sw.served.add(r);
+    await sw.fire('install', {});
+    sw.online.value = false;
+    const res = await sw.fetchEvent(navigation('/'));
+    expect(res?.status).toBe(200);
   });
 });
 
@@ -421,7 +508,7 @@ describe('service worker — RSC payloads', () => {
     // One key for both would hand the router a document to parse as a
     // flight payload, or the browser a flight payload to render.
     await sw.fetchEvent(rsc('/home?_rsc=aaa'));
-    const pages = await sw.cacheNamed('fsm-v5-pages');
+    const pages = await sw.cacheNamed('fsm-v6-pages');
     const keys = [...pages.map.keys()];
     expect(keys.some((k) => k.endsWith('/home?__rsc=1'))).toBe(true);
     expect(keys.some((k) => k.endsWith('/home'))).toBe(false);
@@ -461,7 +548,7 @@ describe('service worker — Vary does not hide the cache', () => {
 
   it('the harness really does enforce Vary', async () => {
     // Without this the two tests above would pass for the wrong reason.
-    const cache = await sw.cacheNamed('fsm-v5-pages');
+    const cache = await sw.cacheNamed('fsm-v6-pages');
     await cache.put(
       { url: `${ORIGIN}/probe`, headers: new Headers({ RSC: '1' }) },
       new Response('x', { headers: { vary: 'RSC' } }),
@@ -496,7 +583,7 @@ describe('service worker — cache budgets', () => {
       await sw.fetchEvent(navigation(p));
     }
 
-    const staticCache = await sw.cacheNamed('fsm-v5-static');
+    const staticCache = await sw.cacheNamed('fsm-v6-static');
     expect(await staticCache.match(new URL(boot, ORIGIN).href)).toBeDefined();
   });
 
@@ -506,15 +593,15 @@ describe('service worker — cache budgets', () => {
       sw.served.add(p);
       await sw.fetchEvent(navigation(p));
     }
-    const pages = await sw.cacheNamed('fsm-v5-pages');
+    const pages = await sw.cacheNamed('fsm-v6-pages');
     expect(pages.map.size).toBeLessThanOrEqual(160);
   });
 
   it('drops caches from an older version on activate', async () => {
-    const stale = await sw.caches.open('fsm-v4-shell');
+    const stale = await sw.caches.open('fsm-v5-shell');
     await stale.put('/old', new Response('old'));
     await sw.fire('activate', {});
-    expect(await sw.caches.keys()).not.toContain('fsm-v4-shell');
+    expect(await sw.caches.keys()).not.toContain('fsm-v5-shell');
   });
 });
 
@@ -534,7 +621,7 @@ describe('service worker — prewarm is not an open fetcher', () => {
   it('warms a real in-app path', async () => {
     sw.served.add('/cycles/abc/record');
     await prewarm(['/cycles/abc/record']);
-    const pages = await sw.cacheNamed('fsm-v5-pages');
+    const pages = await sw.cacheNamed('fsm-v6-pages');
     expect(await pages.match(new URL('/cycles/abc/record', ORIGIN).href)).toBeDefined();
   });
 

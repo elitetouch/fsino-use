@@ -69,6 +69,36 @@ function post(paths: string[]): void {
 /** The day-to-day screens. Call once the farmer is signed in. */
 export function prewarmCore(): void {
   post([...CORE_PATHS]);
+  refreshShellOnce();
+}
+
+/**
+ * Tell the worker to re-fetch its cached shell, because the site may
+ * have been deployed since it cached one.
+ *
+ * The shell is written at install, and install only runs when sw.js
+ * itself changes — so a deploy that does not touch the worker leaves
+ * the cached HTML frozen at an old build while the hashed chunks move
+ * on. Online nobody notices, because navigations are network-first.
+ * Offline it means a farmer runs a build from before the fix that was
+ * shipped to help them, and a document whose markup no longer matches
+ * the code renders as a hydration error.
+ *
+ * Once per session, and only online — this costs the precache list
+ * again, which is the price of the offline copy being at most one
+ * session behind.
+ */
+let shellRefreshed = false;
+
+function refreshShellOnce(): void {
+  if (shellRefreshed) return;
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+  if (!isOnline() || !readToken()) return;
+  shellRefreshed = true;
+
+  void navigator.serviceWorker.ready
+    .then((reg) => reg.active?.postMessage({ type: 'FSM_REFRESH_SHELL' }))
+    .catch(() => undefined);
 }
 
 /**

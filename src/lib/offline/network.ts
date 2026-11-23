@@ -36,10 +36,23 @@ let probeInFlight = false;
  */
 function buildHealthUrl(): string {
   const raw = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').trim();
-  if (!raw) return '/'; // last resort: probe our own origin
+  // `__net_probe` makes the service worker pass this straight to the
+  // network instead of answering it.
+  //
+  // THIS IS NOT COSMETIC. The probe decides whether the app believes
+  // it is online, and the fallback below is same-origin — which the
+  // worker caches. A cached 200 proved "the network works" when there
+  // was no network at all, so the app reported ONLINE, showed "Back
+  // online — all changes synced", and would have sent writes at a
+  // connection that was not there. Confirmed in a real browser with
+  // the network genuinely cut.
+  //
+  // The marker is on the API URL too: nothing about this request may
+  // ever be satisfied from a cache, by us or by anyone downstream.
+  if (!raw) return '/?__net_probe=1'; // last resort: probe our own origin
   const trimmed = raw.replace(/\/+$/, '');
   const host = trimmed.replace(/\/api(?:\/v\d+)?$/i, '');
-  return `${host}/api/v1/health`;
+  return `${host}/api/v1/health?__net_probe=1`;
 }
 
 const HEALTH_TIMEOUT_MS = 4000;
