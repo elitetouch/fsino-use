@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Lock } from 'lucide-react';
@@ -53,7 +53,24 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
 
   // Selected date — defaults to today, drives both the calendar
   // selection and every step's POST payload (record_date).
-  const [selectedDate, setSelectedDate] = useState<string>(() => todayYmd());
+  /*
+   * Empty until after hydration, NOT `todayYmd()`.
+   *
+   * Initialising from the clock during render means the server HTML
+   * carries the date it was generated on — and the service worker now
+   * serves that HTML back on later days, so a document cached
+   * yesterday hydrated against today's clock. React calls that a
+   * mismatch (#418), throws the server markup away and re-runs the
+   * tree; on a page whose data has not loaded that surfaces as
+   * "Application error: a client-side exception has occurred".
+   *
+   * Empty renders the same on the server and on the first client pass,
+   * so there is nothing to recover from.
+   */
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  useEffect(() => {
+    setSelectedDate((d) => (d === '' ? todayYmd() : d));
+  }, []);
 
   // Current step index. 0 = date picker; 1..N = event steps.
   const [stepIdx, setStepIdx] = useState(0);
@@ -200,7 +217,10 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  if (guidance.isLoading || prefs.isLoading || !stepList) {
+  // `selectedDate === ''` is the pre-hydration pass — see the state
+  // declaration. It must render the same thing the server did, and the
+  // server took this branch too.
+  if (selectedDate === '' || guidance.isLoading || prefs.isLoading || !stepList) {
     return <FullPageSpinner />;
   }
 

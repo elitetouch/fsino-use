@@ -41,6 +41,18 @@ vi.mock('@/lib/api', () => ({
       calls.push(`calendar:${id}`);
       return { days: [] };
     },
+    listFarms: async () => {
+      calls.push('farms');
+      return { farms: [] };
+    },
+    listPens: async () => {
+      calls.push('pens');
+      return { pens: [] };
+    },
+    getFlockReportSummary: async (id: string) => {
+      calls.push(`summary:${id}`);
+      return { summary: {} };
+    },
   },
 }));
 
@@ -60,6 +72,13 @@ describe('warming before the signal goes', () => {
     expect(calls).toContain('guidance:c1');
     expect(calls).toContain('calendar:c1');
     expect(calls).toContain('guidance:c2');
+  });
+
+  it('warms the dashboard, which is the screen the launcher opens onto', async () => {
+    await warmOfflineData(new QueryClient());
+    expect(calls).toContain('farms');
+    expect(calls).toContain('pens');
+    expect(calls).toContain('summary:c1');
   });
 
   it('skips archived cycles — nobody records against a closed one', async () => {

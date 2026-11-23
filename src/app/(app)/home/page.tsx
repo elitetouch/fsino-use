@@ -17,6 +17,7 @@ import { CycleWindowBanner } from '@/components/app/cycle-window-banner';
 import { AlertsFeed } from '@/components/app/alerts-feed';
 import { endpoints, type FarmDto, type FlockDto, type PenDto } from '@/lib/api';
 import { Gate } from '@/lib/access';
+import { useHydrated } from '@/lib/use-hydrated';
 import { readUser } from '@/lib/auth';
 import { readCurrentFarmId, useCurrentFarmId, writeCurrentFarmId } from '@/lib/farm-context';
 import { readLastCycle, writeLastCycle } from '@/lib/last-cycle';
@@ -34,6 +35,7 @@ import { flocksKey } from '@/lib/query-keys';
  * instead of empty cards.
  */
 export default function HomePage() {
+  const hydrated = useHydrated();
   const router = useRouter();
   const user = readUser();
 
@@ -170,7 +172,14 @@ export default function HomePage() {
       <section className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">
-            {pickGreeting()} · {todayLabel()}
+            {/* Clock-dependent, so held until after hydration. These
+                pages are statically prerendered: the greeting and date
+                baked into the HTML are whenever the BUILD ran, and
+                rendering the real ones over them is React error #418 —
+                a hydration mismatch that throws the server markup away
+                and re-runs the tree, which on a page with no data
+                escalates into "Application error". */}
+            {hydrated ? `${pickGreeting()} · ${todayLabel()}` : '\u00a0'}
           </p>
           <h1 className="mt-1 text-[1.25rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.375rem]">
             {user?.name?.split(' ')[0] ?? 'Welcome'}
@@ -308,6 +317,7 @@ export default function HomePage() {
  * carries a time component.
  */
 function TodayRecordCTA({ cycle }: { cycle: FlockDto }) {
+  const hydrated = useHydrated();
   const today = todayYmd();
   const month = today.slice(0, 7);
   const calendar = useQuery({
@@ -360,7 +370,7 @@ function TodayRecordCTA({ cycle }: { cycle: FlockDto }) {
             (todayHasRecord ? 'text-[var(--color-brand-fg)]' : 'text-white')
           }
         >
-          {todayFullLabel()}
+          {hydrated ? todayFullLabel() : '\u00a0'}
           {' · '}
           <span className={todayHasRecord ? 'text-[var(--color-brand-primary-deep)]' : 'text-white/90'}>
             {todayHasRecord

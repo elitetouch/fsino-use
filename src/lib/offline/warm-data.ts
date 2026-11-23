@@ -63,7 +63,14 @@ export async function warmOfflineData(client: QueryClient): Promise<void> {
   const farmId = readCurrentFarmId();
 
   try {
-    // Preferences first — the record screen renders nothing without
+    // The dashboard's own two lists. It is the screen the launcher
+    // opens onto, so it being cold is the first thing a farmer sees.
+    await Promise.all([
+      client.prefetchQuery({ queryKey: ['farms'], queryFn: () => endpoints.listFarms() }),
+      client.prefetchQuery({ queryKey: ['pens', readCurrentFarmId()], queryFn: () => endpoints.listPens() }),
+    ]).catch(() => undefined);
+
+    // Preferences — the record screen renders nothing without
     // them, and one request covers every cycle.
     await client.prefetchQuery({
       queryKey: ['my-preferences'],
@@ -108,6 +115,13 @@ export async function warmOfflineData(client: QueryClient): Promise<void> {
           queryKey: ['daily-record-calendar', flock.id, month],
           queryFn: () => endpoints.getDailyRecordCalendar(flock.id, month),
           staleTime: 30_000,
+        });
+        // The dashboard's stat tiles. Without it the cycle opens to a
+        // row of em-dashes, which reads as a farm with no data rather
+        // than a screen with no signal.
+        await client.prefetchQuery({
+          queryKey: ['flock-report-summary', flock.id],
+          queryFn: () => endpoints.getFlockReportSummary(flock.id),
         });
       } catch {
         // One cycle failing must not cost the farmer the rest.
