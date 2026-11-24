@@ -112,6 +112,17 @@ function refreshShellOnce(): void {
  * anything that could carry a traversal or a second path segment is
  * left alone.
  */
+export function prewarmCyclePages(flockIds: readonly string[]): void {
+  const paths: string[] = [];
+  for (const id of flockIds) {
+    // Same conservative id check as prewarmForPath: these become URLs
+    // the browser fetches with the farmer's session.
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) continue;
+    paths.push(`/cycles/${id}`, `/cycles/${id}/record`);
+  }
+  post(paths);
+}
+
 export function prewarmForPath(pathname: string | null | undefined): void {
   if (!pathname) return;
   const match = /^\/cycles\/([A-Za-z0-9_-]{1,64})(?:\/|$)/.exec(pathname);

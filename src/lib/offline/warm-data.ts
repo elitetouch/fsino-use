@@ -6,6 +6,7 @@ import { flocksKey } from '@/lib/query-keys';
 import { readCurrentFarmId } from '@/lib/farm-context';
 import { readToken } from '@/lib/auth';
 import { isOnline } from './network';
+import { prewarmCyclePages } from './prewarm';
 
 /**
  * Fetch the data a farmer will need offline, before they are offline.
@@ -98,6 +99,17 @@ export async function warmOfflineData(client: QueryClient): Promise<void> {
     const flocks = (withArchived?.flocks ?? [])
       .filter((f) => f.archivedAt == null)
       .slice(0, MAX_CYCLES);
+
+    // Ask the service worker to cache each active cycle's PAGES, not
+    // just its data.
+    //
+    // The worker precaches the routes we can name at build time, and
+    // prewarms whatever the farmer is currently looking at — so a
+    // cycle they had not opened since the worker installed had no
+    // document, and opening it with no signal produced the offline
+    // page. The ids are the farmer's, so only the app can name them,
+    // and this is the moment it learns them.
+    prewarmCyclePages(flocks.map((f) => f.id));
 
     const month = currentMonth();
 
