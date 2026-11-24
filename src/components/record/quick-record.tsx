@@ -16,6 +16,9 @@ import {
   type ParsedField,
 } from '@/lib/quick-record/parse';
 import { buildQuickRecordPayloads, MAX_NOTE } from '@/lib/quick-record/to-payloads';
+import { enabledKinds, notTrackedReason } from '@/lib/quick-record/enabled-kinds';
+import { apiErrorMessage, type DailyRecordPrefs } from '@/lib/api';
+import { toast } from 'sonner';
 
 /**
  * One sentence instead of eight screens.
@@ -54,6 +57,12 @@ interface QuickRecordProps {
   readonly lastFeed?: LastFeedEntry | null;
   /** Gates egg entries — broilers do not lay. */
   readonly productionType?: 'broiler' | 'layer' | 'mixed';
+  /**
+   * What this farm records, from the same `effectiveDailyRecord` the
+   * wizard builds its steps from. Anything switched off is refused
+   * here with a reason rather than posted and rejected by the server.
+   */
+  readonly enabled?: DailyRecordPrefs | null;
   /** Fired after every payload saved, so the parent can refresh or exit. */
   readonly onSaved?: () => void;
   /** Escape hatch to the full wizard. */
@@ -117,6 +126,7 @@ export function QuickRecord({
   recordDate,
   lastFeed,
   productionType,
+  enabled,
   currentBirds,
   onSaved,
   onUseWizard,
@@ -252,7 +262,30 @@ export function QuickRecord({
     const override = edited.get(i);
     return override === undefined ? f : { ...f, value: override };
   });
-  const kept = withEdits.filter((_, i) => !removed.has(i));
+
+  /*
+   * Split off anything this farm does not record.
+   *
+   * The wizard never offers a step for a switched-off event, so quick
+   * record must not post one either. It used to, and the server
+   * answered "water records are disabled in this farm settings" — a
+   * 422, which the outbox treats as permanent, leaving a record that
+   * could never be sent under a "Try again" button that would refuse
+   * it every time.
+   *
+   * Declined here instead, with the reason and where to change it,
+   * alongside the parser's own rejections.
+   */
+  const allowed = enabledKinds(enabled);
+  const offFields = withEdits.filter((f) => !allowed.has(f.kind));
+  const onFields = withEdits.filter((f) => allowed.has(f.kind));
+  const notTracked = offFields.map((f) => ({
+    kind: f.kind,
+    sourceText: f.sourceText,
+    reason: notTrackedReason(f.kind),
+  }));
+
+  const kept = onFields.filter((_, i) => !removed.has(i));
   const hasLowConfidence = kept.some((f) => f.confidence === 'low');
   const note = keepNote ? parsed.leftover : '';
   const canSave = !saving && (kept.length > 0 || note.trim() !== '');
@@ -294,8 +327,33 @@ export function QuickRecord({
       // and the guidance the next one is validated against, and the
       // outbox serialises per store anyway — firing them together would
       // race the bird count for no gain.
+      //
+      // BUT ONE REFUSAL MUST NOT SWALLOW THE REST. This loop used to
+      // let the first rejection throw, so "15 birds died and 2 bags of
+      // feed and 40 litres of water" lost the deaths and the feed if
+      // the water was refused — they were never even attempted, and
+      // nothing on screen said so. A farmer reporting mortality cannot
+      // have it dropped because an unrelated line failed.
+      //
+      // Every payload is attempted; the failures are counted and named.
+      const failures: string[] = [];
       for (const payload of payloads) {
-        await createRecord.mutateAsync(payload);
+        try {
+          await createRecord.mutateAsync(payload);
+        } catch (err) {
+          failures.push(apiErrorMessage(err, `Could not save the ${payload.event_type} entry.`));
+        }
+      }
+
+      if (failures.length > 0) {
+        // Said once, naming the first reason. The sync screen carries
+        // the rest; repeating every message here would bury the fact
+        // that the other entries DID save.
+        toast.error(
+          failures.length === payloads.length
+            ? failures[0]
+            : `Saved ${payloads.length - failures.length} of ${payloads.length}. ${failures[0]}`,
+        );
       }
       // Learn from what was just confirmed. The leftover text is the
       // part the app did not understand, and the kinds the farmer kept
@@ -450,7 +508,7 @@ export function QuickRecord({
 
       {/* Understood, then declined. Said plainly, because a farmer who
           sees nothing happen learns only that the app is unreliable. */}
-      {parsed.rejected.map((r) => (
+      {[...parsed.rejected, ...notTracked].map((r) => (
         <p
           key={`${r.kind}-${r.sourceText}`}
           className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-700"

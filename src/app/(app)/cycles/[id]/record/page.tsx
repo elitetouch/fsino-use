@@ -267,6 +267,11 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
             // the "more birds than you have" warning would just stop
             // firing, with nothing to notice it had.
             currentBirds={guidance.data.flock.current_birds}
+            // The same `effectiveDailyRecord` buildStepList reads, so
+            // quick record and the wizard agree on what this farm
+            // records. Without it quick record posted switched-off
+            // events and the server refused them permanently.
+            enabled={prefs.data?.preferences.effectiveDailyRecord}
             // Same source the wizard's feed step pre-fills from, so a
             // quick record and a tapped-out one carry the ration and
             // brand forward identically.
