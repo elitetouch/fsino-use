@@ -40,6 +40,7 @@ import {
   PRODUCE_ITEMS,
   SALE_VERBS,
   MONEY_MULTIPLIERS,
+  PAY_VERBS,
   MAX_MONEY,
   FEED_TYPES,
   KEYWORDS,
@@ -271,40 +272,49 @@ function isUsable(n: number): boolean {
  * costs the books.
  */
 function readMoney(clause: string): number | undefined {
-  // "for 45000" is the strongest signal, so the text after "for" is
-  // read first — in "bought 10 bags of feed for 45000" the ten is a
-  // quantity, not a price.
+  // Candidates in order of how certainly they are money.
   //
-  // It is a HINT, not a requirement: "paid 250000 for day old chicks"
-  // puts the price first and the goods after, which is just as
-  // natural, so a scoped read that finds nothing falls back to the
-  // whole clause rather than giving up.
-  const after = /\bfor\s+(.+)$/.exec(clause)?.[1];
-  return (after !== undefined ? moneyIn(after) : undefined) ?? moneyIn(clause);
-}
+  // 1. MARKED. A multiplier ("45k") or a currency ("N45000") says
+  //    money outright, wherever it sits in the sentence.
+  // 2. AFTER A PAYING VERB. "paid 250000", "paid workers 30000" —
+  //    the thing you pay is an amount; nothing else fits.
+  // 3. IN THE PRICE SLOT. "...for 45000".
+  //
+  // Nothing else counts. A bare number with no marker and no verb to
+  // anchor it is a quantity — "bought 10 bags of feed" is ten bags,
+  // and reading it as ten naira posts a quantity to the ledger as a
+  // price. The landing-page demo, which runs this parser live, is
+  // where that showed.
+  const marked =
+    /\b(\d{1,12}(?:\.\d{1,2})?)\s*(k|thousand|thousands|m|million|millions)\b/.exec(clause)
+    ?? /\b(?:n|ngn|naira)\s*(\d{1,12}(?:\.\d{1,2})?)\b/.exec(clause);
+  if (marked) return scale(marked[1], marked[2]);
 
-function moneyIn(text: string): number | undefined {
-  let value: number | undefined;
-  let multiplier = 1;
-
-  const m =
-    /\b(?:n|ngn|naira)?\s*(\d{1,12}(?:\.\d{1,2})?)\s*(k|thousand|thousands|m|million|millions)?\b/
-      .exec(text);
-
-  if (m) {
-    value = Number.parseFloat(m[1] as string);
-    if (m[2]) multiplier = MONEY_MULTIPLIERS.get(m[2]) ?? 1;
-  } else {
-    // A spelled number with a multiplier: "five thousand".
-    const w = /\b([a-z]+)\s+(thousand|thousands|million|millions)\b/.exec(text);
-    if (!w) return undefined;
-    const base = NUMBER_WORDS.get(w[1] as string);
-    if (base === undefined) return undefined;
-    value = base;
-    multiplier = MONEY_MULTIPLIERS.get(w[2] as string) ?? 1;
+  // A spelled number with a multiplier: "five thousand".
+  const spelled = /\b([a-z]+)\s+(thousand|thousands|million|millions)\b/.exec(clause);
+  if (spelled) {
+    const base = NUMBER_WORDS.get(spelled[1] as string);
+    if (base !== undefined) return scale(String(base), spelled[2]);
   }
 
-  if (value === undefined || !Number.isFinite(value)) return undefined;
+  if (PAY_VERBS.test(clause)) {
+    const afterVerb = clause.slice(clause.search(PAY_VERBS));
+    const n = /\b(\d{1,12}(?:\.\d{1,2})?)\b/.exec(afterVerb);
+    if (n) return scale(n[1], undefined);
+  }
+
+  const priced = /\bfor\s+(?:n|ngn|naira)?\s*(\d{1,12}(?:\.\d{1,2})?)\b/.exec(clause);
+  if (priced) return scale(priced[1], undefined);
+
+  return undefined;
+}
+
+/** A matched number and optional multiplier, bounded to real money. */
+function scale(raw: string | undefined, multiplierWord: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return undefined;
+  const multiplier = multiplierWord ? (MONEY_MULTIPLIERS.get(multiplierWord) ?? 1) : 1;
   const amount = Math.round(value * multiplier * 100) / 100;
   return amount > 0 && amount <= MAX_MONEY ? amount : undefined;
 }

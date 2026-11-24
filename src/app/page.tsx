@@ -7,6 +7,7 @@ import { MarketingHero } from '@/components/marketing/hero';
 import { StatsBar } from '@/components/marketing/stats';
 import { Platforms } from '@/components/marketing/platforms';
 import { Features } from '@/components/marketing/features';
+import { QuickRecordSection } from '@/components/marketing/quick-record-section';
 import { HowItWorks } from '@/components/marketing/how-it-works';
 import { Audience } from '@/components/marketing/audience';
 import { FinalCTA } from '@/components/marketing/final-cta';
@@ -42,6 +43,8 @@ export default function LandingPage() {
         <StatsBar />
         <Platforms />
         <Features />
+        {/* Shows the product working before the page asks for anything. */}
+        <QuickRecordSection />
         <HowItWorks />
         <Audience />
         <FinalCTA />

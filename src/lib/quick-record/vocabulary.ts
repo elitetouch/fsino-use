@@ -436,6 +436,22 @@ export const BUY_VERBS =
   /\b(bought|buy|buys|buying|purchas(?:e|ed|es|ing)|paid|pay|pays|paying|spent(?!\\s+litter)|spend(?:ing)?|restock(?:ed|ing)?)\b/;
 
 /**
+ * Verbs a BARE NUMBER follows as money rather than as a quantity.
+ *
+ * "I PAID 250000" is money. "I BOUGHT 10 bags" is ten bags. Both are
+ * expenses, but the number after them means opposite things, and
+ * treating them alike read "Bought 10 bags of feed" as a ten-naira
+ * spend — a quantity posted to the ledger as a price. The landing
+ * page demo, which runs this parser live, is where that showed.
+ *
+ * So after an acquiring verb a number counts as money only when it is
+ * marked as money: a price slot ("for 45000"), a currency ("N45000"),
+ * or a multiplier ("45k"). After a paying verb it may stand bare,
+ * because money is the only thing it can be.
+ */
+export const PAY_VERBS = /\b(paid|pay|pays|paying|spent(?!\s+litter)|spend(?:ing)?)\b/;
+
+/**
  * What the money was spent on, mapped to the backend's own category
  * list (App\Models\Expense::categories()).
  *

@@ -43,6 +43,23 @@ describe('buying versus giving', () => {
     expect(buildExpensePayloads(r.fields, MONEY)).toHaveLength(0);
   });
 
+  it('does not mistake a QUANTITY for a price', () => {
+    // Found by the landing-page demo, which runs this parser live:
+    // mid-sentence, "Bought 10 bags of feed" was read as a ₦10 spend
+    // — the number of bags posted to the ledger as the price.
+    const r = parseQuickRecord('Bought 10 bags of feed');
+    expect(r.fields.some((f) => f.kind === 'expense')).toBe(false);
+  });
+
+  it.each([
+    ['bought 10 bags of feed for 45000', 45000],  // price slot
+    ['bought 10 bags of feed 45k', 45000],        // multiplier
+    ['bought 10 bags of feed N45000', 45000],     // currency
+    ['paid 45000 for 10 bags of feed', 45000],    // paying verb, bare
+  ])('still reads a marked price: %s', (text, expected) => {
+    expect(expenseOf(text)?.amount).toBe(expected);
+  });
+
   it('refuses a purchase with no amount', () => {
     // "I bought feed" is a fact about the store, not a figure for the
     // books. A zero row would be worse than none.
