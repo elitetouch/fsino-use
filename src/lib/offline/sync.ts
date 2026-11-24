@@ -1,6 +1,7 @@
 'use client';
 
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
+import { api } from '@/lib/api';
 import { complete, getDrainable, markFailed, markInFlight, onOutboxChange } from './queue';
 import { onNetworkChange, isOnline } from './network';
 import { setMeta } from './db';
@@ -148,7 +149,20 @@ export async function drain(): Promise<number> {
           entry.body && typeof entry.body === 'object' && !Array.isArray(entry.body)
             ? { ...(entry.body as Record<string, unknown>), _idempotencyKey: entry.key }
             : entry.body;
-        await axios.request({
+        // `api`, NOT bare axios. THIS IS THE BUG THAT MADE OFFLINE
+        // WRITES IMPOSSIBLE.
+        //
+        // Replaying through the global axios meant no baseURL, so
+        // `/flocks/<id>/daily-records` resolved against the APP's
+        // origin — web.fsinnovation.net, not the API — and came back
+        // 404. No Authorization header either, and no X-Farm-ID. So
+        // every record a farmer saved with no signal was queued
+        // correctly, drained correctly, and posted to a URL that does
+        // not exist, then marked permanently rejected with a bare
+        // "Request failed with status code 404".
+        //
+        // Nothing saved offline had ever reached the server.
+        await api.request({
           url: entry.url,
           method: entry.method,
           data: body,

@@ -5,6 +5,24 @@ import { isOnline } from './network';
 import * as cache from './cache';
 import { enqueue } from './queue';
 import { newIdempotencyKey } from './idempotency';
+import { readCurrentFarmId } from '@/lib/farm-context';
+
+/**
+ * The farm this write belongs to, captured NOW.
+ *
+ * The request interceptor stamps X-Farm-ID from whatever farm is
+ * selected at the time the request goes out — which, for a queued
+ * write, is whenever the signal returns. A farmer who records for one
+ * farm offline and switches to another before reconnecting would have
+ * had the record written to the farm they switched to.
+ *
+ * Pinned on the entry instead, and the interceptor leaves an existing
+ * X-Farm-ID alone.
+ */
+function farmHeaders(): Record<string, string> {
+  const farmId = readCurrentFarmId();
+  return farmId ? { 'X-Farm-ID': farmId } : {};
+}
 
 /**
  * Offline-aware API surface.
@@ -125,6 +143,7 @@ export async function mutateOffline<T = unknown>(input: MutateInput): Promise<Mu
         method: input.method,
         url: input.url,
         body: input.body,
+        headers: farmHeaders(),
         scope: input.scope,
         rollback: input.rollback,
       });
@@ -138,6 +157,7 @@ export async function mutateOffline<T = unknown>(input: MutateInput): Promise<Mu
     method: input.method,
     url: input.url,
     body: input.body,
+    headers: farmHeaders(),
     scope: input.scope,
     rollback: input.rollback,
   });
