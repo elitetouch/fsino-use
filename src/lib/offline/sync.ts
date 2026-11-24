@@ -93,6 +93,31 @@ const TAB_ID =
  * Drive a single drain pass. Returns the count of successfully sent
  * entries.
  */
+/**
+ * The most useful sentence the server gave us.
+ *
+ * Laravel answers a 422 with a generic top-level message and the real
+ * reason in `errors`, field by field. Keeping only the top level
+ * stored "The given data was invalid." against a record that had in
+ * fact been refused for a named field — no more actionable than
+ * saying nothing, and the reason a farmer's missing water record took
+ * days to explain when the answer was in the response all along.
+ */
+function failureMessage(ax: AxiosError): string {
+  const body = ax.response?.data as
+    | { message?: string; errors?: Record<string, string[]> }
+    | undefined;
+
+  const first = body?.errors ? Object.entries(body.errors)[0] : undefined;
+  if (first) {
+    const [field, messages] = first;
+    const detail = Array.isArray(messages) ? messages[0] : undefined;
+    if (detail) return `${field}: ${detail}`;
+  }
+
+  return body?.message ?? ax.message ?? 'Unknown error';
+}
+
 export async function drain(): Promise<number> {
   if (!isOnline()) {
     return 0;
@@ -136,10 +161,7 @@ export async function drain(): Promise<number> {
         const ax = err as AxiosError;
         await markFailed(entry.key, {
           status: ax.response?.status,
-          message:
-            (ax.response?.data as { message?: string } | undefined)?.message ??
-            ax.message ??
-            'Unknown error',
+          message: failureMessage(ax),
         });
       }
     }
