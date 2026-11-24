@@ -61,6 +61,18 @@ const routes = (path) => {
     };
   }
   if (path.startsWith('/api/v1/flocks/') && path.includes('/daily-records')) return { records: [] };
+  if (path.includes('/finance')) {
+    return {
+      flock: { id: 'cycle-1', name: 'Batch A', placedBirds: 500, currentBirds: 480, productionType: 'broiler' },
+      primaryCurrency: 'NGN',
+      placement: { cost: 250000, currency: 'NGN', note: '' },
+      expenses: {
+        primaryCurrency: 'NGN', totalPrimary: 185000,
+        byCategory: [{ category: 'feed', amount: 185000, count: 4 }],
+        secondaryCurrencies: [],
+      },
+    };
+  }
   if (path.startsWith('/api/v1/flocks')) return { flocks: [FLOCK] };
   if (path.startsWith('/api/v1/pens')) return { pens: [PEN] };
   if (path.startsWith('/api/v1/billing/balances')) return { balances: [{ tokenType: 'broiler', tier: 'basic', balance: 900 }], freemium: { enabled: false, used: true } };

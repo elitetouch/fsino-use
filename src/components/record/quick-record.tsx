@@ -19,6 +19,9 @@ import {
   buildQuickRecordPayloads, buildExpensePayloads, buildProduceSalePayloads, MAX_NOTE,
 } from '@/lib/quick-record/to-payloads';
 import { useCreateExpense } from '@/lib/use-expense';
+import { moneyImpact } from '@/lib/quick-record/money-impact';
+import { useQueryClient } from '@tanstack/react-query';
+import type { FlockFinanceDto } from '@/lib/api';
 import { DEFAULT_CURRENCY } from '@/lib/currencies';
 import { enabledKinds, notTrackedReason } from '@/lib/quick-record/enabled-kinds';
 import { apiErrorMessage, type DailyRecordPrefs } from '@/lib/api';
@@ -114,6 +117,21 @@ const BRAND_LABELS: Readonly<Record<string, string>> = {
 
 /** The part of a chip that names what was understood beyond the number. */
 /** "feed" -> "Feed", for the expense chip. */
+/**
+ * Naira, written the way a farmer reads it.
+ *
+ * Grouped thousands, and no kobo unless there are any — "₦45,000"
+ * rather than "₦45000.00". A price with trailing zeros on a phone
+ * screen is harder to scan, and scanning is the whole job here.
+ */
+function money(value: number): string {
+  const whole = Number.isInteger(value);
+  return `\u20A6${value.toLocaleString('en-NG', {
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 const EXPENSE_CATEGORY_LABEL: Readonly<Record<string, string>> = {
   birds: 'Birds', feed: 'Feed', vaccine: 'Vaccine', treatment: 'Treatment',
   fuel: 'Fuel', utilities: 'Utilities', repairs: 'Repairs', wages: 'Wages',
@@ -160,6 +178,7 @@ export function QuickRecord({
 
   const createRecord = useCreateDailyRecord(flockId);
   const createExpense = useCreateExpense();
+  const qc = useQueryClient();
 
   // This farmer's learned words, loaded once. Failure is silent and
   // harmless — an empty map just means the shipped vocabulary alone.
@@ -304,6 +323,15 @@ export function QuickRecord({
   }));
 
   const kept = onFields.filter((_, i) => !removed.has(i));
+
+  // Read from the cache, never fetched. Offline this is whatever the
+  // finance screen last held, and null when it held nothing.
+  const finance = qc.getQueryData<FlockFinanceDto>(['flock-finance', flockId]) ?? null;
+  const impact = useMemo(
+    () => moneyImpact(kept, { currentBirds, finance }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [kept, currentBirds, finance],
+  );
   const hasLowConfidence = kept.some((f) => f.confidence === 'low');
   const note = keepNote ? parsed.leftover : '';
   const canSave = !saving && (kept.length > 0 || note.trim() !== '');
@@ -584,6 +612,41 @@ export function QuickRecord({
             Save the rest as a note: &ldquo;{parsed.leftover.slice(0, MAX_NOTE)}&rdquo;
           </span>
         </label>
+      )}
+
+      {/*
+        What the money means, in the second before they confirm.
+        
+        This is the part a competitor with speech-to-a-form cannot
+        copy: it needs the cost model, the flock size and the ledger.
+        Computed locally so it is right with no signal, and the cycle
+        total is simply absent when nothing is cached rather than
+        showing a stale number as current.
+      */}
+      {impact && (
+        <div className="mt-3 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-3 py-2.5">
+          <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
+            {impact.out > 0 && impact.in > 0
+              ? `${money(impact.out)} out, ${money(impact.in)} in`
+              : impact.out > 0
+                ? `${money(impact.out)} out`
+                : `${money(impact.in)} in`}
+            {impact.perBird !== null && (
+              <span className="font-semibold text-[var(--color-brand-muted)]">
+                {' · about '}{money(impact.perBird)}{' a bird'}
+              </span>
+            )}
+          </p>
+          {impact.categoryToDate && (
+            <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
+              That puts this cycle at{' '}
+              <strong className="text-[var(--color-brand-fg)]">
+                {money(impact.categoryToDate.amount)}
+              </strong>{' '}
+              on {(EXPENSE_CATEGORY_LABEL[impact.categoryToDate.category] ?? impact.categoryToDate.category).toLowerCase()}.
+            </p>
+          )}
+        </div>
       )}
 
       {text.trim() !== '' && parsed.understoodNothing && (
