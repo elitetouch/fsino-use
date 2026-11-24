@@ -309,3 +309,83 @@ export function buildQuickRecordPayloads(
 
   return payloads;
 }
+
+/* ================================================================== */
+/*  EXPENSES — a different ledger, a different endpoint                */
+/* ================================================================== */
+
+/**
+ * Categories the expenses endpoint accepts.
+ *
+ * Mirrors App\Models\Expense::categories(). Re-checked here rather
+ * than trusted from the vocabulary file for the same reason as every
+ * other allowlist in this module: the vocabulary is edited by whoever
+ * is chasing a mis-parse, and a typo there must not become a 422 the
+ * farmer meets after the fact — or worse, a category the server
+ * silently stores because it only checked the length.
+ */
+const EXPENSE_CATEGORY_VALUES: readonly string[] = [
+  'birds', 'feed', 'vaccine', 'treatment', 'fuel', 'utilities',
+  'repairs', 'wages', 'equipment', 'transport', 'other',
+];
+
+/** Matches the expenses endpoint's own ceiling. */
+const MAX_EXPENSE_AMOUNT = 999_999_999.99;
+
+export interface ExpensePayload {
+  readonly flock_id?: string;
+  readonly category: string;
+  readonly amount: number;
+  readonly currency: string;
+  readonly expense_date: string;
+  readonly description?: string;
+}
+
+/**
+ * Turn confirmed expense fields into expense rows.
+ *
+ * SEPARATE FROM buildQuickRecordPayloads ON PURPOSE. These go to
+ * /expenses, not to the flock's daily records, and mixing the two
+ * return types would make it possible to post one to the other's
+ * endpoint by losing track of which list a payload came from.
+ *
+ * THE CURRENCY IS NEVER PARSED FROM SPEECH. It is passed in by the
+ * caller from the app's own setting. A farmer saying "dollars" must
+ * not be able to retag a naira ledger — mixed currencies on one farm
+ * is exactly what made a cost projection read "USD 30,030" when the
+ * farm had spent thirty thousand naira.
+ */
+export function buildExpensePayloads(
+  fields: readonly ParsedField[],
+  opts: {
+    readonly recordDate: string;
+    readonly currency: string;
+    readonly flockId?: string;
+  },
+): ExpensePayload[] {
+  const out: ExpensePayload[] = [];
+
+  for (const f of fields) {
+    if (f.kind !== 'expense') continue;
+
+    const amount = f.value;
+    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_EXPENSE_AMOUNT) continue;
+
+    const raw = f.detail?.expenseCategory;
+    // An unrecognised category becomes `other`, never the raw string.
+    const category =
+      typeof raw === 'string' && EXPENSE_CATEGORY_VALUES.includes(raw) ? raw : 'other';
+
+    out.push({
+      ...(opts.flockId ? { flock_id: opts.flockId } : {}),
+      category,
+      // Money, rounded to the minor unit. A float from a multiplier
+      // ("1.5m") can otherwise arrive as 1499999.9999999998.
+      amount: Math.round(amount * 100) / 100,
+      currency: opts.currency,
+      expense_date: opts.recordDate,
+    });
+  }
+
+  return out;
+}

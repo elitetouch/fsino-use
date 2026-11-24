@@ -32,6 +32,7 @@
 
 /** Event kinds the quick-record parser can produce. */
 export type FieldKind =
+  | 'expense'
   | 'dead'
   | 'culled'
   | 'sold'
@@ -412,6 +413,75 @@ export const BAG_WEIGHT_NOTE = 'Bags are saved as bags — say "50kg" or "2 bags
  * arithmetic from untrusted input. A Map has no prototype chain to
  * walk, so an unknown word can only ever miss.
  */
+/**
+ * Verbs that mean MONEY LEFT THE FARM.
+ *
+ * The whole expense feature hangs off this list, because the
+ * difference between an expense and a daily record is the verb and
+ * nothing else:
+ *
+ *   "I BOUGHT 10 bags of feed for 45000"  → an expense
+ *   "I GAVE them 10 bags of feed"         → feed consumption
+ *
+ * Read the second as an expense and the farm's feed cost doubles;
+ * read the first as consumption and the FCR is computed against feed
+ * that is still in the store. So an expense is never inferred from a
+ * noun and a number — the farmer has to have said they paid.
+ *
+ * "sold" is deliberately absent. Money arriving is not an expense,
+ * and "sold 50 birds for 200000" must stay a sale.
+ */
+export const BUY_VERBS =
+  /\b(bought|buy|buys|buying|purchas(?:e|ed|es|ing)|paid|pay|pays|paying|spent|spend(?:ing)?|restock(?:ed|ing)?)\b/;
+
+/**
+ * What the money was spent on, mapped to the backend's own category
+ * list (App\Models\Expense::categories()).
+ *
+ * ORDER MATTERS. "bought feed for the birds" names both feed and
+ * birds, and it is a feed expense — so the specific goods come before
+ * `birds`, which is otherwise the commonest noun in any poultry
+ * sentence. An unmatched clause becomes `other` rather than being
+ * dropped: a farmer who said they spent money should always get a
+ * row, even when the app cannot tell what for.
+ */
+export const EXPENSE_CATEGORIES: ReadonlyArray<{ re: RegExp; value: string }> = [
+  { re: /\b(feeds?|mash|pellets?|crumbles?|concentrates?|maize|soya|bran)\b/, value: 'feed' },
+  // Before `treatment`: lasota and gumboro are vaccines, and both
+  // words also read as "drugs" to a farmer.
+  { re: /\b(vaccines?|vaccinations?|lasota|gumboro|newcastle|marek)\b/, value: 'vaccine' },
+  { re: /\b(drugs?|medicines?|antibiotics?|dewormers?|vitamins?|treatments?|coccidiosta(?:t|ts)|antistress)\b/, value: 'treatment' },
+  { re: /\b(fuel|diesel|petrol|kerosene|gas)\b/, value: 'fuel' },
+  { re: /\b(electricity|nepa|power|light\s*bill|water\s*bill|utilit(?:y|ies))\b/, value: 'utilities' },
+  { re: /\b(repairs?|repaired|repairing|fixed|fixing|maintenance)\b/, value: 'repairs' },
+  { re: /\b(wages?|salar(?:y|ies)|labour|labor|workers?)\b/, value: 'wages' },
+  { re: /\b(equipment|feeders?|drinkers?|cages?|incubators?|generators?|bulbs?)\b/, value: 'equipment' },
+  { re: /\b(transport|haulage|delivery|logistics|lorry|truck|fare)\b/, value: 'transport' },
+  // LAST of the specific ones. "birds" appears in half of all farm
+  // sentences; only a clause that named nothing else is a bird spend.
+  { re: /\b(day\s*old|doc|chicks?|birds?|point\s*of\s*lay|pol|cockerels?|pullets?|noilers?)\b/, value: 'birds' },
+];
+
+/**
+ * How big a number may be before it is money rather than a count.
+ *
+ * Counts are capped at MAX_VALUE (a million birds is already absurd),
+ * but money is not a count: a batch of day-olds runs to seven figures
+ * in naira. The ceiling here matches what the expenses endpoint
+ * accepts, so nothing can be composed locally that the server will
+ * then refuse.
+ */
+export const MAX_MONEY = 999_999_999.99;
+
+/**
+ * Multipliers a farmer actually says. "45k" is how a price is spoken
+ * in Nigeria far more often than "forty five thousand".
+ */
+export const MONEY_MULTIPLIERS: ReadonlyMap<string, number> = new Map([
+  ['k', 1_000], ['thousand', 1_000], ['thousands', 1_000],
+  ['m', 1_000_000], ['million', 1_000_000], ['millions', 1_000_000],
+]);
+
 export const NUMBER_WORDS: ReadonlyMap<string, number> = new Map([
   ['zero', 0], ['one', 1], ['two', 2], ['three', 3], ['four', 4], ['five', 5],
   ['six', 6], ['seven', 7], ['eight', 8], ['nine', 9], ['ten', 10],

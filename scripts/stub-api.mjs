@@ -22,14 +22,16 @@ const FLOCK = {
   name: 'Batch A',
   farmId: 'farm-1',
   penId: 'pen-1',
-  currentBirds: 480,
-  current_birds: 480,
+  currentBirds: 463,
+  current_birds: 463,
   placedBirds: 500,
   placed_birds: 500,
   productionType: 'broiler',
   production_type: 'broiler',
   currentAge: 21,
   current_age: 21,
+  ageDays: 52,
+  startDate: '2026-10-04',
   archivedAt: null,
   writeWindow: { state: 'open' },
 };
@@ -63,6 +65,7 @@ const routes = (path) => {
   if (path.startsWith('/api/v1/pens')) return { pens: [PEN] };
   if (path.startsWith('/api/v1/billing/balances')) return { balances: [{ tokenType: 'broiler', tier: 'basic', balance: 900 }], freemium: { enabled: false, used: true } };
   if (path.startsWith('/api/v1/alerts')) return { alerts: [] };
+  if (path.startsWith('/api/v1/expenses')) return { expenses: [], totals: [] };
   if (path.includes('preferences')) {
     return {
       preferences: {

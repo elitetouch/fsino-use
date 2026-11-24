@@ -15,7 +15,9 @@ import {
   parseQuickRecord,
   type ParsedField,
 } from '@/lib/quick-record/parse';
-import { buildQuickRecordPayloads, MAX_NOTE } from '@/lib/quick-record/to-payloads';
+import { buildQuickRecordPayloads, buildExpensePayloads, MAX_NOTE } from '@/lib/quick-record/to-payloads';
+import { useCreateExpense } from '@/lib/use-expense';
+import { DEFAULT_CURRENCY } from '@/lib/currencies';
 import { enabledKinds, notTrackedReason } from '@/lib/quick-record/enabled-kinds';
 import { apiErrorMessage, type DailyRecordPrefs } from '@/lib/api';
 import { toast } from 'sonner';
@@ -70,6 +72,7 @@ interface QuickRecordProps {
 }
 
 const KIND_LABEL: Readonly<Record<ParsedField['kind'], string>> = {
+  expense: 'Spent',
   dead: 'Died',
   culled: 'Culled',
   sold: 'Sold',
@@ -107,9 +110,19 @@ const BRAND_LABELS: Readonly<Record<string, string>> = {
 };
 
 /** The part of a chip that names what was understood beyond the number. */
+/** "feed" -> "Feed", for the expense chip. */
+const EXPENSE_CATEGORY_LABEL: Readonly<Record<string, string>> = {
+  birds: 'Birds', feed: 'Feed', vaccine: 'Vaccine', treatment: 'Treatment',
+  fuel: 'Fuel', utilities: 'Utilities', repairs: 'Repairs', wages: 'Wages',
+  equipment: 'Equipment', transport: 'Transport', other: 'Other',
+};
+
 function detailText(field: ParsedField): string | null {
   const d = field.detail;
   if (!d) return null;
+  if (d.expenseCategory) {
+    return EXPENSE_CATEGORY_LABEL[d.expenseCategory] ?? d.expenseCategory;
+  }
   if (d.vaccineName) return d.vaccineName;
   if (d.treatmentType) return d.treatmentType;
   if (d.eggSize) return d.eggSize;
@@ -142,6 +155,7 @@ export function QuickRecord({
   const [momentOverride, setMomentOverride] = useState<Moment | null>(null);
 
   const createRecord = useCreateDailyRecord(flockId);
+  const createExpense = useCreateExpense();
 
   // This farmer's learned words, loaded once. Failure is silent and
   // harmless — an empty map just means the shipped vocabulary alone.
@@ -319,7 +333,15 @@ export function QuickRecord({
       moment,
       note,
     });
-    if (payloads.length === 0) return;
+    // A different ledger and a different endpoint — see
+    // buildExpensePayloads. The currency comes from the app's own
+    // setting and never from what was said.
+    const expenses = buildExpensePayloads(kept, {
+      recordDate,
+      currency: DEFAULT_CURRENCY,
+      flockId,
+    });
+    if (payloads.length === 0 && expenses.length === 0) return;
 
     setSaving(true);
     try {
@@ -345,14 +367,26 @@ export function QuickRecord({
         }
       }
 
+      // Expenses, under the same rule: each attempted, none allowed to
+      // take the others down. A farmer who said what they spent AND
+      // what died must not lose the deaths because the ledger refused.
+      for (const expense of expenses) {
+        try {
+          await createExpense.mutateAsync(expense);
+        } catch (err) {
+          failures.push(apiErrorMessage(err, `Could not save the ${expense.category} expense.`));
+        }
+      }
+
       if (failures.length > 0) {
         // Said once, naming the first reason. The sync screen carries
         // the rest; repeating every message here would bury the fact
         // that the other entries DID save.
+        const total = payloads.length + expenses.length;
         toast.error(
-          failures.length === payloads.length
+          failures.length === total
             ? failures[0]
-            : `Saved ${payloads.length - failures.length} of ${payloads.length}. ${failures[0]}`,
+            : `Saved ${total - failures.length} of ${total}. ${failures[0]}`,
         );
       }
       // Learn from what was just confirmed. The leftover text is the
@@ -598,6 +632,7 @@ function Chip({
   const showsValue =
     field.value > 0 || (field.kind !== 'vaccination' && field.kind !== 'treatment');
   const detail = detailText(field);
+  const isMoney = field.kind === 'expense';
   const inherited = field.detail?.inherited ?? [];
   // Only the brand line is worth naming when just the type carried
   // over — a ration follows bird age and is far less likely to be
@@ -627,15 +662,27 @@ function Chip({
                   more often than the reverse, and making the farmer
                   re-dictate to fix one digit is where they give up and
                   guess instead. */}
+              {/* Money reads as money. A bare "45000" beside a bird
+                  count is the farmer's cue that the app has understood
+                  a price rather than a quantity, and the naira sign is
+                  what carries that in one glance. */}
+              {isMoney && <span aria-hidden>&nbsp;&#8358;</span>}
               <input
                 type="number"
-                inputMode="numeric"
+                inputMode={isMoney ? 'decimal' : 'numeric'}
                 min={0}
-                max={1_000_000}
+                // A count of a million birds is absurd; a spend of a
+                // million naira is a batch of day-olds. Sharing one
+                // ceiling would have silently clamped real prices.
+                max={isMoney ? 999_999_999.99 : 1_000_000}
+                step={isMoney ? '0.01' : '1'}
                 value={field.value}
                 onChange={(e) => onValue(e.target.value)}
-                aria-label={`${KIND_LABEL[field.kind]} amount`}
-                className="w-[5.5ch] rounded border border-transparent bg-white/70 px-0.5 text-center font-semibold tabular-nums underline decoration-dotted underline-offset-2 focus:border-[var(--color-brand-primary)] focus:outline-none"
+                aria-label={isMoney ? 'Amount spent' : `${KIND_LABEL[field.kind]} amount`}
+                className={cn(
+                  'rounded border border-transparent bg-white/70 px-0.5 text-center font-semibold tabular-nums underline decoration-dotted underline-offset-2 focus:border-[var(--color-brand-primary)] focus:outline-none',
+                  isMoney ? 'w-[9ch]' : 'w-[5.5ch]',
+                )}
               />
             </>
           )}
