@@ -15,7 +15,19 @@ import { useState } from 'react';
  *   4. Just reconnected (no pending) → soft green for 4s, "Back online"
  *   5. Default (online + no pending) → hidden
  *
- * Position: fixed top, full width, below the marketing nav.
+ * Position: in normal flow at the very top of the page, full width.
+ *
+ * NOT fixed. It used to be `fixed top-0 z-[60]`, which put it on top
+ * of whatever was beneath — and what is beneath on every signed-in
+ * screen is the app's own header, so the banner covered the hamburger
+ * and the logo. A farmer who went offline lost the way out of the page
+ * they were on.
+ *
+ * In flow it pushes the page down instead, and because both the
+ * marketing nav and the app header are `sticky top-0` they take over
+ * the top of the viewport once this scrolls away. The farmer does not
+ * lose the state when it does: the header carries its own ONLINE /
+ * OFFLINE pill.
  */
 export function OfflineBanner() {
   const { online, justReconnected } = useOnlineTransition();
@@ -89,7 +101,7 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className={`animate-fade-in fixed inset-x-0 top-0 z-[60] flex items-center justify-center gap-3 px-4 py-2 text-sm font-medium text-white shadow-md ${bg}`}
+      className={`animate-fade-in relative z-[60] flex w-full items-center justify-center gap-3 px-4 py-2 text-sm font-medium text-white shadow-md ${bg}`}
     >
       {icon}
       <span>{message}</span>
