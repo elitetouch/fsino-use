@@ -184,7 +184,13 @@ function CycleRow({
           Cycle {ordinal} · {cycle.breed}
         </p>
         <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
-          {pen ? `${pen.name} · ` : ''}{labelForProduction(cycle.productionType)} · {cycle.placedBirds.toLocaleString()} birds
+          {/* Birds still in the pen, not birds placed. Scanning this
+              list to see how a cycle is doing is the whole point of
+              it, and the placement figure never changes however many
+              birds a farmer has lost. Placement stands in only when
+              the current count is absent on the wire. */}
+          {pen ? `${pen.name} · ` : ''}{labelForProduction(cycle.productionType)} ·{' '}
+          {(cycle.currentBirds ?? cycle.placedBirds).toLocaleString()} birds
         </p>
       </div>
       <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">
