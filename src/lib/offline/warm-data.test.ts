@@ -56,10 +56,16 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
+const prewarmed: string[][] = [];
+vi.mock('./prewarm', () => ({
+  prewarmCyclePages: (ids: string[]) => { prewarmed.push(ids); },
+}));
+
 const { warmOfflineData, warmCycle, resetWarmedForTests } = await import('./warm-data');
 
 beforeEach(() => {
   calls.length = 0;
+  prewarmed.length = 0;
   online.value = true;
   token.value = 'tok';
   resetWarmedForTests();
@@ -79,6 +85,15 @@ describe('warming before the signal goes', () => {
     expect(calls).toContain('farms');
     expect(calls).toContain('pens');
     expect(calls).toContain('summary:c1');
+  });
+
+  it('asks the worker to cache each active cycle’s pages', async () => {
+    // Data alone is not enough: a cycle whose document the worker has
+    // never seen opens to the offline page, whatever is in the query
+    // cache. The ids are the farmer's, so this is the only moment the
+    // app can name them.
+    await warmOfflineData(new QueryClient());
+    expect(prewarmed.flat()).toEqual(['c1', 'c2']);
   });
 
   it('skips archived cycles — nobody records against a closed one', async () => {
