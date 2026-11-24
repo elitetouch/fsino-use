@@ -191,6 +191,12 @@ function CycleRow({
               the current count is absent on the wire. */}
           {pen ? `${pen.name} · ` : ''}{labelForProduction(cycle.productionType)} ·{' '}
           {(cycle.currentBirds ?? cycle.placedBirds).toLocaleString()} birds
+          {/* Age belongs next to the count. Together they are what a
+              cycle IS at a glance — how many birds, and how far
+              through. Omitted rather than shown as "0 days old" when
+              the server has no start date, which would read as a
+              flock placed this morning. */}
+          {cycle.ageDays != null && ` · ${cycle.ageDays} days old`}
         </p>
       </div>
       <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">

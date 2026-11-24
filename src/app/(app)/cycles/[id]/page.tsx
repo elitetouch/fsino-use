@@ -173,6 +173,38 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
       ) : (
         <ResultsTab cycle={cycle} pen={pen} ordinal={ordinal} />
       )}
+
+      {/*
+        The primary action, reachable without scrolling.
+        
+        "Add record" lived at the BOTTOM of this page, below every
+        card, so on a phone the one thing a farmer opens this screen to
+        do was several swipes away — and the cards above it are a
+        report, which is read occasionally, where logging is daily.
+        
+        Phone only: from sm up the inline card is already on screen
+        with everything else, and a bar there would cover content for
+        no gain. Hidden on a closed or expired cycle for the same
+        reason the inline card is — the backend refuses the write, so
+        offering it walks the farmer into an error.
+      */}
+      {cycle && !cycle.archivedAt && cycle.writeWindow?.state !== 'locked' && (
+        <Gate perm="flocks.records.create">
+          <div
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-brand-border)] bg-white/95 px-4 py-3 backdrop-blur-lg sm:hidden"
+            style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+          >
+            <Button asChild size="block" className="h-12">
+              <Link href={`/cycles/${cycle.id}/record`}>
+                <Plus className="h-4 w-4" />
+                Add record
+              </Link>
+            </Button>
+          </div>
+          {/* Clears the bar so the last card is never hidden under it. */}
+          <div aria-hidden className="h-20 sm:hidden" />
+        </Gate>
+      )}
     </div>
   );
 }
@@ -223,6 +255,24 @@ function ResultsTab({
           </span>
           <div className="min-w-0">
             <p className="text-[0.875rem] font-bold text-[var(--color-brand-fg)]">Cycle {ordinal}</p>
+            {/*
+              Birds still in the pen, and how old they are, on the
+              first line of the screen.
+              
+              Both already appear on the breed card, but that sits
+              below the dates and the close-out buttons — so on a phone
+              the two figures a farmer opens a cycle to check were
+              under a scroll, behind information that changes once a
+              cycle.
+            */}
+            <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
+              {(cycle.currentBirds ?? cycle.placedBirds).toLocaleString()} birds
+              {cycle.ageDays != null && (
+                <span className="font-semibold text-[var(--color-brand-muted)]">
+                  {' · '}{cycle.ageDays} days old
+                </span>
+              )}
+            </p>
             <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
               Started {fmtDate(cycle.startDate)}
               {completedDate && completedDate !== cycle.startDate ? ` · ends ${fmtDate(completedDate)}` : ''}

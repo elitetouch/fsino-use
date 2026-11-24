@@ -28,7 +28,10 @@ import { cn } from '@/lib/utils';
 // ────────────── BREED SUMMARY CARD ──────────────
 
 export function BreedSummaryCard({ flock }: { flock: FlockDto }) {
-  const days = flock.ageDays ?? 0;
+  // Null age is omitted, not shown as zero. "0 days old" against a
+  // flock placed in October reads as birds that arrived this morning,
+  // which is worse than saying nothing.
+  const days = flock.ageDays;
 
   /*
    * THE PILL SHOWS WHAT IS STILL IN THE PEN, not what was put in it.
@@ -64,8 +67,13 @@ export function BreedSummaryCard({ flock }: { flock: FlockDto }) {
             </span>
           </div>
           <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-muted)]">
-            {labelForProduction(flock.productionType)}.{' '}
-            <strong className="text-[var(--color-brand-fg)]">{days} days old</strong>.
+            {labelForProduction(flock.productionType)}.
+            {days != null && (
+              <>
+                {' '}
+                <strong className="text-[var(--color-brand-fg)]">{days} days old</strong>.
+              </>
+            )}
           </p>
           {/* The losses, stated plainly. A farmer should not have to
               subtract two numbers from two screens to learn how many
