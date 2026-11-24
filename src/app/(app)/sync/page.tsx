@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useOutbox } from '@/lib/offline/hooks';
 import { discard, retry } from '@/lib/offline/queue';
 import { drain } from '@/lib/offline/sync';
+import { describe } from '@/lib/offline/outbox-label';
 import type { OutboxEntry, OutboxStatus } from '@/lib/offline/db';
 
 /**
@@ -266,6 +267,21 @@ function Row({
           <p className="mt-1.5 text-[0.78125rem] leading-relaxed text-[var(--color-brand-muted)]">
             {state.blurb}
           </p>
+          {/*
+            THE SERVER'S OWN WORDS, not just ours.
+            
+            "The server would not accept this one" tells a farmer
+            nothing they can act on, and it told us nothing either:
+            a record went missing days ago and the reason was sitting
+            in this entry the whole time, never rendered. If the
+            server explained itself, show the explanation.
+          */}
+          {entry.lastError?.message && (
+            <p className="mt-1 text-[0.71875rem] leading-relaxed text-[var(--color-brand-danger)]">
+              {entry.lastError.status ? `${entry.lastError.status}: ` : ''}
+              {entry.lastError.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -323,33 +339,6 @@ function Row({
   );
 }
 
-/**
- * Name the record in the farmer's language.
- *
- * Derived from the request URL, because that is all the queue stores —
- * it is transport-level by design and does not know what a "mortality
- * entry" is. Reading it here keeps that separation while still putting
- * something recognisable on screen. An unmatched URL falls back to
- * "A saved change", which is vague but never wrong; guessing would be
- * worse, since this text decides whether someone deletes it.
- */
-function describe(entry: OutboxEntry): string {
-  const url = entry.url;
-
-  if (url.includes('/records')) return 'Daily record';
-  if (url.includes('/diagnoses')) return 'Disease check';
-  if (url.includes('/expenses')) return 'Expense';
-  if (url.includes('/sales')) return 'Sale';
-  if (url.includes('/flocks') && entry.method === 'POST') return 'New flock';
-  if (url.includes('/flocks')) return 'Flock update';
-  if (url.includes('/pens') && entry.method === 'POST') return 'New pen';
-  if (url.includes('/pens')) return 'Pen update';
-  if (url.includes('/vaccination')) return 'Vaccination';
-  if (url.includes('/profile')) return 'Profile change';
-  if (url.includes('/settings')) return 'Settings change';
-
-  return 'A saved change';
-}
 
 /** Relative time, in words, without pulling in a date library. */
 function when(ts: number): string {
