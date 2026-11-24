@@ -49,10 +49,24 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!farms.data) return;
+    const list = farms.data.farms;
+    const first = list[0];
+    if (!first) {
+      router.replace('/setup/farm');
+      return;
+    }
+
     const current = readCurrentFarmId();
-    const first = farms.data.farms[0];
-    if (!current && first) writeCurrentFarmId(first.id);
-    else if (!first) router.replace('/setup/farm');
+    // Repair a stored farm that is no longer one of theirs.
+    //
+    // Only the `!current` case used to be handled, so an id left over
+    // from a membership that had been removed kept being sent as
+    // X-Farm-ID for every query — the farmer saw empty screens with
+    // no way to correct it except finding the switcher themselves,
+    // while usePermissions had already quietly fallen back to the
+    // first farm. The two disagreed about which farm they were on.
+    const stillTheirs = current !== null && list.some((f) => f.id === current);
+    if (!stillTheirs) writeCurrentFarmId(first.id);
   }, [farms.data, router]);
 
   // Reactive read — re-renders when localStorage flips so the

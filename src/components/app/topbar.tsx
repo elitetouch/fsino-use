@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { useHydrated } from '@/lib/use-hydrated';
 import { clearToken, readUser } from '@/lib/auth';
 import { useVertical } from '@/lib/vertical';
-import { writeCurrentFarmId } from '@/lib/farm-context';
 import { useOnline } from '@/lib/offline';
 import { cn } from '@/lib/utils';
 
@@ -53,7 +52,11 @@ export function Topbar({
 
   function signOut() {
     clearToken();
-    writeCurrentFarmId(null);
+    // The farm choice is deliberately KEPT. It is scoped to this user
+    // now, so it cannot leak to whoever signs in next, and discarding
+    // it was why signing back in no longer returned a farmer to the
+    // farm they had been working in — with nothing stored, the
+    // dashboard fell through to the most recently created farm.
     router.replace('/');
   }
 
