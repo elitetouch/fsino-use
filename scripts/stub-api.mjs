@@ -39,7 +39,8 @@ const routes = (path) => {
   if (path.startsWith('/api/v1/health')) return { ok: true };
   if (path.startsWith('/api/v1/farms')) return { farms: [FARM] };
   if (path.startsWith('/api/v1/flocks/') && path.includes('/daily-records/calendar')) return { days: [] };
-  if (path.startsWith('/api/v1/flocks/') && path.includes('/daily-records')) return { records: [] };
+  // Before the generic /daily-records rule — the real path is
+  // /flocks/<id>/daily-records/guidance, so order matters.
   if (path.startsWith('/api/v1/flocks/') && path.includes('guidance')) {
     return {
       flock: { id: FLOCK.id, current_birds: 480, production_type: 'broiler', current_age_days: 21 },
@@ -54,6 +55,7 @@ const routes = (path) => {
       },
     };
   }
+  if (path.startsWith('/api/v1/flocks/') && path.includes('/daily-records')) return { records: [] };
   if (path.startsWith('/api/v1/flocks')) return { flocks: [FLOCK] };
   if (path.startsWith('/api/v1/pens')) return { pens: [PEN] };
   if (path.startsWith('/api/v1/billing/balances')) return { balances: [{ tokenType: 'broiler', tier: 'basic', balance: 900 }], freemium: { enabled: false, used: true } };
@@ -61,6 +63,13 @@ const routes = (path) => {
   if (path.includes('preferences')) {
     return {
       preferences: {
+        effectiveDailyRecord: {
+          feed: { include: true }, water: { include: true },
+          bird_weight: { include: true, auto_average: false },
+          eggs: { include: false }, mortality: { include: true },
+          bird_count: { dead: true, culled: true, sold: true, lost: true },
+          vaccination: { include: true }, treatment: { include: true },
+        },
         dailyRecord: {
           feed: { include: true }, water: { include: true },
           bird_weight: { include: true, auto_average: false },

@@ -352,6 +352,24 @@ describe('service worker — a cached page needs its code', () => {
     expect(held).toContain('/_next/static/css/app-7f3.css');
   });
 
+  it('caches a route-group page chunk, parentheses and all', async () => {
+    // The real shape: `app/(app)/cycles/%5Bid%5D/record/page-<hash>.js`.
+    // A character class of [A-Za-z0-9._%-/] stops at the first
+    // parenthesis and captures a directory, which fails the .js test
+    // and is dropped — so every App Router page chunk went uncached
+    // while the generic ones cached fine and hid it.
+    const chunk = '/_next/static/chunks/app/(app)/cycles/%5Bid%5D/record/page-ab048d.js';
+    const fresh = load();
+    for (const r of APP_ROUTES) fresh.served.add(r);
+    fresh.served.add(chunk);
+    fresh.bodies.set('/home', `<script src="${chunk}"></script>`);
+    await fresh.fire('install', {});
+
+    const staticCache = await fresh.cacheNamed('fsm-v6-static');
+    const held = [...staticCache.map.keys()].map((u) => decodeURI(new URL(u).pathname));
+    expect(held).toContain(decodeURI(chunk));
+  });
+
   it('follows the flight payload’s relative chunk names too', async () => {
     const staticCache = await sw.cacheNamed('fsm-v6-static');
     const held = [...staticCache.map.keys()].map((u) => new URL(u).pathname);

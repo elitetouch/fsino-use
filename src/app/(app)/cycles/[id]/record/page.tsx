@@ -224,7 +224,16 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
     return <FullPageSpinner />;
   }
 
-  if (guidance.isError || !guidance.data) {
+  // `!guidance.data.flock` is part of the guard, not an optional chain
+  // at the use site.
+  //
+  // Every read below goes through `guidance.data.flock.<field>`, and
+  // the guard only checked that `data` existed — so a body without a
+  // flock threw "Cannot read properties of undefined" and took the
+  // whole screen down as "Application error: a client-side exception
+  // has occurred". A payload we cannot use is a load failure, and it
+  // belongs in the branch that already says so.
+  if (guidance.isError || !guidance.data || !guidance.data.flock) {
     // Offline needs its own words. "Try refreshing" is advice a farmer
     // in a pen with no signal cannot act on, and it reads as the app
     // being broken rather than as the one thing it genuinely cannot do
@@ -450,7 +459,17 @@ function buildStepList(
   guidance: DailyRecordGuidance,
   prefs: MyPreferencesDto,
 ): WizardStep[] {
-  const eff = prefs.effectiveDailyRecord;
+  // `?? {}` because this is reached with whatever the cache held.
+  //
+  // Every line below does `eff.<section>?.include`, which throws the
+  // moment `eff` itself is undefined — and the persisted query cache
+  // can hand back a preferences body written by an older build, or a
+  // server that has not sent this field yet. That crashed the record
+  // screen outright as "Application error". An empty object yields no
+  // event steps, which is a degraded wizard rather than a dead one,
+  // and quick record is unaffected: it reads the same field and treats
+  // absent as "allow everything, let the server decide".
+  const eff = prefs.effectiveDailyRecord ?? {};
   const type = guidance.flock.production_type;
   const isLayerOrMixed = type === 'layer' || type === 'mixed';
 
