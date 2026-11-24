@@ -124,6 +124,80 @@ describe('what reaches disk', () => {
   });
 });
 
+describe('the cache does not forget', () => {
+  /**
+   * Writing the fresh snapshot straight over the stored one meant any
+   * query that was momentarily not persistable vanished from disk.
+   * Offline that is routine: saving a record invalidates the cycle's
+   * guidance, the refetch fails for want of signal, and the query
+   * leaves the persistable set — so saving one batch deleted the data
+   * the next batch needed.
+   */
+  async function persist(qc: QueryClient) {
+    const stop = startQueryPersistence(qc);
+    await vi.advanceTimersByTimeAsync(3_000);
+    stop();
+  }
+
+  function storedKeys() {
+    const payload = store.get(STORAGE_KEY) as
+      | { state: { queries?: Array<{ queryKey: unknown[] }> } }
+      | undefined;
+    return (payload?.state.queries ?? []).map((q) => JSON.stringify(q.queryKey));
+  }
+
+  it('keeps a query that a later snapshot no longer carries', async () => {
+    const first = new QueryClient();
+    first.setQueryData(['daily-record-guidance', 'cycle-1'], { flock: { id: 'cycle-1' } });
+    first.setQueryData(['flocks'], [{ id: 1 }]);
+    await persist(first);
+    expect(storedKeys()).toContain('["daily-record-guidance","cycle-1"]');
+
+    // A later session where guidance failed to refetch and so is not
+    // persistable — it must survive on disk regardless.
+    const second = new QueryClient();
+    second.setQueryData(['flocks'], [{ id: 1 }]);
+    await persist(second);
+
+    expect(storedKeys()).toContain('["daily-record-guidance","cycle-1"]');
+    expect(storedKeys()).toContain('["flocks"]');
+  });
+
+  it('prefers the fresh copy over the carried one', async () => {
+    const first = new QueryClient();
+    first.setQueryData(['flocks'], 'old');
+    await persist(first);
+
+    const second = new QueryClient();
+    second.setQueryData(['flocks'], 'new');
+    await persist(second);
+
+    const restored = new QueryClient();
+    await restoreQueryCache(restored);
+    expect(restored.getQueryData(['flocks'])).toBe('new');
+    expect(storedKeys().filter((k) => k === '["flocks"]')).toHaveLength(1);
+  });
+
+  it('will not carry forward a key the denylist has since grown to cover', async () => {
+    store.set(STORAGE_KEY, {
+      version: 1,
+      savedAt: Date.now(),
+      state: {
+        queries: [
+          { queryHash: '["token-balances"]', queryKey: ['token-balances'], state: { data: 1 } },
+          { queryHash: '["flocks"]', queryKey: ['flocks'], state: { data: 1 } },
+        ],
+      },
+    });
+    const qc = new QueryClient();
+    qc.setQueryData(['pens'], []);
+    await persist(qc);
+
+    expect(storedKeys()).toContain('["flocks"]');
+    expect(storedKeys()).not.toContain('["token-balances"]');
+  });
+});
+
 describe('what comes back', () => {
   it('restores data a farmer loaded while they had signal', async () => {
     const source = clientWith([[['flocks'], [{ id: 7, name: 'Pen A' }]]]);

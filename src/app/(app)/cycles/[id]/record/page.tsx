@@ -233,7 +233,17 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   // whole screen down as "Application error: a client-side exception
   // has occurred". A payload we cannot use is a load failure, and it
   // belongs in the branch that already says so.
-  if (guidance.isError || !guidance.data || !guidance.data.flock) {
+  // Keyed on whether there is USABLE DATA, not on whether the last
+  // fetch failed.
+  //
+  // Saving a record invalidates this query. Offline the refetch then
+  // fails, and gating on `isError` turned a screen that still had
+  // perfectly good guidance into "this cycle isn't saved for offline
+  // yet" — so a farmer could log one batch and then be locked out of
+  // logging the next, by the act of logging the first.
+  //
+  // A failed refresh costs freshness. It must not cost the screen.
+  if (!guidance.data || !guidance.data.flock) {
     // Offline needs its own words. "Try refreshing" is advice a farmer
     // in a pen with no signal cannot act on, and it reads as the app
     // being broken rather than as the one thing it genuinely cannot do

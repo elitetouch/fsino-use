@@ -85,6 +85,72 @@ interface PersistedPayload {
   state: unknown;
 }
 
+/**
+ * Ceiling on the merged set, so carrying entries forward cannot grow
+ * without bound. Fresh entries are kept first, so what falls off the
+ * end is always the oldest thing nobody has looked at recently.
+ */
+const MAX_PERSISTED_QUERIES = 240;
+
+interface DehydratedQueryish {
+  queryHash?: string;
+  queryKey?: unknown[];
+}
+
+/**
+ * Carry forward what this snapshot does not contain.
+ *
+ * THE CACHE MUST NOT FORGET WHAT IT ALREADY KNEW. Writing the fresh
+ * snapshot straight over the stored one meant any query that was
+ * momentarily not persistable vanished from disk — and offline, that
+ * is routine: saving a record invalidates the cycle's guidance, the
+ * refetch fails because there is no signal, and the query leaves the
+ * persistable set.
+ *
+ * So a farmer could open the record screen offline, save a batch, and
+ * find the screen refusing to open for the next one: the guidance it
+ * needed had been deleted from disk by the act of saving, and nothing
+ * short of going back online could bring it back.
+ *
+ * Merging makes the offline cache monotonic. A transient failure can
+ * cost freshness; it can no longer cost knowledge.
+ */
+function mergeWithStored(
+  fresh: { queries?: DehydratedQueryish[] },
+  stored: unknown,
+): { queries?: DehydratedQueryish[] } {
+  const priorState = stored as { queries?: DehydratedQueryish[] } | undefined;
+  const prior = Array.isArray(priorState?.queries) ? priorState.queries : [];
+  if (prior.length === 0) return fresh;
+
+  const freshQueries = Array.isArray(fresh.queries) ? fresh.queries : [];
+  const seen = new Set(freshQueries.map((q) => q.queryHash));
+
+  const carried = prior.filter(
+    (q) =>
+      q.queryHash !== undefined &&
+      !seen.has(q.queryHash) &&
+      // Re-apply the denylist. It has grown since entries were first
+      // written, and a key that is no longer allowed on disk must not
+      // survive just because it predates the rule.
+      !isDeniedKey(q.queryKey),
+  );
+
+  return { ...fresh, queries: [...freshQueries, ...carried].slice(0, MAX_PERSISTED_QUERIES) };
+}
+
+function isDeniedKey(queryKey: unknown): boolean {
+  if (!Array.isArray(queryKey)) return false;
+  for (const segment of queryKey) {
+    if (typeof segment !== 'string') continue;
+    const lower = segment.toLowerCase();
+    if (DO_NOT_PERSIST.some((banned) => lower === banned || lower.includes(banned))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function isPersistable(query: Query): boolean {
   if (query.state.status !== 'success') return false;
   // An error or a fetch in flight is not a fact about the farm.
@@ -141,10 +207,21 @@ export function startQueryPersistence(client: QueryClient): () => void {
     if (stopped) return;
     try {
       const state = dehydrate(client, { shouldDehydrateQuery: isPersistable });
+
+      // Merge rather than replace — see mergeWithStored.
+      const stored = await getMeta<PersistedPayload>(STORAGE_KEY);
+      const usable =
+        stored?.version === SCHEMA_VERSION &&
+        Number.isFinite(stored.savedAt) &&
+        Date.now() - stored.savedAt <= MAX_AGE_MS;
+
       await setMeta(STORAGE_KEY, {
         version: SCHEMA_VERSION,
         savedAt: Date.now(),
-        state,
+        state: mergeWithStored(
+          state as unknown as { queries?: DehydratedQueryish[] },
+          usable ? stored.state : undefined,
+        ),
       } satisfies PersistedPayload);
     } catch {
       // Out of quota, private mode, or storage blocked. Nothing here is
