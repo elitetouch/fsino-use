@@ -86,11 +86,41 @@ const routes = (path) => {
   return {};
 };
 
+/** Every write the server actually received — the point of the test. */
+const writes = [];
+
 createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
   res.setHeader('Access-Control-Allow-Methods', '*');
+  res.setHeader('Access-Control-Expose-Headers', '*');
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+
+  if (req.url === '/__writes') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify(writes));
+  }
+  if (req.url === '/__reset') {
+    writes.length = 0;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end('[]');
+  }
+
+  if (req.method !== 'GET') {
+    let raw = '';
+    req.on('data', (d) => { raw += d; });
+    return req.on('end', () => {
+      writes.push({
+        method: req.method,
+        url: req.url,
+        farm: req.headers['x-farm-id'] ?? null,
+        auth: req.headers.authorization ? 'bearer present' : 'MISSING',
+        body: (() => { try { return JSON.parse(raw); } catch { return raw.slice(0, 200); } })(),
+      });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ data: { record: { id: 'rec-' + writes.length } } }));
+    });
+  }
   const body = routes(req.url.split('?')[0] + (req.url.includes('?') ? '?' + req.url.split('?')[1] : ''));
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ data: body }));
