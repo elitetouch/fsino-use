@@ -96,8 +96,24 @@ export async function warmOfflineData(client: QueryClient): Promise<void> {
       }),
     ]);
 
+    // Only cycles the server will actually answer for.
+    //
+    // The guidance endpoint refuses three ways, all 422: the flock is
+    // not in this farm, it is archived or inactive, or its paid write
+    // window has lapsed. Filtering on `archivedAt` alone meant warming
+    // a closed-out or expired cycle anyway — two wasted requests per
+    // cycle on every app start, and a pair of red 422s in the console
+    // that look like a broken screen but are only the background
+    // warmer asking a question the server has already said no to.
+    //
+    // `allowsWrites` is the server's own answer to "can this cycle
+    // take a record", so it is the right gate. A flock from an older
+    // API has no writeWindow at all, and absent is treated as open —
+    // the same assumption the record screen makes.
     const flocks = (withArchived?.flocks ?? [])
       .filter((f) => f.archivedAt == null)
+      .filter((f) => f.isActive !== false)
+      .filter((f) => f.writeWindow?.allowsWrites !== false)
       .slice(0, MAX_CYCLES);
 
     // Ask the service worker to cache each active cycle's PAGES, not

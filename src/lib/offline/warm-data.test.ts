@@ -30,6 +30,9 @@ vi.mock('@/lib/api', () => ({
           { id: 'c1', archivedAt: null },
           { id: 'c2', archivedAt: null },
           { id: 'old', archivedAt: '2026-01-01' },
+          { id: 'inactive', archivedAt: null, isActive: false },
+          { id: 'expired', archivedAt: null, writeWindow: { allowsWrites: false, state: 'locked' } },
+          { id: 'legacy', archivedAt: null },
         ],
       };
     },
@@ -93,12 +96,29 @@ describe('warming before the signal goes', () => {
     // cache. The ids are the farmer's, so this is the only moment the
     // app can name them.
     await warmOfflineData(new QueryClient());
-    expect(prewarmed.flat()).toEqual(['c1', 'c2']);
+    expect(prewarmed.flat()).toEqual(['c1', 'c2', 'legacy']);
   });
 
   it('skips archived cycles — nobody records against a closed one', async () => {
     await warmOfflineData(new QueryClient());
     expect(calls).not.toContain('guidance:old');
+  });
+
+  it('skips cycles the server will refuse anyway', async () => {
+    // Guidance answers 422 for an inactive flock and for one whose
+    // paid write window has lapsed. Warming those spends two requests
+    // per cycle on every app start to be told no, and puts red 422s
+    // in the console that read like a broken screen.
+    await warmOfflineData(new QueryClient());
+    expect(calls).not.toContain('guidance:inactive');
+    expect(calls).not.toContain('guidance:expired');
+  });
+
+  it('still warms a flock from an API with no write window', async () => {
+    // Absent is open, the same assumption the record screen makes —
+    // deploy skew must not silently disable offline support.
+    await warmOfflineData(new QueryClient());
+    expect(calls).toContain('guidance:legacy');
   });
 
   it('warms both flocks-list keys, because they are different requests', async () => {
