@@ -214,6 +214,22 @@ export function useDictation(onText: (alternatives: string[]) => void): UseDicta
     if (Ctor === null || !available) return;
     if (recognitionRef.current !== null) return; // already listening
 
+    // Say it before opening the microphone, not after it fails.
+    //
+    // Browser speech recognition is not done on the device — the audio
+    // goes to the browser vendor's servers — so with no signal there
+    // is nothing to try. Starting anyway lights the button, asks for
+    // the microphone, listens at a farmer who is talking to their
+    // phone, and only then reports a network error. Checking first
+    // costs them nothing and tells them what will actually work.
+    if (!isOnline()) {
+      setStatus('error');
+      setMessage(
+        'Voice typing needs a connection — your phone sends what you say away to be written out. Type it here instead, or use the microphone on your keyboard, which works offline. Saving works either way.',
+      );
+      return;
+    }
+
     let rec: SpeechRecognitionLike;
     try {
       rec = new Ctor();

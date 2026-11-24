@@ -7,6 +7,7 @@ import { Loader2, Lock } from 'lucide-react';
 import { endpoints, type DailyRecordDto, type DailyRecordGuidance, type MyPreferencesDto } from '@/lib/api';
 import { useMyPreferences } from '@/lib/use-preferences';
 import { useCurrentFarmId } from '@/lib/farm-context';
+import { withSafeSections } from '@/lib/safe-guidance';
 import { useOnline } from '@/lib/offline';
 import { flocksKey } from '@/lib/query-keys';
 import { CycleWindowBanner } from '@/components/app/cycle-window-banner';
@@ -91,7 +92,11 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   // allows) plus per-section hints for each event step.
   const guidance = useQuery({
     queryKey: ['daily-record-guidance', flockId],
-    queryFn: () => endpoints.getDailyRecordGuidance(flockId),
+    // Normalised on the way in, so every step below can read its own
+    // section without each one guarding separately. A body missing a
+    // section — from the offline cache, or an API that has not caught
+    // up with a new step — used to take the whole screen down.
+    queryFn: async () => withSafeSections(await endpoints.getDailyRecordGuidance(flockId)),
     staleTime: 60_000,
   });
 
@@ -161,10 +166,27 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   /*  Dynamic step list                                                 */
   /* ------------------------------------------------------------------ */
 
+  /**
+   * Every section present, whatever shape the body arrived in.
+   *
+   * Each step reads its own section directly, so one missing section
+   * is not a missing hint — it is "Cannot read properties of
+   * undefined" and the whole record screen replaced by an error.
+   *
+   * Done HERE rather than in queryFn because the two bodies most
+   * likely to be the wrong shape never pass through queryFn: one
+   * restored from the persisted offline cache, written by an older
+   * build, and one put in the cache by the background warmer.
+   */
+  const safeGuidance = useMemo(
+    () => (guidance.data ? withSafeSections(guidance.data) : undefined),
+    [guidance.data],
+  );
+
   const stepList = useMemo(() => {
-    if (!guidance.data || !prefs.data) return null;
-    return buildStepList(guidance.data, prefs.data.preferences);
-  }, [guidance.data, prefs.data]);
+    if (!safeGuidance || !prefs.data) return null;
+    return buildStepList(safeGuidance, prefs.data.preferences);
+  }, [safeGuidance, prefs.data]);
 
   const totalSteps = (stepList?.length ?? 0) + 1; // +1 for date picker
 
@@ -233,7 +255,17 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   // whole screen down as "Application error: a client-side exception
   // has occurred". A payload we cannot use is a load failure, and it
   // belongs in the branch that already says so.
-  if (guidance.isError || !guidance.data || !guidance.data.flock) {
+  // Keyed on whether there is USABLE DATA, not on whether the last
+  // fetch failed.
+  //
+  // Saving a record invalidates this query. Offline the refetch then
+  // fails, and gating on `isError` turned a screen that still had
+  // perfectly good guidance into "this cycle isn't saved for offline
+  // yet" — so a farmer could log one batch and then be locked out of
+  // logging the next, by the act of logging the first.
+  //
+  // A failed refresh costs freshness. It must not cost the screen.
+  if (!safeGuidance || !safeGuidance.flock) {
     // Offline needs its own words. "Try refreshing" is advice a farmer
     // in a pen with no signal cannot act on, and it reads as the app
     // being broken rather than as the one thing it genuinely cannot do
@@ -275,7 +307,7 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
             // contract change into a silently disabled safety check —
             // the "more birds than you have" warning would just stop
             // firing, with nothing to notice it had.
-            currentBirds={guidance.data.flock.current_birds}
+            currentBirds={safeGuidance.flock.current_birds}
             // The same `effectiveDailyRecord` buildStepList reads, so
             // quick record and the wizard agree on what this farm
             // records. Without it quick record posted switched-off
@@ -284,10 +316,10 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
             // Same source the wizard's feed step pre-fills from, so a
             // quick record and a tapped-out one carry the ration and
             // brand forward identically.
-            lastFeed={lastFeedFromGuidance(guidance.data.sections.feed.last_entry)}
+            lastFeed={lastFeedFromGuidance(safeGuidance.sections.feed.last_entry)}
             // Same gate the wizard applies when it builds its step
             // list: eggs only exist for layer and mixed flocks.
-            productionType={guidance.data.flock.production_type}
+            productionType={safeGuidance.flock.production_type}
             onSaved={() => router.replace(`/cycles/${flockId}?recorded=1`)}
             onUseWizard={goNext}
           />
@@ -316,7 +348,7 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
   const sharedProps = {
     flockId,
     recordDate: selectedDate,
-    guidance: guidance.data,
+    guidance: safeGuidance,
     prefs: prefs.data!.preferences,
     stepIndex: stepIdx,
     stepCount: stepList.length,

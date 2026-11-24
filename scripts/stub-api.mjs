@@ -44,14 +44,17 @@ const routes = (path) => {
   if (path.startsWith('/api/v1/flocks/') && path.includes('guidance')) {
     return {
       flock: { id: FLOCK.id, current_birds: 480, production_type: 'broiler', current_age_days: 21 },
+      // All eight sections the DTO declares. A real server sends them
+      // all; omitting one here hid a crash rather than avoiding it.
       sections: {
-        feed: { messages: [], last_entry: null },
-        water: { messages: [] },
-        weight: { messages: [], usual_quantity: { low: 0.8, high: 1.6 } },
-        eggs: { messages: [] },
-        mortality: { messages: [] },
-        vaccination: { messages: [] },
-        treatment: { messages: [] },
+        feed: { enabled: true, messages: [], last_entry: null, unit: 'bags' },
+        water: { enabled: true, messages: [], usual_quantity: { low: 40, high: 80, avg: 60 } },
+        vaccination: { enabled: true, messages: [] },
+        treatment: { enabled: true, messages: [] },
+        bird_count: { enabled: true, messages: [], living_birds: 480 },
+        weight: { enabled: true, messages: [], usual_quantity: { low: 0.8, high: 1.6, avg: 1.2 } },
+        eggs: { enabled: true, messages: [] },
+        egg_size: { enabled: true, messages: [] },
       },
     };
   }
