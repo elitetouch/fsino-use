@@ -35,6 +35,12 @@ import {
   EGG_SIZES,
   FEED_BRANDS,
   NON_BRAND_WORDS,
+  BUY_VERBS,
+  EXPENSE_CATEGORIES,
+  PRODUCE_ITEMS,
+  SALE_VERBS,
+  MONEY_MULTIPLIERS,
+  MAX_MONEY,
   FEED_TYPES,
   KEYWORDS,
   MOMENT_WORDS,
@@ -71,6 +77,12 @@ const MAX_CLAUSES = 24;
  * to confirm.
  */
 const MAX_VALUE = 1_000_000;
+
+/**
+ * Below this, an expense is more likely a mis-heard "45k" than a real
+ * price. Nigerian naira: a hundred buys almost nothing on a farm.
+ */
+const IMPLAUSIBLE_EXPENSE = 100;
 
 export interface ParsedField {
   readonly kind: FieldKind;
@@ -109,6 +121,12 @@ export interface ParsedField {
      * answer a question the farmer has already answered.
      */
     readonly brandStated?: boolean;
+    /** expense — which of the backend's categories the money went to. */
+    readonly expenseCategory?: string;
+    /** produce_sale — the allowlisted item, e.g. 'eggs'. */
+    readonly produceItem?: string;
+    /** produce_sale — what to call it on the chip. */
+    readonly produceLabel?: string;
     /**
      * Keys in this detail that were carried over from the farmer's last
      * record rather than heard in this sentence. The UI must mark these
@@ -194,6 +212,14 @@ function normalise(raw: string): string {
     // \p{L} rather than [a-z] on purpose — stripping non-Latin letters
     // here would silently mangle any language the app adds later.
     .replace(/[^\p{L}\p{N}\s,.;]/gu, ' ')
+    // Thousands separators, BEFORE anything splits on a comma.
+    //
+    // CLAUSE_SPLIT treats "," as a separator, so "45,000" would be cut
+    // into "45" and "000" and a forty-five-thousand-naira expense
+    // would be recorded as forty five. Only a comma sitting between a
+    // digit and exactly three more digits is removed, so "2 bags, 3
+    // birds" is untouched.
+    .replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -230,6 +256,67 @@ function isUsable(n: number): boolean {
 }
 
 /** Money following "for" — "sold 20 birds for 15000". */
+/**
+ * A money amount, in the forms a Nigerian farmer actually says.
+ *
+ * Handles "45000", "45,000" (already de-comma'd above), "45k",
+ * "45 thousand", "1.5m", and a spelled single number with a
+ * multiplier ("five thousand").
+ *
+ * WHAT IT REFUSES, and why that is the point. "two fifty" is 250 to
+ * one farmer and 2.50 to another, and a wrong amount does not look
+ * wrong — it quietly moves the margin. Anything this function cannot
+ * read unambiguously returns undefined, and the composer then asks
+ * rather than guesses. A missed amount costs one tap; an invented one
+ * costs the books.
+ */
+function readMoney(clause: string): number | undefined {
+  // "for 45000" is the strongest signal, so the text after "for" is
+  // read first — in "bought 10 bags of feed for 45000" the ten is a
+  // quantity, not a price.
+  //
+  // It is a HINT, not a requirement: "paid 250000 for day old chicks"
+  // puts the price first and the goods after, which is just as
+  // natural, so a scoped read that finds nothing falls back to the
+  // whole clause rather than giving up.
+  const after = /\bfor\s+(.+)$/.exec(clause)?.[1];
+  return (after !== undefined ? moneyIn(after) : undefined) ?? moneyIn(clause);
+}
+
+function moneyIn(text: string): number | undefined {
+  let value: number | undefined;
+  let multiplier = 1;
+
+  const m =
+    /\b(?:n|ngn|naira)?\s*(\d{1,12}(?:\.\d{1,2})?)\s*(k|thousand|thousands|m|million|millions)?\b/
+      .exec(text);
+
+  if (m) {
+    value = Number.parseFloat(m[1] as string);
+    if (m[2]) multiplier = MONEY_MULTIPLIERS.get(m[2]) ?? 1;
+  } else {
+    // A spelled number with a multiplier: "five thousand".
+    const w = /\b([a-z]+)\s+(thousand|thousands|million|millions)\b/.exec(text);
+    if (!w) return undefined;
+    const base = NUMBER_WORDS.get(w[1] as string);
+    if (base === undefined) return undefined;
+    value = base;
+    multiplier = MONEY_MULTIPLIERS.get(w[2] as string) ?? 1;
+  }
+
+  if (value === undefined || !Number.isFinite(value)) return undefined;
+  const amount = Math.round(value * multiplier * 100) / 100;
+  return amount > 0 && amount <= MAX_MONEY ? amount : undefined;
+}
+
+/** The category the money went to, defaulting to `other`. */
+function readExpenseCategory(clause: string): string {
+  for (const { re, value } of EXPENSE_CATEGORIES) {
+    if (re.test(clause)) return value;
+  }
+  return 'other';
+}
+
 function readAmount(clause: string): number | undefined {
   const m = clause.match(/\bfor\s+(\d{1,9})(?:\.(\d{1,2}))?\b/);
   if (!m) return undefined;
@@ -341,7 +428,60 @@ function misheardCullIsAdjacent(clause: string): boolean {
   return cullAt.some((c) => birdAt.some((b) => Math.abs(b - c) <= MAX_CULL_GAP));
 }
 
+/**
+ * Did the farmer say they PAID for something, and how much?
+ *
+ * Both halves are required. A buy verb with no amount is not an
+ * expense — "I bought feed" is a fact about the store, not a figure
+ * for the books, and inventing a zero would put a meaningless row in
+ * the ledger. An amount with no buy verb is not an expense either:
+ * "sold 50 birds for 200000" is money coming in.
+ *
+ * Checked BEFORE the keyword table, because every expense clause also
+ * names the thing bought — "bought 10 bags of feed for 45000" matches
+ * `feed`, and classified that way it becomes feed the birds never
+ * ate, which is the FCR wrong for the rest of the cycle.
+ */
+function isExpenseClause(clause: string): boolean {
+  return BUY_VERBS.test(clause) && readMoney(clause) !== undefined;
+}
+
+/**
+ * Did the farmer sell something that is not a bird?
+ *
+ * Three things have to line up: a sale verb, a non-bird item, and a
+ * price. All three, because each one alone is something else —
+ * "collected 3 crates" is an egg record, "sold 50 birds for 200000" is
+ * a bird sale that moves stock, and "3 crates" is a count.
+ *
+ * Checked before the keyword table, which would otherwise see "sold"
+ * and move birds out of a pen the eggs came from.
+ */
+function isProduceSaleClause(clause: string): boolean {
+  if (!SALE_VERBS.test(clause)) return false;
+  // A bird word means stock is moving; that is the `sold` kind's job.
+  if (BIRD_WORDS.test(clause)) return false;
+  if (!PRODUCE_ITEMS.some(({ re }) => re.test(clause))) return false;
+  return readMoney(clause) !== undefined;
+}
+
+/** The produce item named, or null. */
+function readProduceItem(clause: string): { value: string; label: string } | null {
+  for (const { re, value, label } of PRODUCE_ITEMS) {
+    if (re.test(clause)) return { value, label };
+  }
+  return null;
+}
+
 function classifyClause(clause: string): FieldKind | null {
+  // Produce BEFORE expense. "sold spent litter for 2500" contains
+  // "spent", which is a buy verb, so the expense test would claim it
+  // and file revenue as a cost — the sign of the money reversed.
+  // A produce sale needs a SALE verb, which no expense sentence has,
+  // so taking it first cannot steal a genuine purchase.
+  if (isProduceSaleClause(clause)) return 'produce_sale';
+  if (isExpenseClause(clause)) return 'expense';
+
   // VACCINES is the single source of truth for what counts as a
   // vaccination, checked before the keyword table rather than
   // duplicated into it. The misheard forms ("la so", "gum borrow")
@@ -419,6 +559,59 @@ function buildField(
       caution: vaccineName ? undefined : 'Vaccine name not recognised — check it before saving',
       sourceText: clause,
       detail: vaccineName ? { vaccineName } : undefined,
+    };
+  }
+
+  // A produce sale is money too, and for the same reason must not go
+  // through readNumber — "sold 3 crates of eggs for 9000" would be
+  // filed as a three-naira sale.
+  if (kind === 'produce_sale') {
+    const amount = readMoney(clause);
+    if (amount === undefined) return null;
+    const item = readProduceItem(clause);
+    if (item === null) return null;
+
+    const tiny = amount < IMPLAUSIBLE_EXPENSE;
+    return {
+      kind,
+      value: amount,
+      confidence: tiny ? 'low' : 'high',
+      caution: tiny ? 'That is a very small amount — check it before saving' : undefined,
+      sourceText: clause,
+      detail: { produceItem: item.value, produceLabel: item.label },
+    };
+  }
+
+  // MONEY, built before readNumber().
+  //
+  // readNumber takes the first number in the clause, and in
+  // "bought 10 bags of feed for 45000" that is ten — so the generic
+  // path would file a forty-five-thousand-naira spend as ten naira.
+  // An expense is the one kind whose value is not a count.
+  if (kind === 'expense') {
+    const amount = readMoney(clause);
+    // isExpenseClause already proved an amount is readable; this is
+    // the belt to that brace, and it must never invent a zero.
+    if (amount === undefined) return null;
+
+    const category = readExpenseCategory(clause);
+
+    // A suspiciously small amount is almost always a mis-heard "45k".
+    // Warned, not blocked: a farmer really can buy a 50-naira bulb,
+    // and refusing them would be worse than asking.
+    const tiny = amount < IMPLAUSIBLE_EXPENSE;
+
+    return {
+      kind,
+      value: amount,
+      confidence: category === 'other' || tiny ? 'low' : 'high',
+      caution: tiny
+        ? 'That is a very small amount — check it before saving'
+        : category === 'other'
+          ? 'Could not tell what this was for — it will be filed under Other'
+          : undefined,
+      sourceText: clause,
+      detail: { expenseCategory: category },
     };
   }
 

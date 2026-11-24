@@ -22,11 +22,23 @@ import type { DailyRecordPrefs } from '@/lib/api';
  */
 export function enabledKinds(eff: DailyRecordPrefs | null | undefined): ReadonlySet<FieldKind> {
   const on = new Set<FieldKind>();
+
+  // An expense is not a daily-record event. It is a separate ledger
+  // with its own endpoint and its own permission, so the farm's
+  // daily-record settings have no say over it — a farm that does not
+  // track water still buys feed.
+  on.add('expense');
+  // Selling eggs or manure is its own ledger entry, not a
+  // daily-record event the farm can switch off.
+  on.add('produce_sale');
+
   if (!eff) {
     // Preferences not loaded. Allow everything rather than silently
     // discarding what the farmer said — the server is still the
     // authority, and a visible rejection beats an invisible drop.
     return new Set<FieldKind>([
+      'expense',
+      'produce_sale',
       'dead', 'culled', 'sold', 'lost', 'feed', 'water', 'eggs', 'weight',
       'egg_weight', 'vaccination', 'treatment',
     ]);
@@ -60,6 +72,8 @@ export function enabledKinds(eff: DailyRecordPrefs | null | undefined): Readonly
 
 /** The farmer's words for a kind, for the "not tracked" message. */
 const KIND_LABEL: Record<FieldKind, string> = {
+  expense: 'expenses',
+  produce_sale: 'produce sales',
   dead: 'deaths',
   culled: 'culls',
   sold: 'birds sold',
