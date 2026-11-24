@@ -389,3 +389,52 @@ export function buildExpensePayloads(
 
   return out;
 }
+
+/* ================================================================== */
+/*  PRODUCE SALES — money in, with no birds leaving                     */
+/* ================================================================== */
+
+/** Mirrors App\Models\FlockDailyRecord::produceItems(). */
+const PRODUCE_ITEM_VALUES: readonly string[] = [
+  'eggs', 'manure', 'spent_litter', 'empty_sacks', 'other',
+];
+
+/**
+ * Turn confirmed produce-sale fields into daily records.
+ *
+ * These ARE daily records — event_type `produce_sale` — so they ride
+ * the same endpoint, the same outbox and the same offline path as
+ * everything else on this screen. What makes them different is what
+ * they must never carry: `birds_delta`. The API rejects a produce
+ * sale that moves birds, deliberately, because a caller sending one
+ * has confused eggs leaving the farm with birds leaving the pen.
+ *
+ * The currency is passed in, never parsed from speech — same rule as
+ * expenses, same reason.
+ */
+export function buildProduceSalePayloads(
+  fields: readonly ParsedField[],
+  opts: { readonly recordDate: string; readonly currency: string },
+): CreateDailyRecordPayload[] {
+  const out: CreateDailyRecordPayload[] = [];
+
+  for (const f of fields) {
+    if (f.kind !== 'produce_sale') continue;
+
+    const amount = f.value;
+    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_EXPENSE_AMOUNT) continue;
+
+    const raw = f.detail?.produceItem;
+    const item = typeof raw === 'string' && PRODUCE_ITEM_VALUES.includes(raw) ? raw : 'other';
+
+    out.push({
+      event_type: 'produce_sale',
+      record_date: opts.recordDate,
+      amount: Math.round(amount * 100) / 100,
+      currency: opts.currency,
+      payload: { item },
+    });
+  }
+
+  return out;
+}

@@ -33,6 +33,7 @@
 /** Event kinds the quick-record parser can produce. */
 export type FieldKind =
   | 'expense'
+  | 'produce_sale'
   | 'dead'
   | 'culled'
   | 'sold'
@@ -432,7 +433,7 @@ export const BAG_WEIGHT_NOTE = 'Bags are saved as bags — say "50kg" or "2 bags
  * and "sold 50 birds for 200000" must stay a sale.
  */
 export const BUY_VERBS =
-  /\b(bought|buy|buys|buying|purchas(?:e|ed|es|ing)|paid|pay|pays|paying|spent|spend(?:ing)?|restock(?:ed|ing)?)\b/;
+  /\b(bought|buy|buys|buying|purchas(?:e|ed|es|ing)|paid|pay|pays|paying|spent(?!\\s+litter)|spend(?:ing)?|restock(?:ed|ing)?)\b/;
 
 /**
  * What the money was spent on, mapped to the backend's own category
@@ -472,6 +473,26 @@ export const EXPENSE_CATEGORIES: ReadonlyArray<{ re: RegExp; value: string }> = 
  * then refuse.
  */
 export const MAX_MONEY = 999_999_999.99;
+
+/**
+ * Things a farm sells that are not birds, and the words farmers use.
+ *
+ * A bird sale moves stock and is already handled by the `sold` kind.
+ * These leave the farm without changing the flock, so they are a
+ * different record entirely — see `produce_sale` on the API.
+ *
+ * ORDER MATTERS, same as everywhere else here: "spent litter" and
+ * "empty sacks" are two words each and must be tested before the
+ * single words they contain.
+ */
+export const SALE_VERBS = /\b(sold|sell|sells|selling|sale)\b/;
+
+export const PRODUCE_ITEMS: ReadonlyArray<{ re: RegExp; value: string; label: string }> = [
+  { re: /\b(spent\s*litter|used\s*litter|litter)\b/, value: 'spent_litter', label: 'Spent litter' },
+  { re: /\b(empty\s*(?:bags?|sacks?)|used\s*(?:bags?|sacks?))\b/, value: 'empty_sacks', label: 'Empty sacks' },
+  { re: /\b(eggs?|crates?)\b/, value: 'eggs', label: 'Eggs' },
+  { re: /\b(manure|droppings?|dung|poop)\b/, value: 'manure', label: 'Manure' },
+];
 
 /**
  * Multipliers a farmer actually says. "45k" is how a price is spoken

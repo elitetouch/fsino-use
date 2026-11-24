@@ -15,7 +15,9 @@ import {
   parseQuickRecord,
   type ParsedField,
 } from '@/lib/quick-record/parse';
-import { buildQuickRecordPayloads, buildExpensePayloads, MAX_NOTE } from '@/lib/quick-record/to-payloads';
+import {
+  buildQuickRecordPayloads, buildExpensePayloads, buildProduceSalePayloads, MAX_NOTE,
+} from '@/lib/quick-record/to-payloads';
 import { useCreateExpense } from '@/lib/use-expense';
 import { DEFAULT_CURRENCY } from '@/lib/currencies';
 import { enabledKinds, notTrackedReason } from '@/lib/quick-record/enabled-kinds';
@@ -73,6 +75,7 @@ interface QuickRecordProps {
 
 const KIND_LABEL: Readonly<Record<ParsedField['kind'], string>> = {
   expense: 'Spent',
+  produce_sale: 'Sold',
   dead: 'Died',
   culled: 'Culled',
   sold: 'Sold',
@@ -123,6 +126,7 @@ function detailText(field: ParsedField): string | null {
   if (d.expenseCategory) {
     return EXPENSE_CATEGORY_LABEL[d.expenseCategory] ?? d.expenseCategory;
   }
+  if (d.produceLabel) return d.produceLabel;
   if (d.vaccineName) return d.vaccineName;
   if (d.treatmentType) return d.treatmentType;
   if (d.eggSize) return d.eggSize;
@@ -341,7 +345,15 @@ export function QuickRecord({
       currency: DEFAULT_CURRENCY,
       flockId,
     });
-    if (payloads.length === 0 && expenses.length === 0) return;
+    // Eggs and manure. These ARE daily records, so they join the same
+    // list and ride the same endpoint — the only thing that makes them
+    // different is that they carry no birds_delta.
+    const produce = buildProduceSalePayloads(kept, {
+      recordDate,
+      currency: DEFAULT_CURRENCY,
+    });
+    const records = [...payloads, ...produce];
+    if (records.length === 0 && expenses.length === 0) return;
 
     setSaving(true);
     try {
@@ -359,7 +371,7 @@ export function QuickRecord({
       //
       // Every payload is attempted; the failures are counted and named.
       const failures: string[] = [];
-      for (const payload of payloads) {
+      for (const payload of records) {
         try {
           await createRecord.mutateAsync(payload);
         } catch (err) {
@@ -382,7 +394,7 @@ export function QuickRecord({
         // Said once, naming the first reason. The sync screen carries
         // the rest; repeating every message here would bury the fact
         // that the other entries DID save.
-        const total = payloads.length + expenses.length;
+        const total = records.length + expenses.length;
         toast.error(
           failures.length === total
             ? failures[0]
@@ -632,7 +644,7 @@ function Chip({
   const showsValue =
     field.value > 0 || (field.kind !== 'vaccination' && field.kind !== 'treatment');
   const detail = detailText(field);
-  const isMoney = field.kind === 'expense';
+  const isMoney = field.kind === 'expense' || field.kind === 'produce_sale';
   const inherited = field.detail?.inherited ?? [];
   // Only the brand line is worth naming when just the type carried
   // over — a ration follows bird age and is far less likely to be

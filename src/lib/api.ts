@@ -1897,7 +1897,11 @@ export type DailyRecordDto = {
 /** The 10 event types the backend accepts in CreateFlockEventRequest. */
 export type DailyRecordEventType =
   | 'feed' | 'water' | 'vaccination' | 'treatment' | 'weight' | 'eggs'
-  | 'mortality' | 'bird_count' | 'sale' | 'note';
+  | 'mortality' | 'bird_count' | 'sale'
+  // A sale that moves no birds — eggs, manure. `sale` requires
+  // birds_delta, so produce had no way to be recorded at all.
+  | 'produce_sale'
+  | 'note';
 
 /**
  * Per-step payload for createDailyRecord. Backend validates per

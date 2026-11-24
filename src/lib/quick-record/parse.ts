@@ -37,6 +37,8 @@ import {
   NON_BRAND_WORDS,
   BUY_VERBS,
   EXPENSE_CATEGORIES,
+  PRODUCE_ITEMS,
+  SALE_VERBS,
   MONEY_MULTIPLIERS,
   MAX_MONEY,
   FEED_TYPES,
@@ -121,6 +123,10 @@ export interface ParsedField {
     readonly brandStated?: boolean;
     /** expense — which of the backend's categories the money went to. */
     readonly expenseCategory?: string;
+    /** produce_sale — the allowlisted item, e.g. 'eggs'. */
+    readonly produceItem?: string;
+    /** produce_sale — what to call it on the chip. */
+    readonly produceLabel?: string;
     /**
      * Keys in this detail that were carried over from the farmer's last
      * record rather than heard in this sentence. The UI must mark these
@@ -440,7 +446,40 @@ function isExpenseClause(clause: string): boolean {
   return BUY_VERBS.test(clause) && readMoney(clause) !== undefined;
 }
 
+/**
+ * Did the farmer sell something that is not a bird?
+ *
+ * Three things have to line up: a sale verb, a non-bird item, and a
+ * price. All three, because each one alone is something else —
+ * "collected 3 crates" is an egg record, "sold 50 birds for 200000" is
+ * a bird sale that moves stock, and "3 crates" is a count.
+ *
+ * Checked before the keyword table, which would otherwise see "sold"
+ * and move birds out of a pen the eggs came from.
+ */
+function isProduceSaleClause(clause: string): boolean {
+  if (!SALE_VERBS.test(clause)) return false;
+  // A bird word means stock is moving; that is the `sold` kind's job.
+  if (BIRD_WORDS.test(clause)) return false;
+  if (!PRODUCE_ITEMS.some(({ re }) => re.test(clause))) return false;
+  return readMoney(clause) !== undefined;
+}
+
+/** The produce item named, or null. */
+function readProduceItem(clause: string): { value: string; label: string } | null {
+  for (const { re, value, label } of PRODUCE_ITEMS) {
+    if (re.test(clause)) return { value, label };
+  }
+  return null;
+}
+
 function classifyClause(clause: string): FieldKind | null {
+  // Produce BEFORE expense. "sold spent litter for 2500" contains
+  // "spent", which is a buy verb, so the expense test would claim it
+  // and file revenue as a cost — the sign of the money reversed.
+  // A produce sale needs a SALE verb, which no expense sentence has,
+  // so taking it first cannot steal a genuine purchase.
+  if (isProduceSaleClause(clause)) return 'produce_sale';
   if (isExpenseClause(clause)) return 'expense';
 
   // VACCINES is the single source of truth for what counts as a
@@ -520,6 +559,26 @@ function buildField(
       caution: vaccineName ? undefined : 'Vaccine name not recognised — check it before saving',
       sourceText: clause,
       detail: vaccineName ? { vaccineName } : undefined,
+    };
+  }
+
+  // A produce sale is money too, and for the same reason must not go
+  // through readNumber — "sold 3 crates of eggs for 9000" would be
+  // filed as a three-naira sale.
+  if (kind === 'produce_sale') {
+    const amount = readMoney(clause);
+    if (amount === undefined) return null;
+    const item = readProduceItem(clause);
+    if (item === null) return null;
+
+    const tiny = amount < IMPLAUSIBLE_EXPENSE;
+    return {
+      kind,
+      value: amount,
+      confidence: tiny ? 'low' : 'high',
+      caution: tiny ? 'That is a very small amount — check it before saving' : undefined,
+      sourceText: clause,
+      detail: { produceItem: item.value, produceLabel: item.label },
     };
   }
 
