@@ -256,6 +256,13 @@ async function precacheBuildOutput(html) {
  * offline copy is never more than one session behind a deploy.
  */
 async function refreshShell() {
+  // Not without a network. The app guards this too, but `isOnline()`
+  // there is a probe result that can still be catching up, and a
+  // refresh attempted offline fills the console with a failed fetch
+  // per precached URL. It cannot corrupt the cache — cacheDocument
+  // throws before it writes — but it is noise that reads like damage.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
   const html = await precacheDocuments();
   await precacheBuildOutput(html);
 }
@@ -316,9 +323,24 @@ async function cacheBuildOutputFrom(html) {
   // Linear patterns only — no nested quantifiers. This runs on
   // server-sent HTML, but a regex that can backtrack exponentially is
   // a hang waiting for an unusual document.
+  // CHARACTER CLASSES WERE THE BUG. These paths carry Next's route
+  // groups and dynamic segments — `app/(app)/cycles/%5Bid%5D/record/
+  // page-<hash>.js` — so a class of [A-Za-z0-9._%-/] stops dead at the
+  // first parenthesis and captures `/_next/static/chunks/app/`, a
+  // directory, which then fails the .js test and is dropped.
+  //
+  // So every App Router PAGE chunk was silently never cached, while
+  // the generic ones (webpack, main-app) cached fine and made it look
+  // like it was working. Offline, the page's own chunk 404s and
+  // webpack throws ChunkLoadError, which Next renders as
+  // "Application error: a client-side exception has occurred".
+  //
+  // Matching by what terminates a URL in markup — quote, whitespace,
+  // angle bracket, backslash — instead of trying to enumerate what a
+  // path may contain. Still linear, so still no backtracking.
   const refs = new Set();
-  const absolute = /\/_next\/static\/[A-Za-z0-9._%\-/]+/g;
-  const relative = /["']static\/[A-Za-z0-9._%\-/]+["']/g;
+  const absolute = /\/_next\/static\/[^"'`\s<>\\]+/g;
+  const relative = /["']static\/[^"'`\s<>\\]+["']/g;
 
   for (const m of html.matchAll(absolute)) {
     if (refs.size >= MAX_ASSETS_PER_DOCUMENT) break;
