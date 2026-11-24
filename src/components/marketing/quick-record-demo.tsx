@@ -34,7 +34,22 @@ const SCRIPT: ReadonlyArray<{ text: string; currentBirds: number }> = [
 ];
 
 const TYPE_MS = 45;
-const HOLD_MS = 3_200;
+
+/**
+ * How long the finished state stays on screen.
+ *
+ * Measured against what there is to read, not a round number. The
+ * chips fade in over 600ms, and the money panel only appears once the
+ * PRICE has been typed — which in "Sold 3 crates of eggs for 9,000"
+ * is the last four characters. So the one line a visitor most needs
+ * to see was the one on screen for the shortest time, and it read as
+ * being cut off mid-thought.
+ *
+ * A sentence with money has a chip, an impact line and a total to
+ * read, so it gets longer.
+ */
+const HOLD_MS = 4_200;
+const HOLD_MONEY_BONUS_MS = 1_600;
 const CLEAR_MS = 500;
 
 const KIND_LABEL: Readonly<Record<string, string>> = {
@@ -122,8 +137,14 @@ export function QuickRecordDemo() {
       at(i * TYPE_MS, () => { if (!cancelled) setTyped(target.text.slice(0, i)); });
     }
     const typedFor = target.text.length * TYPE_MS;
-    at(typedFor + HOLD_MS, () => { if (!cancelled) setTyped(''); });
-    at(typedFor + HOLD_MS + CLEAR_MS, () => { if (!cancelled) setStep((s) => s + 1); });
+    // Asked of the parser, not hard-coded per example, so adding a
+    // sentence to SCRIPT cannot give it the wrong reading time.
+    const showsMoney = parseQuickRecord(target.text).fields
+      .some((f) => f.kind === 'expense' || f.kind === 'produce_sale');
+    const hold = HOLD_MS + (showsMoney ? HOLD_MONEY_BONUS_MS : 0);
+
+    at(typedFor + hold, () => { if (!cancelled) setTyped(''); });
+    at(typedFor + hold + CLEAR_MS, () => { if (!cancelled) setStep((s) => s + 1); });
 
     return () => {
       cancelled = true;
