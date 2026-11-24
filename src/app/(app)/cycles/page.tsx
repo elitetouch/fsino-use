@@ -184,7 +184,19 @@ function CycleRow({
           Cycle {ordinal} · {cycle.breed}
         </p>
         <p className="truncate text-[0.71875rem] text-[var(--color-brand-muted)]">
-          {pen ? `${pen.name} · ` : ''}{labelForProduction(cycle.productionType)} · {cycle.placedBirds.toLocaleString()} birds
+          {/* Birds still in the pen, not birds placed. Scanning this
+              list to see how a cycle is doing is the whole point of
+              it, and the placement figure never changes however many
+              birds a farmer has lost. Placement stands in only when
+              the current count is absent on the wire. */}
+          {pen ? `${pen.name} · ` : ''}{labelForProduction(cycle.productionType)} ·{' '}
+          {(cycle.currentBirds ?? cycle.placedBirds).toLocaleString()} birds
+          {/* Age belongs next to the count. Together they are what a
+              cycle IS at a glance — how many birds, and how far
+              through. Omitted rather than shown as "0 days old" when
+              the server has no start date, which would read as a
+              flock placed this morning. */}
+          {cycle.ageDays != null && ` · ${cycle.ageDays} days old`}
         </p>
       </div>
       <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">

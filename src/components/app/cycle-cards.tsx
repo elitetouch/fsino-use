@@ -28,7 +28,27 @@ import { cn } from '@/lib/utils';
 // ────────────── BREED SUMMARY CARD ──────────────
 
 export function BreedSummaryCard({ flock }: { flock: FlockDto }) {
-  const days = flock.ageDays ?? 0;
+  // Null age is omitted, not shown as zero. "0 days old" against a
+  // flock placed in October reads as birds that arrived this morning,
+  // which is worse than saying nothing.
+  const days = flock.ageDays;
+
+  /*
+   * THE PILL SHOWS WHAT IS STILL IN THE PEN, not what was put in it.
+   *
+   * It read `placedBirds`, so a farmer who had logged mortality all
+   * cycle still saw the placement figure here and nowhere on this
+   * screen showed how many birds they actually had left. For a
+   * poultry app that is the number — it sets the feed, the water, the
+   * value of the flock, and it is the one a farmer checks.
+   *
+   * `currentBirds` is nullable on the wire, so placement stands in
+   * when it is absent rather than rendering a blank or a zero. A zero
+   * here would read as "every bird is dead".
+   */
+  const current = flock.currentBirds ?? flock.placedBirds;
+  const lost = flock.currentBirds === null ? 0 : Math.max(0, flock.placedBirds - flock.currentBirds);
+
   return (
     <Card className="lg:col-span-2">
       <div className="flex items-start gap-3">
@@ -43,13 +63,34 @@ export function BreedSummaryCard({ flock }: { flock: FlockDto }) {
                 weight/water/rating badges are green. Keeps counts
                 visually distinct from production-status badges. */}
             <span className="shrink-0 rounded-md bg-[var(--color-brand-fg)] px-2 py-0.5 text-[0.6875rem] font-bold text-white">
-              {flock.placedBirds.toLocaleString()} birds
+              {current.toLocaleString()} birds
             </span>
           </div>
           <p className="mt-0.5 text-[0.75rem] text-[var(--color-brand-muted)]">
-            {labelForProduction(flock.productionType)}.{' '}
-            <strong className="text-[var(--color-brand-fg)]">{days} days old</strong>.
+            {labelForProduction(flock.productionType)}.
+            {days != null && (
+              <>
+                {' '}
+                <strong className="text-[var(--color-brand-fg)]">{days} days old</strong>.
+              </>
+            )}
           </p>
+          {/* The losses, stated plainly. A farmer should not have to
+              subtract two numbers from two screens to learn how many
+              birds a cycle has cost them. Hidden at zero — a flock
+              that has lost nothing does not need telling. */}
+          {lost > 0 && (
+            <p className="mt-1 text-[0.71875rem] text-[var(--color-brand-muted)]">
+              <strong className="text-[var(--color-brand-fg)]">
+                {flock.placedBirds.toLocaleString()}
+              </strong>{' '}
+              placed ·{' '}
+              <strong className="text-[var(--color-brand-danger)]">
+                {lost.toLocaleString()} lost
+              </strong>{' '}
+              ({((lost / flock.placedBirds) * 100).toFixed(1)}%)
+            </p>
+          )}
         </div>
       </div>
     </Card>
