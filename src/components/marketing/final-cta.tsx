@@ -55,7 +55,7 @@ export function FinalCTA() {
             className="relative mx-auto mt-5 max-w-xl leading-relaxed text-white/85"
             style={{ fontSize: 'var(--text-lead)' }}
           >
-            Free to start. 5-minute setup. Cancel any time, and your data is
+            Free to start. 5-minute setup. Cancel any time. Your data is
             always yours.
           </p>
 

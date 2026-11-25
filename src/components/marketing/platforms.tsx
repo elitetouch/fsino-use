@@ -47,7 +47,7 @@ export function Platforms() {
             style={{ fontSize: 'var(--text-lead)' }}
           >
             Plan and review from the laptop in the office. Log feed, weigh-ins
-            and vaccines on the phone in the pen. Same data, same farm, so your
+            and vaccines on the phone in the pen. Same data, same farm. Your
             staff are never out of sync.
           </p>
 

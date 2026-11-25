@@ -218,10 +218,10 @@ export default function SubscriptionPage() {
               Ready to place a cycle?
             </p>
             <h2 className="mt-1 text-[1.25rem] font-bold tracking-tight text-white sm:text-[1.375rem]">
-              Buy tokens now: no subscription, no recurring fee
+              Buy tokens now. No subscription, no recurring fee
             </h2>
             <p className="mt-1 text-[0.8125rem] leading-relaxed text-white/80">
-              Pay only for the birds you place. Tokens don&apos;t expire on the shelf, only when a cycle uses them.
+              Pay only for the birds you place. Tokens don&apos;t expire on the shelf. They are only spent when a cycle uses them.
             </p>
           </div>
           <Gate perm="billing.manage">

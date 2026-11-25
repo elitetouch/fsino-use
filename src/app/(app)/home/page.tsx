@@ -301,7 +301,7 @@ export default function HomePage() {
               Daily logs, FCR &amp; cost analytics coming next
             </p>
             <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
-              Feed, water, vaccines, mortality: log in seconds, watch your margins grow.
+              Feed, water, vaccines, mortality. Log in seconds, watch your margins grow.
             </p>
           </div>
           {/* "Log" needs an active cycle to land on — without one, the
