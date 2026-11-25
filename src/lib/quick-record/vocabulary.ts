@@ -402,7 +402,7 @@ export const UNITS: ReadonlyArray<{ re: RegExp; spec: UnitSpec }> = [
  * who wants both says "2 bags of 25kg", which is read as 50kg because
  * at that point they have told us the bag weight themselves.
  */
-export const BAG_WEIGHT_NOTE = 'Bags are saved as bags — say "50kg" or "2 bags of 25kg" for weight.';
+export const BAG_WEIGHT_NOTE = 'Bags are saved as bags. Say "50kg" or "2 bags of 25kg" for weight.';
 
 /**
  * Number words, because dictation writes "fifteen" as often as "15".

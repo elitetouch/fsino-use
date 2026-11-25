@@ -74,7 +74,7 @@ export function assessVpd(
       kpa,
       level: 'not_applicable',
       label: 'n/a',
-      note: 'Mushrooms do not transpire — humidity is the figure that matters here, not VPD.',
+      note: 'Mushrooms do not transpire, so humidity is the figure that matters here, not VPD.',
     };
   }
 
@@ -222,13 +222,13 @@ function criticalNote(crop: string): string {
     case 'sweet_pepper':
       return 'Pollen goes sterile at this temperature. The plant keeps flowering and sets no fruit, and nothing looks wrong until the picks never come. Vent or shade now.';
     case 'leafy_green':
-      return 'This is where lettuce bolts — it runs to seed and turns bitter, and it does not come back. Shade or cool immediately.';
+      return 'This is where lettuce bolts. It runs to seed and turns bitter, and it does not come back. Shade or cool immediately.';
     case 'mushroom':
       return 'The mycelium stalls here and green mould takes the substrate instead. It spreads through a room of bags, not one tray.';
     case 'cucumber':
       return 'Fruit turns bitter and misshapen above this. The plant survives; the crop is not saleable.';
     case 'hot_pepper':
-      return 'Past what even hot pepper tolerates — flowers drop rather than set.';
+      return 'Past what even hot pepper tolerates, so flowers drop rather than set.';
     default:
       return 'Past the point where this crop can be saved by cooling later.';
   }

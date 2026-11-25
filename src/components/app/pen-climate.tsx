@@ -221,7 +221,7 @@ function Live({
           <section>
             <SectionHeader
               eyebrow="Heater zones"
-              title={multiStation ? `${active.stationLabel ?? 'This station'} — temperature` : 'Pen temperature'}
+              title={multiStation ? `${active.stationLabel ?? 'This station'} · temperature` : 'Pen temperature'}
               description="Each zone has its own heater. Status reads against the min / max thresholds set on the device."
             />
             <div className="mt-3 grid gap-3 sm:gap-4 md:grid-cols-3">
@@ -275,7 +275,7 @@ function Live({
           <section>
             <SectionHeader
               eyebrow="Manual controls"
-              title={multiStation ? `${active.stationLabel ?? 'This station'} — relays & socket` : 'Relays & socket'}
+              title={multiStation ? `${active.stationLabel ?? 'This station'} · relays & socket` : 'Relays & socket'}
               description="Override the device's automatic decisions. Useful for one-off tasks like draining a drinker or testing a heater coil."
             />
             <ControlsPanel
@@ -566,9 +566,9 @@ function ResyncButton({ penId, className }: { penId: string; className?: string 
       // is true only when every station's publish succeeded. Multi-station
       // pens land in the mixed-success branch when some units are offline.
       if (res.mqtt_published) {
-        toast.success('Resync sent — devices will reboot and refresh.');
+        toast.success('Resync sent. Devices will reboot and refresh.');
       } else {
-        toast.warning('Some stations couldn’t be reached — they’ll pick up the change on next contact.');
+        toast.warning('Some stations couldn’t be reached. They’ll pick up the change on next contact.');
       }
       qc.invalidateQueries({ queryKey: ['pen-climate', penId] });
     },

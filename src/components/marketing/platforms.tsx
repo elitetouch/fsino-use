@@ -47,7 +47,7 @@ export function Platforms() {
             style={{ fontSize: 'var(--text-lead)' }}
           >
             Plan and review from the laptop in the office. Log feed, weigh-ins
-            and vaccines on the phone in the pen. Same data, same farm — your
+            and vaccines on the phone in the pen. Same data, same farm, so your
             staff are never out of sync.
           </p>
 
@@ -87,7 +87,7 @@ export function Platforms() {
           {/* Offline hint — now true for both surfaces */}
           <p className="mt-5 flex items-center gap-2 text-xs text-[var(--color-brand-muted)]">
             <Wifi className="h-3.5 w-3.5" />
-            Works offline on web and Android — logs sync the moment you reconnect.
+            Works offline on web and Android. Logs sync the moment you reconnect.
           </p>
         </div>
       </div>

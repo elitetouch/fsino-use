@@ -372,11 +372,11 @@ export default function SetupFlocksPage() {
                   {...form.register('pen_id')}
                   className="block h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3.5 text-[0.9375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
                 >
-                  <option value="">{freePens.length === 0 ? 'No free pens yet — create one below' : 'Pick a pen…'}</option>
+                  <option value="">{freePens.length === 0 ? 'No free pens yet. Create one below' : 'Pick a pen…'}</option>
                   {freePens.map((p: PenDto) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
-                      {p.capacity ? ` — capacity ${p.capacity.toLocaleString()}` : ''}
+                      {p.capacity ? ` · capacity ${p.capacity.toLocaleString()}` : ''}
                     </option>
                   ))}
                 </select>
@@ -534,7 +534,7 @@ export default function SetupFlocksPage() {
                           Free first flock available
                         </p>
                         <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
-                          We&rsquo;ll cover this placement up to 100 birds — no tokens needed.
+                          We&rsquo;ll cover this placement up to 100 birds, no tokens needed.
                         </p>
                       </>
                     ) : (
@@ -575,7 +575,7 @@ export default function SetupFlocksPage() {
                   {...form.register('flock_price')}
                 />
                 <p className="mt-1.5 text-xs text-[var(--color-brand-muted)]">
-                  All-in cost of buying these birds — used to seed your cost-per-bird tracking.
+                  All-in cost of buying these birds, used to seed your cost-per-bird tracking.
                 </p>
                 <FieldError message={form.formState.errors.flock_price?.message} />
               </div>
@@ -606,7 +606,7 @@ export default function SetupFlocksPage() {
                         </p>
                         <p className="mt-1 text-xs text-[var(--color-brand-muted)]">
                           {t === 'basic'
-                            ? 'Core tracking — feed, vaccines, mortality.'
+                            ? 'Core tracking: feed, vaccines, mortality.'
                             : 'Adds cost analytics, FCR, margins, exports.'}
                         </p>
                       </label>
@@ -718,11 +718,11 @@ function TokenRulesNote() {
         </span>
         <div className="min-w-0">
           <p className="text-sm font-bold text-[var(--color-brand-fg)]">
-            How tokens work — one token, one bird, one tracked cycle
+            How tokens work: one token, one bird, one tracked cycle
           </p>
           <p className="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-brand-muted)]">
             Tokens are how you buy access to flock tracking. Each placed bird debits one token from the matching{' '}
-            <strong className="text-[var(--color-brand-fg)]">token type × tier</strong> bucket, and that single debit keeps the cycle live for the full production window — no daily fees, no recurring charges per record.
+            <strong className="text-[var(--color-brand-fg)]">token type × tier</strong> bucket, and that single debit keeps the cycle live for the full production window, with no daily fees, no recurring charges per record.
           </p>
 
           <ul className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -739,7 +739,7 @@ function TokenRulesNote() {
             <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
               <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Cockerel</p>
               <p className="mt-0.5 text-sm font-bold text-[var(--color-brand-fg)]">20 weeks per token</p>
-              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Cockerels sell from 12 to 20 weeks — the window stays open to the last bird.</p>
+              <p className="text-[0.6875rem] text-[var(--color-brand-muted)]">Cockerels sell from 12 to 20 weeks, so the window stays open to the last bird.</p>
             </li>
             <li className="rounded-lg border border-[var(--color-brand-border)] bg-white px-3 py-2">
               <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary-deep)]">Dual-purpose</p>
@@ -750,13 +750,13 @@ function TokenRulesNote() {
 
           <ul className="mt-4 space-y-1.5 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             <li>
-              <strong className="text-[var(--color-brand-fg)]">Pen exclusivity:</strong> a pen can only hold one active flock at a time — new placements are blocked until the current cycle is archived.
+              <strong className="text-[var(--color-brand-fg)]">Pen exclusivity:</strong> a pen can only hold one active flock at a time, so new placements are blocked until the current cycle is archived.
             </li>
             <li>
               <strong className="text-[var(--color-brand-fg)]">Auto-archive on expiry:</strong> when the cycle window passes, the flock is archived automatically and its pen is freed for the next placement.
             </li>
             <li>
-              <strong className="text-[var(--color-brand-fg)]">Auto-archive at zero birds:</strong> a flock that drops to zero birds (sold, culled, lost) is auto-archived the same day — the token has done its job.
+              <strong className="text-[var(--color-brand-fg)]">Auto-archive at zero birds:</strong> a flock that drops to zero birds (sold, culled, lost) is auto-archived the same day. The token has done its job.
             </li>
             <li>
               <strong className="text-[var(--color-brand-fg)]">Manual archive:</strong> you can end a cycle early; the pen is freed immediately and the data stays on file for reports.

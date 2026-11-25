@@ -310,7 +310,7 @@ function RevenueBlock({ finance }: { finance: FlockFinanceDto }) {
       </p>
       {r.secondaryCurrencies.length > 0 && (
         <p className="mt-2 text-[0.6875rem] italic text-[var(--color-brand-muted)]">
-          Also received: {r.secondaryCurrencies.map((s) => fmtMoney(s.amount, s.currency)).join(' · ')} — not added into the primary total.
+          Also received: {r.secondaryCurrencies.map((s) => fmtMoney(s.amount, s.currency)).join(' · ')}, not added into the primary total.
         </p>
       )}
     </section>

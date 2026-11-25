@@ -71,7 +71,7 @@ export default function ReportsPage() {
       <PageHeader
         eyebrow="Reports"
         title="Cycle reports"
-        description="A shareable summary of any cycle — feed used, mortality, cost, revenue, PENKEEP climate. Export as PDF for banks and co-ops, or CSV for your own spreadsheets."
+        description="A shareable summary of any cycle: feed used, mortality, cost, revenue, PENKEEP climate. Export as PDF for banks and co-ops, or CSV for your own spreadsheets."
       />
 
       {flocks.isLoading || pens.isLoading ? (
@@ -400,7 +400,7 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
   if (!climate || !climate.available) {
     const reason = climate?.available === false
       ? climate.reason
-      : 'Climate data is loading — if this persists, the backend needs to be redeployed to include the new climate section.';
+      : 'Climate data is loading. If this persists, the backend needs to be redeployed to include the new climate section.';
     return (
       <section className="rounded-2xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-5">
         <div className="flex items-start gap-3">
@@ -427,7 +427,7 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
     <section className="rounded-2xl border border-[var(--color-brand-border)] bg-white">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-brand-border)] px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Climate — PENKEEP</p>
+          <p className="text-[0.65625rem] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary-deep)]">Climate · PENKEEP</p>
           <h2 className="mt-0.5 text-[0.875rem] font-bold tracking-tight text-[var(--color-brand-fg)]">Zone comfort &amp; air quality</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -535,7 +535,7 @@ function ClimateCard({ climate }: { climate: FlockReportSummary['climate'] | und
           <span>
             {climate.thresholds.note}{' '}
             Breach hours = readings out of range ÷ readings-per-hour (sample every {climate.sampleIntervalSeconds}s).
-            Coverage % = actual readings ÷ expected at the sample cadence — a lower number means the device was offline for stretches during the cycle.
+            Coverage % = actual readings ÷ expected at the sample cadence. A lower number means the device was offline for stretches during the cycle.
           </span>
         </p>
       </div>
@@ -597,7 +597,7 @@ function TemperatureAdvisoryBlock({
 
       {advisory.tentative === true && (
         <div className="mt-2 rounded-lg bg-amber-50/60 px-3 py-2 text-[0.71875rem] leading-relaxed text-amber-900">
-          Coverage was thin this cycle. The verdict may shift as more readings come in — treat this as guidance, not a final grade.
+          Coverage was thin this cycle. The verdict may shift as more readings come in, so treat this as guidance, not a final grade.
         </div>
       )}
 
@@ -620,7 +620,7 @@ function TemperatureAdvisoryBlock({
       )}
 
       <p className="mt-3 text-[0.65625rem] leading-relaxed text-[var(--color-brand-muted)]">
-        Each day is rated against the physiological target for the flock&rsquo;s age <em>on that day</em> — day 3 is graded on the 32–34 °C brooding target; day 30 on the 20–23 °C growing target. The verdict shows the worst-day rating, not the average, because a single bad day of welfare-level stress matters more than an otherwise-green trend.
+        Each day is rated against the physiological target for the flock&rsquo;s age <em>on that day</em>: day 3 is graded on the 32–34 °C brooding target; day 30 on the 20–23 °C growing target. The verdict shows the worst-day rating, not the average, because a single bad day of welfare-level stress matters more than an otherwise-green trend.
       </p>
     </div>
   );
@@ -777,7 +777,7 @@ function TreatmentLog({
     <DetailedEntryTable
       eyebrow="Treatment log"
       title="Every treatment given"
-      description="Antibiotics, coccidiostats, supplements — evidence of health events and how they were handled."
+      description="Antibiotics, coccidiostats, supplements: evidence of health events and how they were handled."
       rows={rows}
       currency={currency}
       showBirdsColumn={true}
@@ -824,7 +824,7 @@ function DiseaseCheckLog({
         </h2>
         <p className="mt-1 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
           Produced by an automated tool that is still in development and can be wrong. These are
-          your record of what you observed and acted on — not a veterinary diagnosis.
+          your record of what you observed and acted on, not a veterinary diagnosis.
         </p>
       </header>
 
@@ -857,7 +857,7 @@ function DiseaseCheckLog({
                   ) : r.farmerVerdict === 'disagreed' ? (
                     <span className="font-semibold text-[var(--color-brand-fg)]">
                       Disagreed
-                      {r.actualDisease ? ` — said it was ${r.actualDisease}` : ''}
+                      {r.actualDisease ? `, said it was ${r.actualDisease}` : ''}
                     </span>
                   ) : r.farmerVerdict === 'unsure' ? (
                     'Unsure'
@@ -1047,7 +1047,7 @@ function ExportsRow({ flockId }: { flockId: string }) {
         <div>
           <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">Share with your bank or co-op</p>
           <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
-            The PDF is a printable one-page cycle summary — signable, shareable, honest about coverage.
+            The PDF is a printable one-page cycle summary: signable, shareable, honest about coverage.
             The CSV is every raw daily-record row for your own spreadsheets.
           </p>
         </div>
@@ -1085,7 +1085,7 @@ function AccuracyNotes() {
           <strong className="text-[var(--color-brand-fg)]">Feed (kg)</strong> normalises logged units: bag → 25 kg, sack → 50 kg, tonne → 1,000 kg, gram → 0.001 kg. Unknown units are treated as kg.
         </li>
         <li>
-          <strong className="text-[var(--color-brand-fg)]">FCR</strong> uses (latest average bird weight − earliest average bird weight) × current birds, and only prints when that gain is positive AND the resulting ratio is inside a sane 0.5–10 window. Otherwise the field says &ldquo;insufficient data&rdquo; — never a misleading number driven by a unit-entry mistake.
+          <strong className="text-[var(--color-brand-fg)]">FCR</strong> uses (latest average bird weight − earliest average bird weight) × current birds, and only prints when that gain is positive AND the resulting ratio is inside a sane 0.5–10 window. Otherwise the field says &ldquo;insufficient data&rdquo;, never a misleading number driven by a unit-entry mistake.
         </li>
         <li>
           <strong className="text-[var(--color-brand-fg)]">Placement cost</strong> is the flock&rsquo;s original purchase price. It&rsquo;s kept separate from operating expenses so P&amp;L stays honest.
@@ -1094,10 +1094,10 @@ function AccuracyNotes() {
           <strong className="text-[var(--color-brand-fg)]">Climate breach hours</strong> come from the PENKEEP&rsquo;s own status flags against the min / max you set on the device. Air-quality thresholds (NH₃ &gt; 25 ppm, CO₂ &gt; 5,000 ppm) follow broiler welfare guidance.
         </li>
         <li>
-          <strong className="text-[var(--color-brand-fg)]">Coverage %</strong> tells you how full the PENKEEP stream was. Below 90% means the device was offline for stretches — the numbers stay honest but weigh them accordingly.
+          <strong className="text-[var(--color-brand-fg)]">Coverage %</strong> tells you how full the PENKEEP stream was. Below 90% means the device was offline for stretches. The numbers stay honest but weigh them accordingly.
         </li>
         <li>
-          <strong className="text-[var(--color-brand-fg)]">Corrections</strong> are append-only reversal entries — a farmer can post one at any time on an entry they created, with a required reason. The original stays in the ledger next to the offsetting fix, and all aggregations above use the NET (original + correction). The Records CSV export shows every original + correction pair with the reason so the audit story is intact end-to-end.
+          <strong className="text-[var(--color-brand-fg)]">Corrections</strong> are append-only reversal entries. A farmer can post one at any time on an entry they created, with a required reason. The original stays in the ledger next to the offsetting fix, and all aggregations above use the NET (original + correction). The Records CSV export shows every original + correction pair with the reason so the audit story is intact end-to-end.
         </li>
       </ul>
     </details>
@@ -1114,7 +1114,7 @@ function EmptyState() {
       </span>
       <p className="mt-4 text-[0.875rem] font-bold text-[var(--color-brand-fg)]">No cycles to report on yet</p>
       <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
-        Place a flock and log some daily records — you&rsquo;ll be able to export a full cycle report once there&rsquo;s data.
+        Place a flock and log some daily records. You&rsquo;ll be able to export a full cycle report once there&rsquo;s data.
       </p>
       <Button asChild size="sm" className="mt-5">
         <Link href="/setup/flocks">
@@ -1139,7 +1139,7 @@ function ErrorState({ error }: { error: unknown }) {
   return (
     <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-5">
       <p className="text-[0.8125rem] font-bold text-rose-900">Couldn&rsquo;t load this cycle report</p>
-      <p className="mt-1 text-[0.75rem] text-rose-900">{apiErrorMessage(error, 'Please retry — if this keeps happening, contact support.')}</p>
+      <p className="mt-1 text-[0.75rem] text-rose-900">{apiErrorMessage(error, 'Please retry. If this keeps happening, contact support.')}</p>
     </div>
   );
 }

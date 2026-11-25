@@ -476,7 +476,7 @@ function SoldAmountField({
             About <strong>₦{perBird.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> per bird.
           </>
         ) : (
-          'Leave blank if you don’t know yet — your cycle profit will show as incomplete until you add it.'
+          'Leave blank if you don’t know yet. Your cycle profit will show as incomplete until you add it.'
         )}
       </p>
     </div>
@@ -753,7 +753,7 @@ function BirdCountEditView({
         )
       ) : (
         <BeigeAlert title="Counts can't be edited">
-          Bird-count totals are frozen once saved — editing them would
+          Bird-count totals are frozen once saved, because editing them would
           let the running flock count drift. If today&rsquo;s figures are
           wrong, tap Cancel and log a <strong>fresh bird-count entry</strong>{' '}
           on this same date. Multiple rows on one day are allowed. Owners

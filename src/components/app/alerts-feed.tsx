@@ -105,7 +105,7 @@ function AlertRow({ alert }: { alert: FlockAlertDto }) {
       endpoints.submitAlertFeedback(alert.id, kind),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['alerts'] });
-      toast.success('Thanks — your rating trains the alert engine.');
+      toast.success('Thanks. Your rating trains the alert engine.');
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not save feedback.')),
   });
@@ -187,7 +187,7 @@ function AlertRow({ alert }: { alert: FlockAlertDto }) {
                 type="text"
                 value={dismissReason}
                 onChange={(e) => setDismissReason(e.target.value.slice(0, 500))}
-                placeholder="e.g. Already handled — no longer relevant."
+                placeholder="e.g. Already handled, no longer relevant."
                 className="mt-1 block h-9 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-2.5 text-[0.78125rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               />
               <div className="mt-2 flex flex-wrap gap-2">

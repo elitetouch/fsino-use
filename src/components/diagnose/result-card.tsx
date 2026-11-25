@@ -144,7 +144,7 @@ export function ResultCard({
           <p className="mt-3.5 flex items-start gap-1.5 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             <Info className="mt-0.5 h-3 w-3 shrink-0" />
             <span>
-              This is guidance, not a prescription. Confirm dosages with a vet before treating —
+              This is guidance, not a prescription. Confirm dosages with a vet before treating,
               especially for young birds or a flock already on medication.
             </span>
           </p>
@@ -263,7 +263,7 @@ function WhatItLookedAt({ image }: { image: string }) {
           />
           <p className="mt-2 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
             The bright areas are what the app paid most attention to. If those areas are not on the
-            droppings, the result is less trustworthy — take another photo closer in.
+            droppings, the result is less trustworthy. Take another photo closer in.
           </p>
         </div>
       )}
@@ -296,7 +296,7 @@ function Feedback({ diagnosisId }: { diagnosisId: string }) {
   if (sent === 'agreed' || sent === 'disagreed') {
     return (
       <p className="rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] p-3 text-center text-[0.78125rem] text-[var(--color-brand-muted)]">
-        Thank you — this makes the tool better for every farmer using it.
+        Thank you. This makes the tool better for every farmer using it.
       </p>
     );
   }

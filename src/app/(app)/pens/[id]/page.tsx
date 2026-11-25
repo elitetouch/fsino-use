@@ -124,7 +124,7 @@ export default function PenDetailPage({ params }: { params: Promise<{ id: string
           <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-8 text-center">
             <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">No completed cycles yet</p>
             <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
-              Once a cycle here is archived it&rsquo;ll show up below — newest first.
+              Once a cycle here is archived it&rsquo;ll show up below, newest first.
             </p>
           </div>
         ) : (
@@ -172,7 +172,7 @@ function PenStatusCard({ pen, active }: { pen: PenDto; active?: FlockDto }) {
           <strong className="text-[var(--color-brand-fg)]">
             {active.breed} · {active.placedBirds.toLocaleString()} birds
           </strong>
-          {' '}— day {active.ageDays ?? 0} of cycle.
+          {', '}day {active.ageDays ?? 0} of cycle.
         </p>
       ) : (
         <p className="mt-4 text-[0.8125rem] text-[var(--color-brand-muted)]">

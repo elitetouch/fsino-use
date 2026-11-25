@@ -249,7 +249,7 @@ function LookupResult({
         <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 fill-[var(--color-brand-primary)] text-white" strokeWidth={2.4} />
         <div className="min-w-0 flex-1">
           <p className="text-[0.78125rem] font-bold text-[var(--color-brand-primary-deep)]">
-            Device verified — ready to pair
+            Device verified, ready to pair
           </p>
           <p className="mt-0.5 break-all text-[0.75rem] text-[var(--color-brand-fg-soft)]">
             <span className="font-mono">{state.device.device_id}</span>
@@ -271,7 +271,7 @@ function LookupResult({
         <label className="block text-[0.71875rem] font-semibold text-[var(--color-brand-fg-soft)]" htmlFor="pair-station-label">
           Station name{' '}
           <span className="font-normal text-[var(--color-brand-muted)]">
-            (optional — name this spot in the {unitLower})
+            (optional: name this spot in the {unitLower})
           </span>
         </label>
         <input

@@ -94,7 +94,7 @@ export default function SettingsHubPage() {
               <MenuRow
                 href="/settings/farm/daily-record"
                 label="Farm daily record defaults"
-                hint="The hard ceiling — events disabled here cannot be recorded by anyone."
+                hint="The hard ceiling. Events disabled here cannot be recorded by anyone."
               />
               <MenuRow
                 href="/settings/farm/notifications"

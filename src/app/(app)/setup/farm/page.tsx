@@ -61,7 +61,7 @@ const schema = z.object({
   // Only poultry is asked meat-or-eggs. A cold room produces neither,
   // and requiring an answer there would block the form on a question
   // that does not apply.
-  message: 'Pick at least one — meat, eggs, or both',
+  message: 'Pick at least one: meat, eggs, or both',
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -88,7 +88,7 @@ export default function SetupFarmPage() {
     if (!canCreateFarm(farms.data.farms)) {
       // Invited-staff path: they have memberships but no owner role,
       // so the backend would 403 a POST /farms. Send them home.
-      toast.info('You already have access to a farm — opening your dashboard.');
+      toast.info('You already have access to a farm. Opening your dashboard.');
       router.replace('/home');
     }
   }, [farms.data, farms.isLoading, router]);
@@ -136,7 +136,7 @@ export default function SetupFarmPage() {
       // lands.
       const unitWord = VERTICALS[form.getValues('vertical')].unit.toLowerCase();
 
-      toast.success(`Farm saved — let’s add your first ${unitWord}.`);
+      toast.success(`Farm saved. Let’s add your first ${unitWord}.`);
       router.push('/setup/pens');
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not create your farm.')),
@@ -204,7 +204,7 @@ export default function SetupFarmPage() {
         className="mt-2 text-[var(--color-brand-muted)]"
         style={{ fontSize: 'var(--text-lead)' }}
       >
-        Tell us about the farm — you can add more later.
+        Tell us about the farm. You can add more later.
       </p>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
@@ -258,7 +258,7 @@ export default function SetupFarmPage() {
         <div>
           <Label>What do you manage here? *</Label>
           <p className="-mt-1 mb-2 text-xs text-[var(--color-brand-muted)]">
-            This sets up the right records and alerts. One thing per farm — add another farm
+            This sets up the right records and alerts. One thing per farm. Add another farm
             if you run more.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -277,7 +277,7 @@ export default function SetupFarmPage() {
         <div>
           <Label>What do you produce? *</Label>
           <p className="-mt-1 mb-2 text-xs text-[var(--color-brand-muted)]">
-            Pick one or both — we’ll use this to tune your default schedules.
+            Pick one or both. We’ll use this to tune your default schedules.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <ProduceChip

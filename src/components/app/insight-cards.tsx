@@ -303,7 +303,7 @@ export function CostProjectionCard({ data }: { data?: CostProjectionCardDto | nu
 function CostStatusPill({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     projected: { label: 'On track', cls: 'bg-[var(--color-brand-fg)] text-white' },
-    burn_only: { label: 'Layer — no target', cls: 'bg-[var(--color-brand-fg)] text-white' },
+    burn_only: { label: 'Layer, no target', cls: 'bg-[var(--color-brand-fg)] text-white' },
     cycle_end: { label: 'End of cycle', cls: 'bg-emerald-100 text-emerald-800' },
     too_early: { label: 'Too early', cls: 'bg-amber-50 text-amber-800' },
     mixed_currency: { label: 'Mixed currency', cls: 'bg-amber-50 text-amber-800' },

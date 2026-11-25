@@ -80,7 +80,7 @@ export default function LearnedWordsPage() {
       </h1>
       <p className="mt-2 text-sm text-[var(--color-brand-muted)]">
         When the microphone keeps hearing a word wrongly, this app remembers what
-        you actually meant — after you have corrected it {PROMOTION_THRESHOLD} times.
+        you actually meant, after you have corrected it {PROMOTION_THRESHOLD} times.
         These words are kept on this phone and are only used to suggest an entry,
         never to save one by itself.
       </p>

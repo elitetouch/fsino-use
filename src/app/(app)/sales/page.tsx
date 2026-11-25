@@ -66,7 +66,7 @@ export default function SalesPage() {
       <PageHeader
         eyebrow="Sales"
         title="Money-in ledger"
-        description="Every bird sale on this farm. Sales logged without a price show at the top — pricing them is what completes a cycle's profit figure."
+        description="Every bird sale on this farm. Sales logged without a price show at the top. Pricing them is what completes a cycle's profit figure."
         actions={
           <Gate perm="sales.record">
             <Button size="sm" className="h-10" onClick={() => setLogOpen(true)}>
@@ -344,7 +344,7 @@ function LogSaleDialog({ open, onClose }: { open: boolean; onClose: () => void }
               disabled={flocks.isLoading}
               className="h-10 w-full rounded-lg border border-[var(--color-brand-input-border)] bg-white px-3 text-[0.84375rem]"
             >
-              <option value="">— pick a cycle —</option>
+              <option value="">Pick a cycle</option>
               {(flocks.data?.flocks ?? []).map((f) => (
                 <option key={f.id} value={f.id}>{f.name} · {f.currentBirds} birds</option>
               ))}

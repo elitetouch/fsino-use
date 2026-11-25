@@ -64,8 +64,8 @@ export function OfflineBanner() {
     icon = <CloudOff className="h-4 w-4" />;
     message =
       pending > 0
-        ? `You're offline — ${pending} ${pending === 1 ? 'change' : 'changes'} saved on this device`
-        : `You're offline — anything you log will sync when you're back`;
+        ? `You're offline, ${pending} ${pending === 1 ? 'change' : 'changes'} saved on this device`
+        : `You're offline. Anything you log will sync when you're back`;
     action = (
       <button
         type="button"
@@ -88,7 +88,7 @@ export function OfflineBanner() {
   } else if (justReconnected) {
     tone = 'green';
     icon = <CheckCircle2 className="h-4 w-4" />;
-    message = 'Back online — all changes synced';
+    message = 'Back online, all changes synced';
   }
 
   const bg = {

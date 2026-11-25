@@ -24,7 +24,7 @@ export default function SetupDonePage() {
   // as written for somebody else.
   const closing = hasCycles
     ? 'From now on, every feed bag, vaccine and weigh-in you log goes into a real cost-per-bird picture.'
-    : 'From now on every reading, excursion and consignment is recorded — and the breach report writes itself.';
+    : 'From now on every reading, excursion and consignment is recorded, and the breach report writes itself.';
 
   return (
     <div className="text-center">

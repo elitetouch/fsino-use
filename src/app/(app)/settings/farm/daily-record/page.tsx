@@ -74,7 +74,7 @@ export default function FarmDailyRecordDefaultsPage() {
       <SubPageHeader
         backTo="/settings"
         title="Farm daily record defaults"
-        description="What your team is allowed to record. Switching something off here turns it off for everyone on the farm — they can't override it from their personal preferences."
+        description="What your team is allowed to record. Switching something off here turns it off for everyone on the farm. They can't override it from their personal preferences."
         lockedNote={canEdit ? undefined : 'You can review these defaults but only owners and managers can change them.'}
       />
 

@@ -251,7 +251,7 @@ function SubToggleRow({
       checked={!!checked && farmAllowed}
       onChange={onChange}
       disabled={!farmAllowed}
-      lockedReason={!farmAllowed ? 'Disabled by the farm — owner must turn this on first.' : undefined}
+      lockedReason={!farmAllowed ? 'Disabled by the farm. The owner must turn this on first.' : undefined}
     />
   );
 }

@@ -212,7 +212,7 @@ export function EntryPicker({
                       {!isOwn && (
                         <span
                           className="inline-flex items-center gap-0.5 rounded-full bg-[var(--color-brand-surface-soft)] px-1.5 py-0.5 text-[0.59375rem] font-bold uppercase tracking-wider text-[var(--color-brand-muted-soft)]"
-                          title="Staff users can only edit records they created themselves. Tap to try anyway — the server will return a clear message if it's not allowed."
+                          title="Staff users can only edit records they created themselves. Tap to try anyway. The server will return a clear message if it's not allowed."
                         >
                           <Lock className="h-2.5 w-2.5" />
                           Theirs

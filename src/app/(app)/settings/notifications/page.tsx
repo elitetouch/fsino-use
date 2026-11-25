@@ -58,7 +58,7 @@ export default function NotificationsPage() {
     <div>
       <SubPageHeader
         title="Push notifications"
-        description="Reminders and alerts you get on this device. These override the farm's defaults — turn any of them on or off, independently of the rest of the team."
+        description="Reminders and alerts you get on this device. These override the farm's defaults. Turn any of them on or off, independently of the rest of the team."
       />
 
       <div className="space-y-4">
@@ -105,7 +105,7 @@ export default function NotificationsPage() {
 
         <Section
           title="More alerts"
-          hint="Everything below is on the roadmap — we'll switch it on once the underlying signal is wired up."
+          hint="Everything below is on the roadmap. We'll switch it on once the underlying signal is wired up."
         >
           <ComingSoonRow
             label="Finance reminders"

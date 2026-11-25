@@ -297,7 +297,7 @@ export default function SetupCropsPage() {
           <FieldError message={form.formState.errors.pen_id?.message} />
           {bays.length === 0 && !pens.isLoading && (
             <p className="mt-1.5 text-xs text-[var(--color-brand-muted)]">
-              No {unitPlural.toLowerCase()} yet — go back a step and add one.
+              No {unitPlural.toLowerCase()} yet. Go back a step and add one.
             </p>
           )}
         </div>
@@ -334,7 +334,7 @@ export default function SetupCropsPage() {
             {...form.register('variety')}
           />
           <p className="mt-1.5 text-xs text-[var(--color-brand-muted)]">
-            Optional — useful later when you compare one season to the next.
+            Optional, useful later when you compare one season to the next.
           </p>
         </div>
 

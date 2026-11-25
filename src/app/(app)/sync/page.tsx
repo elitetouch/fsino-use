@@ -114,7 +114,7 @@ export default function SyncPage() {
       toast.success(
         sent > 0
           ? `${sent} ${sent === 1 ? 'change' : 'changes'} sent.`
-          : 'Nothing sent — check your connection.',
+          : 'Nothing sent. Check your connection.',
       );
     } catch {
       toast.error("Couldn't reach the server. Try again when you have signal.");
@@ -185,7 +185,7 @@ export default function SyncPage() {
             Everything is saved
           </p>
           <p className="mx-auto mt-1 max-w-[28rem] text-[0.8125rem] leading-relaxed text-[var(--color-brand-muted)]">
-            Every record on this phone has reached the server. You can keep working offline —
+            Every record on this phone has reached the server. You can keep working offline, and
             anything you enter will appear here until it sends.
           </p>
         </div>
@@ -292,7 +292,7 @@ function Row({
         <div className="mt-3 rounded-lg border border-[var(--color-brand-danger)]/30 bg-[var(--color-brand-danger)]/[0.06] p-3">
           <p className="text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg)]">
             Delete <strong>{describe(entry)}</strong> from this phone? It was never saved to the
-            server, so it cannot be recovered — you would need to enter it again.
+            server, so it cannot be recovered and you would need to enter it again.
           </p>
           <div className="mt-2.5 flex gap-2">
             <Button size="sm" variant="outline" className="flex-1" onClick={onCancelDiscard}>

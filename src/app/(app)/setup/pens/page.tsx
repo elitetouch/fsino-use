@@ -199,7 +199,7 @@ export default function SetupPensPage() {
         className="mt-2 text-[var(--color-brand-muted)]"
         style={{ fontSize: 'var(--text-lead)' }}
       >
-        {unitDescription} Add at least one — you can keep adding more before
+        {unitDescription} Add at least one. You can keep adding more before
         continuing.
       </p>
 

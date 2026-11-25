@@ -173,7 +173,7 @@ export function CorrectDailyRecordDialog({
               <div>
                 <p className="text-[0.8125rem] font-bold text-amber-900">This entry is itself a correction</p>
                 <p className="mt-1 text-[0.75rem] text-amber-900">
-                  Corrections can&rsquo;t be corrected — post a new correction on the ORIGINAL entry instead.
+                  Corrections can&rsquo;t be corrected. Post a new correction on the ORIGINAL entry instead.
                 </p>
               </div>
             </div>
@@ -183,7 +183,7 @@ export function CorrectDailyRecordDialog({
             <div className="flex items-start gap-2 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)]/60 p-3 text-[0.71875rem] leading-relaxed text-[var(--color-brand-muted)]">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" />
               <p>
-                Type what the entry <em>should have been</em>. We&rsquo;ll post a reversal entry that offsets the original — nothing gets deleted, and the fix (with your reason) is visible in the records CSV so your bank / co-op can trust the audit trail.
+                Type what the entry <em>should have been</em>. We&rsquo;ll post a reversal entry that offsets the original. Nothing gets deleted, and the fix (with your reason) is visible in the records CSV so your bank / co-op can trust the audit trail.
               </p>
             </div>
 
@@ -254,13 +254,13 @@ export function CorrectDailyRecordDialog({
                 value={reason}
                 onChange={(e) => setReason(e.target.value.slice(0, 500))}
                 rows={3}
-                placeholder="e.g. Miscount — actual mortality was 1, not 18."
+                placeholder="e.g. Miscount: actual mortality was 1, not 18."
                 className="mt-1 block w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.84375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               />
               <p className={cn('mt-1 text-[0.6875rem]', reasonOk ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
                 {reasonOk
                   ? `Saved with the correction and shown in the records CSV. ${reason.length}/500 chars.`
-                  : `At least 3 characters — bank readers rely on this to trust the audit. ${reason.length}/500 chars.`}
+                  : `At least 3 characters. Bank readers rely on this to trust the audit. ${reason.length}/500 chars.`}
               </p>
             </div>
           </div>

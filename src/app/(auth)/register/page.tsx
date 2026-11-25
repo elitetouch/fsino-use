@@ -69,7 +69,7 @@ export default function RegisterPage() {
         emailVerifiedAt: session.user.emailVerifiedAt ?? null,
         phoneVerifiedAt: session.user.phoneVerifiedAt ?? null,
       });
-      toast.success('Account created — check your email for the code.');
+      toast.success('Account created. Check your email for the code.');
       router.push('/verify');
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not create account.')),

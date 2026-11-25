@@ -203,7 +203,7 @@ export default function HomePage() {
           </p>
           <h1 className="mt-1 text-[1.25rem] font-bold tracking-tight text-[var(--color-brand-fg)] sm:text-[1.375rem]">
             {user?.name?.split(' ')[0] ?? 'Welcome'}
-            {farm ? ` — ${farm.name}` : ''}
+            {farm ? ` · ${farm.name}` : ''}
           </h1>
         </div>
         {(flocks.data?.flocks ?? []).length > 0 && (
@@ -301,7 +301,7 @@ export default function HomePage() {
               Daily logs, FCR &amp; cost analytics coming next
             </p>
             <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">
-              Feed, water, vaccines, mortality — log in seconds, watch your margins grow.
+              Feed, water, vaccines, mortality: log in seconds, watch your margins grow.
             </p>
           </div>
           {/* "Log" needs an active cycle to land on — without one, the
@@ -469,7 +469,7 @@ function EmptyCycleNudge({ completedCount = 0 }: { completedCount?: number }) {
       </p>
       <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
         {hasHistory
-          ? `Your ${completedCount === 1 ? 'completed cycle is' : `${completedCount} completed cycles are`} still here — place a new flock when you're ready.`
+          ? `Your ${completedCount === 1 ? 'completed cycle is' : `${completedCount} completed cycles are`} still here. Place a new flock when you're ready.`
           : 'Place your first flock to start tracking feed, vaccines and margin.'}
       </p>
       <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">

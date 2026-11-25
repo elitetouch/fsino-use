@@ -4,12 +4,12 @@ const FEATURES = [
   {
     icon: CalendarCheck2,
     title: 'Daily records, done in seconds',
-    body: 'Feed, water, vaccinations, mortality, bird count — log everything from the same screen, no spreadsheets.',
+    body: 'Feed, water, vaccinations, mortality, bird count: log everything from the same screen, no spreadsheets.',
   },
   {
     icon: TrendingUp,
     title: 'See where the money goes',
-    body: 'Real cost-per-bird, FCR and margin per flock. Know which pen is making you money — and which one is bleeding.',
+    body: 'Real cost-per-bird, FCR and margin per flock. Know which pen is making you money, and which one is bleeding.',
   },
   {
     icon: ShieldCheck,
@@ -19,7 +19,7 @@ const FEATURES = [
   {
     icon: Users2,
     title: 'Work as a team',
-    body: 'Invite your farm manager and field staff. Everyone records on their own phone — you see one source of truth.',
+    body: 'Invite your farm manager and field staff. Everyone records on their own phone, and you see one source of truth.',
   },
   {
     icon: FileBarChart2,

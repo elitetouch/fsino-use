@@ -237,7 +237,7 @@ function ResultsTab({
     mutationFn: (opts: ArchiveFlockOpts) => endpoints.archiveFlock(cycle.id, opts),
     onSuccess: (_res, opts) => {
       const label = opts.outcome === 'terminated' ? 'ended early' : 'completed';
-      toast.success(`Cycle ${ordinal} ${label} — pen ${pen?.name ?? ''} is now free.`);
+      toast.success(`Cycle ${ordinal} ${label}. Pen ${pen?.name ?? ''} is now free.`);
       qc.invalidateQueries({ queryKey: ['flocks'] });
       qc.invalidateQueries({ queryKey: ['pens'] });
       router.push('/cycles');
@@ -380,7 +380,7 @@ function ResultsTab({
 function PlaceholderTab({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--color-brand-input-border)] bg-white p-10 text-center">
-      <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title} — coming soon</p>
+      <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">{title}: coming soon</p>
       <p className="mx-auto mt-1 max-w-md text-[0.75rem] text-[var(--color-brand-muted)]">{body}</p>
     </div>
   );
@@ -546,7 +546,7 @@ function CloseOutSheet({
               onChange={(e) => setNotes(e.target.value)}
               placeholder={isComplete
                 ? 'Anything worth remembering about this cycle?'
-                : 'Add the specifics — dates, symptoms, decisions.'}
+                : 'Add the specifics: dates, symptoms, decisions.'}
               className="w-full rounded-xl border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.8125rem] text-[var(--color-brand-fg)] outline-none placeholder:text-[var(--color-brand-muted-soft)] focus:border-[var(--color-brand-primary)]"
             />
           </div>

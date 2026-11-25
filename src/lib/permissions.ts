@@ -71,7 +71,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   },
   {
     heading: 'Sales (money-in ledger)',
-    description: 'Revenue from birds and eggs sold. Pair these with the expenses permissions to make someone a complete finance-only staff — able to record money in and out without touching feed, mortality or weight records.',
+    description: 'Revenue from birds and eggs sold. Pair these with the expenses permissions to make someone a complete finance-only staff, able to record money in and out without touching feed, mortality or weight records.',
     items: [
       { key: 'sales.view',   label: 'See sales',    hint: 'Read the sales ledger, totals and which sales still need a price.' },
       { key: 'sales.record', label: 'Record sales', hint: 'Log a new sale, and add the amount to a sale that was logged without one.' },
@@ -88,7 +88,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   },
   {
     heading: 'Team & billing',
-    description: 'Power-user actions — grant carefully.',
+    description: 'Power-user actions. Grant carefully.',
     items: [
       { key: 'staff_manage.view',   label: 'See team members',   hint: 'View the people list and pending invites.' },
       { key: 'staff_manage.create', label: 'Invite new members', hint: 'Send invite emails to add new staff.' },

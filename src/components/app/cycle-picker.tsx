@@ -130,7 +130,7 @@ export function CyclePicker({
           <div className="max-h-[420px] overflow-y-auto p-1.5">
             {cycles.length === 0 ? (
               <div className="px-3 py-6 text-center text-[0.75rem] text-[var(--color-brand-muted)]">
-                No cycles yet —{' '}
+                No cycles yet,{' '}
                 <Link href="/setup/flocks" className="font-semibold text-[var(--color-brand-primary)] hover:underline">
                   place a flock
                 </Link>
