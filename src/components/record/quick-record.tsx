@@ -626,16 +626,34 @@ export function QuickRecord({
       {impact && (
         <div className="mt-3 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-3 py-2.5">
           <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
+            {/*
+              PLAIN VERBS, not accounting shorthand.
+              
+              This read "₦9,000 in", which was meant as money in and
+              lands as an unfinished sentence — in what? A farmer
+              should never have to work out which direction the money
+              went, and "spent" and "earned" are words they already
+              use.
+            */}
             {impact.out > 0 && impact.in > 0
-              ? `${money(impact.out)} out, ${money(impact.in)} in`
+              ? `You spent ${money(impact.out)} and earned ${money(impact.in)}`
               : impact.out > 0
-                ? `${money(impact.out)} out`
-                : `${money(impact.in)} in`}
-            {impact.perBird !== null && (
+                ? `You spent ${money(impact.out)}`
+                : `You earned ${money(impact.in)}`}
+            {/* The trailing phrase has to belong to ONE figure. With
+                money going both ways, "about ₦93.75 a bird" could
+                attach to either, so the net is shown instead — which
+                is the thing a farmer wants from a sentence that both
+                spends and earns. */}
+            {impact.out > 0 && impact.in > 0 ? (
               <span className="font-semibold text-[var(--color-brand-muted)]">
-                {' · about '}{money(impact.perBird)}{' a bird'}
+                {' \u00b7 '}{money(Math.abs(impact.net))}{impact.net >= 0 ? ' down overall' : ' up overall'}
               </span>
-            )}
+            ) : impact.perBird !== null ? (
+              <span className="font-semibold text-[var(--color-brand-muted)]">
+                {' \u00b7 about '}{money(impact.perBird)}{' a bird'}
+              </span>
+            ) : null}
           </p>
           {impact.categoryToDate && (
             <p className="mt-0.5 text-[0.71875rem] text-[var(--color-brand-muted)]">

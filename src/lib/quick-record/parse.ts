@@ -566,7 +566,7 @@ function buildField(
       value: dose !== null && doseUnit?.apiUnit === 'ml' ? dose : 0,
       unit: doseUnit?.apiUnit === 'ml' ? 'ml' : undefined,
       confidence: vaccineName ? 'high' : 'low',
-      caution: vaccineName ? undefined : 'Vaccine name not recognised — check it before saving',
+      caution: vaccineName ? undefined : 'Vaccine name not recognised. Check it before saving',
       sourceText: clause,
       detail: vaccineName ? { vaccineName } : undefined,
     };
@@ -586,7 +586,7 @@ function buildField(
       kind,
       value: amount,
       confidence: tiny ? 'low' : 'high',
-      caution: tiny ? 'That is a very small amount — check it before saving' : undefined,
+      caution: tiny ? 'That is a very small amount. Check it before saving' : undefined,
       sourceText: clause,
       detail: { produceItem: item.value, produceLabel: item.label },
     };
@@ -616,9 +616,9 @@ function buildField(
       value: amount,
       confidence: category === 'other' || tiny ? 'low' : 'high',
       caution: tiny
-        ? 'That is a very small amount — check it before saving'
+        ? 'That is a very small amount. Check it before saving'
         : category === 'other'
-          ? 'Could not tell what this was for — it will be filed under Other'
+          ? 'Could not tell what this was for, so it goes under Other'
           : undefined,
       sourceText: clause,
       detail: { expenseCategory: category },
@@ -637,7 +637,7 @@ function buildField(
         confidence: treatmentType ? 'high' : 'low',
         caution: treatmentType
           ? undefined
-          : 'Treatment type not recognised — check it before saving',
+          : 'Treatment type not recognised. Check it before saving',
         sourceText: clause,
         detail: treatmentType ? { treatmentType } : undefined,
       };
@@ -712,7 +712,7 @@ function buildField(
       caution = `More than the ${ctx.currentBirds} birds currently in this pen`;
     } else if (ctx.currentBirds > 0 && value / ctx.currentBirds > 0.1) {
       confidence = 'low';
-      caution = 'Unusually high for one day — check before saving';
+      caution = 'Unusually high for one day. Check before saving';
     }
   }
 
@@ -723,13 +723,13 @@ function buildField(
   // inferred cull removes birds from the flock. The farmer sees it.
   if (kind === 'culled' && !/\bcull/.test(clause)) {
     confidence = 'low';
-    caution = caution ?? 'Heard this as culling — check the count before saving';
+    caution = caution ?? 'Heard this as culling. Check the count before saving';
   }
 
   // A number with no unit where a unit is expected is a guess.
   if ((kind === 'feed' || kind === 'water' || kind === 'weight') && !unitSpec) {
     confidence = 'low';
-    caution = 'No unit heard — confirm the unit before saving';
+    caution = 'No unit heard. Confirm the unit before saving';
   }
 
   // Kind-specific extras, so "two bags of starter feed" keeps the
@@ -737,7 +737,7 @@ function buildField(
   const brand = kind === 'feed' ? readBrand(clause) : null;
   if (brand?.uncertain) {
     confidence = 'low';
-    caution = caution ?? `Heard brand "${brand.label}" — confirm it before saving`;
+    caution = caution ?? `Heard brand "${brand.label}". Confirm it before saving`;
   }
 
   // A brand was named and we could not place it. Recorded so the
@@ -746,7 +746,7 @@ function buildField(
   // left to notice.
   const brandStated = kind === 'feed' && brand === null && statesUnrecognisedBrand(clause);
   if (brandStated) {
-    caution = caution ?? 'Brand not recognised — pick it in the wizard before saving';
+    caution = caution ?? 'Brand not recognised. Pick it in the wizard before saving';
   }
 
   const detail = {
@@ -854,7 +854,7 @@ export function parseQuickRecord(
             // farmer cannot work out for themselves, and it is the
             // explanation for every surprising entry a learned alias
             // will ever produce.
-            caution: 'Understood from a word you taught this app — check it',
+            caution: 'Understood from a word you taught this app. Check it',
           };
 
     seen.add(kind);

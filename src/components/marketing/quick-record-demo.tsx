@@ -26,11 +26,23 @@ import type { ParsedField } from '@/lib/quick-record/parse';
  * finished state, which is the part that makes the argument anyway.
  */
 
-/** One example per thing a farmer does: lose birds, buy, sell. */
+/**
+ * One example per thing a farmer does: lose birds, buy, sell.
+ *
+ * THE PRICES HAVE TO BE REAL. A Nigerian farmer reads this page and
+ * knows what a crate of eggs costs; a stale figure tells them the app
+ * does not know their market, which is the one thing this section is
+ * trying to prove it does. A crate is ₦5,500, so three is ₦16,500 —
+ * not the ₦9,000 that was here, which was three thousand a crate and
+ * years out of date.
+ *
+ * Keep these current. They are the cheapest credibility on the site
+ * and the easiest thing to let rot.
+ */
 const SCRIPT: ReadonlyArray<{ text: string; currentBirds: number }> = [
   { text: '15 birds died and I gave them 2 bags of feed', currentBirds: 480 },
-  { text: 'Bought 10 bags of feed for 45,000', currentBirds: 480 },
-  { text: 'Sold 3 crates of eggs for 9,000', currentBirds: 480 },
+  { text: 'Bought 10 bags of feed for 250,000', currentBirds: 480 },
+  { text: 'Sold 3 crates of eggs for 16,500', currentBirds: 480 },
 ];
 
 const TYPE_MS = 45;
@@ -215,16 +227,34 @@ export function QuickRecordDemo() {
         {impact && (
           <div className="animate-fade-in mt-3 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-soft)] px-3 py-2.5">
             <p className="text-[0.8125rem] font-bold text-[var(--color-brand-fg)]">
+              {/*
+                PLAIN VERBS, not accounting shorthand.
+                
+                This read "₦9,000 in", which was meant as money in and
+                lands as an unfinished sentence — in what? A farmer
+                should never have to work out which direction the money
+                went, and "spent" and "earned" are words they already
+                use.
+              */}
               {impact.out > 0 && impact.in > 0
-                ? `${money(impact.out)} out, ${money(impact.in)} in`
+                ? `You spent ${money(impact.out)} and earned ${money(impact.in)}`
                 : impact.out > 0
-                  ? `${money(impact.out)} out`
-                  : `${money(impact.in)} in`}
-              {impact.perBird !== null && (
+                  ? `You spent ${money(impact.out)}`
+                  : `You earned ${money(impact.in)}`}
+              {/* The trailing phrase has to belong to ONE figure. With
+                  money going both ways, "about ₦93.75 a bird" could
+                  attach to either, so the net is shown instead — which
+                  is the thing a farmer wants from a sentence that both
+                  spends and earns. */}
+              {impact.out > 0 && impact.in > 0 ? (
                 <span className="font-semibold text-[var(--color-brand-muted)]">
-                  {' · about '}{money(impact.perBird)}{' a bird'}
+                  {' \u00b7 '}{money(Math.abs(impact.net))}{impact.net >= 0 ? ' down overall' : ' up overall'}
                 </span>
-              )}
+              ) : impact.perBird !== null ? (
+                <span className="font-semibold text-[var(--color-brand-muted)]">
+                  {' \u00b7 about '}{money(impact.perBird)}{' a bird'}
+                </span>
+              ) : null}
             </p>
           </div>
         )}
@@ -235,7 +265,7 @@ export function QuickRecordDemo() {
       </div>
 
       <p className="mt-3 text-center text-[0.78125rem] text-[var(--color-brand-muted)]">
-        This is the real thing — the same reader the app uses, running here.
+        This is the real thing. The same reader the app uses, running right here.
       </p>
     </div>
   );

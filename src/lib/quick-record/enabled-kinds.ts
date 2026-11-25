@@ -88,5 +88,5 @@ const KIND_LABEL: Record<FieldKind, string> = {
 };
 
 export function notTrackedReason(kind: FieldKind): string {
-  return `This farm isn't recording ${KIND_LABEL[kind] ?? kind} — turn it on in Daily record settings.`;
+  return `This farm isn't recording ${KIND_LABEL[kind] ?? kind}. Turn it on in Daily record settings.`;
 }

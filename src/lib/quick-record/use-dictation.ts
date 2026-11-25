@@ -225,7 +225,7 @@ export function useDictation(onText: (alternatives: string[]) => void): UseDicta
     if (!isOnline()) {
       setStatus('error');
       setMessage(
-        'Voice typing needs a connection — your phone sends what you say away to be written out. Type it here instead, or use the microphone on your keyboard, which works offline. Saving works either way.',
+        'Voice typing needs a connection, because your phone sends what you say away to be written out. Type it here instead, or use the microphone on your keyboard, which works offline. Saving works either way.',
       );
       return;
     }
@@ -308,8 +308,8 @@ export function useDictation(onText: (alternatives: string[]) => void): UseDicta
         setStatus('error');
         setMessage(
           isOnline()
-            ? 'This browser can’t do voice typing. Use Chrome for the microphone, or type it here — everything else works normally.'
-            : 'Voice needs a connection. Type it instead — saving still works offline.',
+            ? 'This browser can’t do voice typing. Use Chrome for the microphone, or just type it here. Everything else works normally.'
+            : 'Voice needs a connection. Type it instead, and saving still works offline.',
         );
         return;
       }
