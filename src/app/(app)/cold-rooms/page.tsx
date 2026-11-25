@@ -120,7 +120,7 @@ function Banner({ count, silent, total }: { count: number; silent: number; total
         <WifiOff className="h-4 w-4 shrink-0 text-amber-700" />
         <p className="text-[13.5px] font-semibold text-amber-900">
           {silent === total
-            ? `No readings from ${total === 1 ? 'this room' : 'any of these rooms'} — nothing is being watched yet.`
+            ? `No readings from ${total === 1 ? 'this room' : 'any of these rooms'}, so nothing is being watched yet.`
             : `${silent} of ${total} rooms are not reporting, so they are not being watched.`}
         </p>
       </div>

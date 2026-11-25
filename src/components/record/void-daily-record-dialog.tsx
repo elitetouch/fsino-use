@@ -145,7 +145,7 @@ export function VoidDailyRecordDialog({
                 Voiding is not a delete. The entry stays in your records CSV export next to your reason so a bank or co-op can trust the audit trail. Aggregations and the wizard just stop counting it.
                 {shiftsBirds && (
                   <>
-                    {' '}Your running flock count will be reconciled — the birds this entry took out will be added back.
+                    {' '}Your running flock count will be reconciled. The birds this entry took out will be added back.
                   </>
                 )}
               </p>
@@ -162,15 +162,15 @@ export function VoidDailyRecordDialog({
                 rows={3}
                 placeholder={
                   record.eventType === 'vaccination'
-                    ? 'e.g. Duplicate entry — vaccine already logged earlier that day.'
-                    : 'e.g. Duplicate entry — logged twice by mistake.'
+                    ? 'e.g. Duplicate entry: vaccine already logged earlier that day.'
+                    : 'e.g. Duplicate entry: logged twice by mistake.'
                 }
                 className="mt-1 block w-full rounded-[var(--radius-input)] border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.84375rem] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
               />
               <p className={'mt-1 text-[0.6875rem] ' + (reasonOk ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>
                 {reasonOk
                   ? `Saved with the void and shown in the records CSV export. ${reason.length}/500 chars.`
-                  : `At least 3 characters — bank readers rely on this to trust the audit. ${reason.length}/500 chars.`}
+                  : `At least 3 characters. Bank readers rely on this to trust the audit. ${reason.length}/500 chars.`}
               </p>
             </div>
           </div>

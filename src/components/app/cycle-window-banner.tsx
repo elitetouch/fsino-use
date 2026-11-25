@@ -122,8 +122,8 @@ export function CycleWindowBanner({
               <>
                 The tracking period ended on{' '}
                 <strong className="text-[var(--color-brand-fg)]">{fmtDate(window.validUntil)}</strong>, so new
-                records can&apos;t be added. Everything you&apos;ve already recorded — and the full
-                report — stays available.
+                records can&apos;t be added. Everything you&apos;ve already recorded, and the full
+                report, stays available.
               </>
             ) : (
               <>

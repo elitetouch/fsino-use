@@ -58,7 +58,7 @@ const CYCLE_WINDOWS: ReadonlyArray<{ type: ProductionType; window: string; body:
   {
     type: 'cockerel',
     window: '20 weeks per token',
-    body: 'Cockerels sell from 12 to 20 weeks — the window holds to the last bird.',
+    body: 'Cockerels sell from 12 to 20 weeks, so the window holds to the last bird.',
   },
   {
     type: 'layer',
@@ -172,7 +172,7 @@ export default function SubscriptionPage() {
           tier="basic"
           title="Basic"
           eyebrow="For daily record-keeping"
-          summary="Everything a farmer needs to run a cycle without paper — daily logging, breed-standard benchmarks, and a bank-ready PDF at harvest."
+          summary="Everything a farmer needs to run a cycle without paper: daily logging, breed-standard benchmarks, and a bank-ready PDF at harvest."
           features={BASIC_FEATURES}
           notIncluded={PREMIUM_ONLY_FEATURES}
           prices={pricesByTier.basic}
@@ -218,10 +218,10 @@ export default function SubscriptionPage() {
               Ready to place a cycle?
             </p>
             <h2 className="mt-1 text-[1.25rem] font-bold tracking-tight text-white sm:text-[1.375rem]">
-              Buy tokens now — no subscription, no recurring fee
+              Buy tokens now. No subscription, no recurring fee
             </h2>
             <p className="mt-1 text-[0.8125rem] leading-relaxed text-white/80">
-              Pay only for the birds you place. Tokens don&apos;t expire on the shelf — only when a cycle uses them.
+              Pay only for the birds you place. Tokens don&apos;t expire on the shelf. They are only spent when a cycle uses them.
             </p>
           </div>
           <Gate perm="billing.manage">
@@ -319,7 +319,7 @@ function PlanCard({
             </div>
           ) : prices.length === 0 ? (
             <div className="rounded-lg border border-dashed border-[var(--color-brand-border)] p-3 text-[0.78125rem] text-[var(--color-brand-muted)]">
-              Pricing for this plan isn&apos;t configured for your market yet — contact support.
+              Pricing for this plan isn&apos;t configured for your market yet. Contact support.
             </div>
           ) : (
             prices.map((p) => (
@@ -459,7 +459,7 @@ function DeviceOfferCard({ offer }: { offer: DeviceOfferDto }) {
           </h3>
           <p className="mt-1 text-[0.78125rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
             {isPenkeep
-              ? 'One PENKEEP covers a full pen with three heater zones and monitors temperature, humidity, ammonia and CO₂ around the clock. Only needed if you\'re on Premium — Basic runs on record-keeping alone.'
+              ? 'One PENKEEP covers a full pen with three heater zones and monitors temperature, humidity, ammonia and CO₂ around the clock. Only needed if you\'re on Premium. Basic runs on record-keeping alone.'
               : 'Reach out to support to order.'}
           </p>
 
@@ -564,7 +564,7 @@ function TokenRulesPanel() {
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
-                <strong className="text-[var(--color-brand-fg)]">At placement.</strong> The moment you place a flock, the app debits one token per bird from the matching bucket. If the bucket runs short, placement is blocked — you top up and try again.
+                <strong className="text-[var(--color-brand-fg)]">At placement.</strong> The moment you place a flock, the app debits one token per bird from the matching bucket. If the bucket runs short, placement is blocked. You top up and try again.
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -597,7 +597,7 @@ function TokenRulesPanel() {
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
-                <strong className="text-[var(--color-brand-fg)]">All birds gone.</strong> A flock that drops to zero birds — sold, culled or lost — auto-archives the same day.
+                <strong className="text-[var(--color-brand-fg)]">All birds gone.</strong> A flock that drops to zero birds, whether sold, culled or lost, auto-archives the same day.
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -624,13 +624,13 @@ function TokenRulesPanel() {
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
-                <strong className="text-[var(--color-brand-fg)]">Unused tokens don&apos;t expire on the shelf.</strong> Buy in bulk if you&apos;re planning multiple cycles — they wait in your wallet until you place a flock.
+                <strong className="text-[var(--color-brand-fg)]">Unused tokens don&apos;t expire on the shelf.</strong> Buy in bulk if you&apos;re planning multiple cycles. They wait in your wallet until you place a flock.
               </span>
             </li>
             <li className="flex items-start gap-2">
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span>
-                <strong className="text-[var(--color-brand-fg)]">Refunds only for undelivered tokens.</strong> If a purchase fails after payment (rare — the gateway usually catches it), the failed order is refunded to your original payment method. Once a token is delivered to your wallet, it&apos;s yours — no refund on delivered tokens.
+                <strong className="text-[var(--color-brand-fg)]">Refunds only for undelivered tokens.</strong> If a purchase fails after payment (rare, the gateway usually catches it), the failed order is refunded to your original payment method. Once a token is delivered to your wallet, it&apos;s yours, and there is no refund on delivered tokens.
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -642,7 +642,7 @@ function TokenRulesPanel() {
             <li className="flex items-start gap-2 rounded-lg bg-[var(--color-brand-surface-soft)]/60 p-2.5">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-primary-deep)]" strokeWidth={2.5} />
               <span className="text-[0.75rem] text-[var(--color-brand-muted)]">
-                Questions about a specific charge or bulk discount? Reach us on the <a href="/contact" className="font-semibold text-[var(--color-brand-primary-deep)] hover:underline">Contact us</a> page — support usually replies same-day.
+                Questions about a specific charge or bulk discount? Reach us on the <a href="/contact" className="font-semibold text-[var(--color-brand-primary-deep)] hover:underline">Contact us</a> page. Support usually replies same-day.
               </span>
             </li>
           </ul>
@@ -676,9 +676,9 @@ function CycleTypeCard({ label, window, body }: { label: string; window: string;
  * delivers on for the tier in question.
  */
 const BASIC_FEATURES = [
-  'Daily record wizard — feed, water, mortality, vaccines, weight, sales.',
-  'Breed-standard benchmarks (Ross 308, Cobb 500, Hy-Line, Lohmann, ISA) — every metric rated against the target for the exact age of your birds.',
-  'Cycle report — birds, feed, mortality, FCR, cost and margin, exportable as bank-ready PDF and CSV.',
+  'Daily record wizard: feed, water, mortality, vaccines, weight, sales.',
+  'Breed-standard benchmarks (Ross 308, Cobb 500, Hy-Line, Lohmann, ISA): every metric rated against the target for the exact age of your birds.',
+  'Cycle report: birds, feed, mortality, FCR, cost and margin, exportable as bank-ready PDF and CSV.',
   'Vaccination schedule built from your breed\'s protocol, with off-schedule tracking for anything you administer outside the standard.',
   'Expenses ledger and per-cycle finance view (placement + operating cost + revenue + margin).',
   'Unlimited pens, unlimited past cycles, unlimited staff.',
@@ -686,11 +686,11 @@ const BASIC_FEATURES = [
 
 const PREMIUM_FEATURES = [
   'Everything in Basic, plus:',
-  'PENKEEP pen climate station — live temperature, humidity, ammonia and CO₂, streamed to the dashboard 24/7.',
-  'Age-based temperature comfort verdict — every day rated against the breed\'s physiological target for that age.',
-  'Real-time alerts — feed drop, mortality spike, climate stress, ammonia spike, weight stall — the moment the data trips a rule.',
-  'Cost projection and harvest-day forecast — see the end of the cycle from day 15.',
-  'Peer benchmarking — how this cycle compares to your own past cycles at the same age.',
+  'PENKEEP pen climate station: live temperature, humidity, ammonia and CO₂, streamed to the dashboard 24/7.',
+  'Age-based temperature comfort verdict: every day rated against the breed\'s physiological target for that age.',
+  'Real-time alerts the moment the data trips a rule: feed drop, mortality spike, climate stress, ammonia spike, weight stall.',
+  'Cost projection and harvest-day forecast: see the end of the cycle from day 15.',
+  'Peer benchmarking: how this cycle compares to your own past cycles at the same age.',
 ] as const;
 
 const PREMIUM_ONLY_FEATURES = [

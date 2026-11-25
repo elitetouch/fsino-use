@@ -42,7 +42,7 @@ export default function CommunityPage() {
             </h2>
             <p className="mt-1 text-[0.84375rem] leading-relaxed text-[var(--color-brand-fg-soft)]">
               Ask questions, share what worked, get faster answers than any
-              support channel can offer. Our team is in the chat too — you
+              support channel can offer. Our team is in the chat too, so you
               don&apos;t need to file a ticket for a quick answer.
             </p>
           </div>

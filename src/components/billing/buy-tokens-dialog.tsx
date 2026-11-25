@@ -202,7 +202,7 @@ export function BuyTokensDialog({
             </div>
             {tokenType === 'layer' ? (
               <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-[var(--color-brand-muted)]">
-                Dual-purpose flocks spend layer tokens too — they share the
+                Dual-purpose flocks spend layer tokens too, because they share the
                 18-month cycle.
               </p>
             ) : null}
@@ -283,7 +283,7 @@ export function BuyTokensDialog({
                 {priceState === 'loading' && 'Loading current prices…'}
                 {priceState === 'error' && (
                   <>
-                    Couldn&rsquo;t load prices. You can still continue — the gateway
+                    Couldn&rsquo;t load prices. You can still continue. The gateway
                     will reject the request if pricing isn&rsquo;t configured server-side.
                   </>
                 )}

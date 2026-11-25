@@ -394,7 +394,7 @@ function TreatmentForm({
         <p>
           You can enter the number of birds you gave a treatment to. Tap on
           <strong> All birds</strong> if you&rsquo;ve given treatment to your
-          entire flock — it pre-fills the count from the living-bird tally so
+          entire flock. It pre-fills the count from the living-bird tally so
           you can&rsquo;t accidentally enter more birds than you have.
         </p>
         <LearnMoreHeading>Treatment type and reason</LearnMoreHeading>

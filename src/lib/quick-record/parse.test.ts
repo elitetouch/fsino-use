@@ -495,7 +495,9 @@ describe('feed brand, heard and carried forward', () => {
       confidence: 'low',
       detail: { feedBrand: 'chikun_feeds' },
     });
-    expect(r.fields[0]?.caution).toContain('confirm');
+    // Case-insensitive: the wording is copy and gets edited, the
+    // requirement is that the farmer is asked to confirm.
+    expect(r.fields[0]?.caution).toMatch(/confirm/i);
   });
 
   it('carries the brand forward when the sentence did not say one', () => {

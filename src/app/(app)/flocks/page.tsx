@@ -24,7 +24,7 @@ export default function FlocksPage() {
       <PageHeader
         eyebrow="Flocks"
         title="All flocks"
-        description="Every flock you have placed — active and past cycles."
+        description="Every flock you have placed, active and past cycles."
         actions={
           <Gate perm="flocks.create">
             <Button asChild size="sm" className="h-10">

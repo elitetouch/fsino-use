@@ -5,7 +5,7 @@ import { Bullets, DocTitle, Important, Section } from '@/components/legal/doc';
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description:
-    'The agreement between you and Farm Support Innovation — subscriptions, your data, the disease checker, and the limits of what we promise.',
+    'The agreement between you and Farm Support Innovation: subscriptions, your data, the disease checker, and the limits of what we promise.',
 };
 
 /**
@@ -45,7 +45,7 @@ export default function TermsPage() {
       <DocTitle
         title="Terms of Service"
         updated="2026-09-23"
-        summary="Your farm records are yours. Pay for the cycles you track, and we keep them, show you what they mean, and never hand them to anyone else. The disease checker is an early tool and is sometimes wrong — never treat a flock on its word alone."
+        summary="Your farm records are yours. Pay for the cycles you track, and we keep them, show you what they mean, and never hand them to anyone else. The disease checker is an early tool and is sometimes wrong. Never treat a flock on its word alone."
       />
 
       <Section n={1} title="The agreement">
@@ -63,7 +63,7 @@ export default function TermsPage() {
         <Bullets
           items={[
             'You must be 18 or older.',
-            'Give us details that are true, and keep your email current — it is how we send billing notices and password resets.',
+            'Give us details that are true, and keep your email current, because it is how we send billing notices and password resets.',
             'Your password is yours to protect. Anything done with your account is treated as done by you.',
             'Tell us at once if you think someone else has your password. Resetting it ends every other signed-in session.',
           ]}
@@ -83,7 +83,7 @@ export default function TermsPage() {
         <Bullets
           items={[
             <>
-              <strong>Before the period ends</strong> we warn you — in the app and by email — so it
+              <strong>Before the period ends</strong> we warn you, in the app and by email, so it
               does not arrive without notice.
             </>,
             <>
@@ -148,7 +148,7 @@ export default function TermsPage() {
         <p>
           Treatment and dosage information shown with a result is general guidance, not a
           prescription. Dosages depend on the age and weight of your birds and on what they have
-          already been given — a vet needs to confirm them.
+          already been given, and a vet needs to confirm them.
         </p>
         <p>
           Newcastle disease and other notifiable conditions must be reported to your local
@@ -163,7 +163,7 @@ export default function TermsPage() {
         </p>
         <Bullets
           items={[
-            'This is an opinion formed from a photograph and your records — not an examination of your birds, and not a substitute for one.',
+            'This is an opinion formed from a photograph and your records, not an examination of your birds, and not a substitute for one.',
             'We do not promise a reply within a fixed time. It depends on the vet being available.',
             'In an emergency, or where birds are dying quickly, contact a veterinarian in person. Do not wait for a reply here.',
           ]}
@@ -202,7 +202,7 @@ export default function TermsPage() {
           health of your birds is at stake, take advice from a veterinarian who can examine them.
         </p>
         <p>
-          Poultry farming carries risks that no software removes — disease, feed quality, weather,
+          Poultry farming carries risks that no software removes: disease, feed quality, weather,
           power, water, market prices and theft among them. By using the service you accept that
           those risks remain yours, and that the figures, alerts, projections and disease-check
           results we show are inputs to your judgement rather than a replacement for it.
@@ -228,7 +228,7 @@ export default function TermsPage() {
           ]}
         />
         <p>
-          Some of what the service does depends on companies we do not control — payment
+          Some of what the service does depends on companies we do not control: payment
           processors, email and notification providers, network operators and hosting. Where one of
           those fails, we will do what we reasonably can, but we are not responsible for their
           failures.
@@ -237,7 +237,7 @@ export default function TermsPage() {
 
       <Section n={10} title="Limits on our liability">
         <p>
-          Nothing in this clause limits liability that cannot lawfully be limited — including for
+          Nothing in this clause limits liability that cannot lawfully be limited, including for
           death or personal injury caused by our negligence, for fraud or fraudulent
           misrepresentation, or any other liability Nigerian law does not permit us to exclude.
         </p>
@@ -245,7 +245,7 @@ export default function TermsPage() {
         <Bullets
           items={[
             <>
-              We are <strong>not liable for indirect or consequential loss</strong> — including
+              We are <strong>not liable for indirect or consequential loss</strong>, including
               lost profit, lost revenue, lost contracts, lost opportunity, or business interruption.
             </>,
             <>
@@ -268,7 +268,7 @@ export default function TermsPage() {
           it is out of time.
         </p>
         <p>
-          These limits apply however a claim is framed — in contract, in negligence, or otherwise —
+          These limits apply however a claim is framed, in contract, in negligence, or otherwise,
           and they reflect the price of the service. We could not offer it at this price bearing
           the risks of every farming decision made with it.
         </p>
@@ -311,7 +311,7 @@ export default function TermsPage() {
           this agreement if you breach these terms.
         </p>
         <p>
-          Before you go, export what you want to keep. We will help if you ask — write to{' '}
+          Before you go, export what you want to keep. We will help if you ask. Write to{' '}
           <a
             href="mailto:support@fsinnovation.net"
             className="font-semibold text-[var(--color-brand-primary-deep)] underline underline-offset-2"
@@ -325,7 +325,7 @@ export default function TermsPage() {
       <Section n={14} title="Things outside our control">
         <p>
           We are not in breach of these terms, and not liable, where we are prevented from
-          providing the service by something beyond our reasonable control — including power
+          providing the service by something beyond our reasonable control, including power
           failure, network or internet outage, the failure of a supplier or hosting provider, fire,
           flood, epidemic or animal disease control measures, civil unrest, industrial action, or
           government action.

@@ -66,7 +66,7 @@ function Diagnose() {
       setError(
         apiErrorMessage(
           e,
-          "Couldn't check the photo. You need an internet connection for this — everything else in the app works offline.",
+          "Couldn't check the photo. You need an internet connection for this. Everything else in the app works offline.",
         ),
       ),
   });
@@ -259,7 +259,7 @@ function BetaNotice() {
       </p>
       <p className="mt-0.5 text-[0.75rem] leading-relaxed text-[var(--color-brand-muted)]">
         It was trained on a limited set of photos, so it will sometimes say it cannot read a
-        perfectly good picture — and it can be wrong. Treat every answer as a second opinion,
+        perfectly good picture, and it can be wrong. Treat every answer as a second opinion,
         never as a replacement for a vet. Telling us whether it got it right is what improves it.
       </p>
     </div>
@@ -362,7 +362,7 @@ function PhotoGuide() {
           // threshold. The model learned small droppings within a wider
           // field of ground, so the guidance now matches that.
           'Stand over the droppings and shoot downwards, as you normally would',
-          'Include some of the ground around them — do not fill the whole frame',
+          'Include some of the ground around them, and do not fill the whole frame',
           'Use daylight if you can, or your torch in a dark pen',
           'Photograph fresh droppings, one patch at a time',
           'Keep birds, hands and feet out of the frame',

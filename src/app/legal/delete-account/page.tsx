@@ -5,7 +5,7 @@ import { Bullets, Defs, DocTitle, Important, Section } from '@/components/legal/
 export const metadata: Metadata = {
   title: 'Delete your account',
   description:
-    'How to ask Farm Support Innovation to delete your FSI Farm Manager account, or only your disease-check photographs — what gets deleted, and what we are required to keep.',
+    'How to ask Farm Support Innovation to delete your FSI Farm Manager account, or only your disease-check photographs: what gets deleted, and what we are required to keep.',
 };
 
 /**
@@ -52,7 +52,7 @@ export default function DeleteAccountPage() {
       <DocTitle
         title="Delete your account"
         updated="2026-09-30"
-        summary="You can ask us to delete your FSI Farm Manager account at any time — or, if you would rather keep the account, just your disease-check photographs. Either way it is free: write from the email address on the account and we will confirm within 7 days and finish within 30. Deleting the account takes your farm records with it, so export anything you still need first."
+        summary="You can ask us to delete your FSI Farm Manager account at any time. Or, if you would rather keep the account, just your disease-check photographs. Either way it is free: write from the email address on the account and we will confirm within 7 days and finish within 30. Deleting the account takes your farm records with it, so export anything you still need first."
       />
 
       <Section n={1} title="Which app this is about">
@@ -81,7 +81,7 @@ export default function DeleteAccountPage() {
               </a>{' '}
               from the address your account uses</strong>, with the subject{' '}
               <span className="font-medium">Delete my account</span>. Sending from that address is
-              how we know it is you — we will not act on a request to delete someone else&rsquo;s
+              how we know it is you. We will not act on a request to delete someone else&rsquo;s
               farm.
             </>,
             <>
@@ -140,7 +140,7 @@ export default function DeleteAccountPage() {
           rows={[
             [
               'Payment references',
-              'Seven years. Nigerian tax law expects records of a transaction to be retained, and we cannot delete them on request. These are references and amounts — your card and bank details never reached our servers in the first place.',
+              'Seven years. Nigerian tax law expects records of a transaction to be retained, and we cannot delete them on request. These are references and amounts, and your card and bank details never reached our servers in the first place.',
             ],
             [
               'Technical logs',
@@ -148,7 +148,7 @@ export default function DeleteAccountPage() {
             ],
             [
               'Anonymised figures',
-              'Aggregate numbers that can no longer be traced to you or your farm — for example how many cycles a region ran — may be kept. Nothing in them identifies you.',
+              'Aggregate numbers that can no longer be traced to you or your farm, for example how many cycles a region ran, may be kept. Nothing in them identifies you.',
             ],
           ]}
         />
@@ -162,7 +162,7 @@ export default function DeleteAccountPage() {
         </p>
         <p>
           If you do not say, we will ask before touching a farm that someone else is still
-          recording against — deleting one person&rsquo;s login should not quietly destroy a
+          recording against. Deleting one person&rsquo;s login should not quietly destroy a
           manager&rsquo;s or an attendant&rsquo;s work.
         </p>
       </Section>

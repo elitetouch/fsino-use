@@ -176,7 +176,7 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
     unitNamePlaceholder: 'Cold Room 1',
     capacityUnit: 'tonnes',
     unitDescription:
-      'A cold room is one space held at its own temperature — a walk-in, a chest freezer, or a vaccine fridge.',
+      'A cold room is one space held at its own temperature: a walk-in, a chest freezer, or a vaccine fridge.',
     // These are the ColdChainPreset codes the backend knows, so the
     // choice made here is also the band the room is monitored against.
     unitTypes: [
@@ -184,7 +184,7 @@ export const VERTICALS: Record<Vertical, VerticalConfig> = {
       { value: 'chilled', label: 'Chilled (0 to 4°C)' },
       { value: 'frozen', label: 'Frozen (−25 to −15°C)' },
       { value: 'produce', label: 'Fresh produce (12 to 16°C)' },
-      { value: 'custom', label: 'Something else — I will set the range' },
+      { value: 'custom', label: 'Something else, I will set the range' },
     ],
   },
   aquaculture: {

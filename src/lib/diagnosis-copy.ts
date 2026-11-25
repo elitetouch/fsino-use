@@ -47,7 +47,7 @@ export function refusalCopy(reason: string | null): RefusalCopy {
       fixes: [
         'Hold the phone still and let it focus before tapping',
         'Stay about an arm’s length away, not closer',
-        'Wipe the camera lens — droppings dust it quickly',
+        'Wipe the camera lens, because droppings dust it quickly',
       ],
     };
   }
@@ -84,7 +84,7 @@ export function refusalCopy(reason: string | null): RefusalCopy {
     body: 'The photo was examined but the result was not confident enough to report. Showing you a guess here could cost you a flock, so it is withheld deliberately.',
     fixes: [
       'Shoot from standing height, with some ground visible around the droppings',
-      'Take it in daylight, or use the torch — avoid deep shadow',
+      'Take it in daylight, or use the torch, and avoid deep shadow',
       'Photograph a single fresh dropping rather than a mixed patch',
     ],
   };
@@ -148,7 +148,7 @@ export function diseaseFraming(disease: string | null): DiseaseFraming {
       urgency: 'critical',
       headline: 'Act today',
       leadWith:
-        'Newcastle disease spreads very fast and has no cure once birds are infected. Separate affected birds now and contact a vet or your local veterinary office — it is a reportable disease.',
+        'Newcastle disease spreads very fast and has no cure once birds are infected. Separate affected birds now and contact a vet or your local veterinary office. It is a reportable disease.',
     };
   }
 

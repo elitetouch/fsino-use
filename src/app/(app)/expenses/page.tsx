@@ -98,7 +98,7 @@ export default function ExpensesPage() {
       <PageHeader
         eyebrow="Expenses"
         title="Money-out ledger"
-        description="Log every cost — feed, drugs, fuel, wages, repairs. The reports and cost projection read from this ledger."
+        description="Log every cost: feed, drugs, fuel, wages, repairs. The reports and cost projection read from this ledger."
         actions={
           <Gate perm="expenses.record">
             <Button size="sm" className="h-10" onClick={() => setAddOpen(true)}>
@@ -397,7 +397,7 @@ function AddExpenseDialog({
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.code} — {c.label}
+                    {c.code} · {c.label}
                   </option>
                 ))}
               </select>
@@ -517,7 +517,7 @@ function VoidExpenseDialog({
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5">
             <p className="text-[0.78125rem] font-bold text-amber-900">The row stays in the ledger</p>
             <p className="mt-1 text-[0.75rem] leading-relaxed text-amber-900">
-              Voiding is not a delete — the entry stays with your reason so a bank or co-op can trust the audit trail. It just stops counting in totals and cost projection.
+              Voiding is not a delete. The entry stays with your reason so a bank or co-op can trust the audit trail. It just stops counting in totals and cost projection.
             </p>
           </div>
 
@@ -529,7 +529,7 @@ function VoidExpenseDialog({
               value={reason}
               onChange={(e) => setReason(e.target.value.slice(0, 500))}
               rows={3}
-              placeholder="e.g. Duplicate entry — the same feed purchase was logged twice."
+              placeholder="e.g. Duplicate entry: the same feed purchase was logged twice."
               className="mt-1 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.8125rem]"
             />
             <p className={cn('mt-1 text-[0.6875rem]', canSubmit ? 'text-[var(--color-brand-muted)]' : 'text-amber-800')}>

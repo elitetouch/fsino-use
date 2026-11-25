@@ -151,7 +151,7 @@ export default function BatchesPage() {
           <p className="mt-3 text-[15px] font-bold">Nothing recorded yet</p>
           <p className="mx-auto mt-1 max-w-sm text-[13px] text-[var(--color-brand-muted)]">
             Record what goes into a room and any excursion it sits through is attached to it
-            automatically — that record is what a buyer or an insurer asks for.
+            automatically. That record is what a buyer or an insurer asks for.
           </p>
         </div>
       ) : (
@@ -431,7 +431,7 @@ function AddBatch({
     return (
       <Shell title="Add stock" onClose={onClose}>
         <p className="text-[13px] text-[var(--color-brand-muted)]">
-          You need a cold room first — stock is recorded as being inside one, so there is
+          You need a cold room first. Stock is recorded as being inside one, so there is
           nowhere to put this yet.
         </p>
         <div className="mt-4">
@@ -541,7 +541,7 @@ function AddBatch({
         className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-brand-primary-deep)]"
       >
         <ChevronDown className={cn('h-4 w-4 transition-transform', more && 'rotate-180')} />
-        {more ? 'Fewer details' : 'More details — lot, supplier, expiry, value'}
+        {more ? 'Fewer details' : 'More details: lot, supplier, expiry, value'}
       </button>
 
       {more && (
@@ -569,7 +569,7 @@ function AddBatch({
           </div>
           <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
             <Field
-              label="Value — used to show what is at risk during an excursion"
+              label="Value, used to show what is at risk during an excursion"
               value={value}
               onChange={setValue}
               placeholder="2400000"
@@ -590,7 +590,7 @@ function AddBatch({
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.code} — {c.label}
+                    {c.code} · {c.label}
                   </option>
                 ))}
               </select>

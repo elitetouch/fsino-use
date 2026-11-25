@@ -41,7 +41,7 @@ export default function DashboardPreferencesPage() {
     <div>
       <SubPageHeader
         title="Dashboard preferences"
-        description="Choose which cards appear on your dashboard. These are just for you — teammates can pick their own."
+        description="Choose which cards appear on your dashboard. These are just for you. Teammates can pick their own."
       />
 
       <div className="space-y-4">
@@ -77,7 +77,7 @@ export default function DashboardPreferencesPage() {
 
         <Section
           title="Mortality & sales"
-          hint="What happened to the birds — losses and revenue moves."
+          hint="What happened to the birds: losses and revenue moves."
         >
           <ToggleRow
             label="Mortality"

@@ -47,7 +47,7 @@ export default function ContactPage() {
       <PageHeader
         eyebrow="Contact"
         title="How can we help?"
-        description="Reach us the way that fits the moment — phone, WhatsApp, or a written message the team picks up in order."
+        description="Reach us the way that fits the moment: phone, WhatsApp, or a written message the team picks up in order."
       />
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -241,7 +241,7 @@ function SupportInbox() {
                 value={body}
                 onChange={(e) => setBody(e.target.value.slice(0, 5000))}
                 rows={5}
-                placeholder="Give as much detail as you can — which flock, which page, what you expected, what happened. Screenshots welcome via WhatsApp."
+                placeholder="Give as much detail as you can: which flock, which page, what you expected, what happened. Screenshots welcome via WhatsApp."
                 className="mt-1 w-full rounded-md border border-[var(--color-brand-input-border)] bg-white px-3 py-2 text-[0.8125rem]"
               />
               <p className="mt-1 text-[0.6875rem] text-[var(--color-brand-muted)]">
@@ -277,7 +277,7 @@ function SupportInbox() {
             You haven&apos;t opened any support threads yet.
           </p>
           <p className="mt-1 text-[0.75rem] text-[var(--color-brand-muted)]">
-            Anything you send here reaches our support inbox — enquiries, complaints, feature ideas, bugs.
+            Anything you send here reaches our support inbox: enquiries, complaints, feature ideas, bugs.
           </p>
         </div>
       ) : (

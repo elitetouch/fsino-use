@@ -37,7 +37,7 @@ export default function MenuPage() {
       <PageHeader
         eyebrow="Menu"
         title="Menu"
-        description={`Welcome ${user?.name ?? firstName} — everything you need is here.`}
+        description={`Welcome ${user?.name ?? firstName}, everything you need is here.`}
       />
 
       <MenuList

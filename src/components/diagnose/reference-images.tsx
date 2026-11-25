@@ -120,7 +120,7 @@ export function ReferenceImages({ images }: { images: ReferenceImage[] }) {
       </ul>
 
       <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-[var(--color-brand-muted)]">
-        Examples from other farms. Birds vary — use these to compare, not to confirm.
+        Examples from other farms. Birds vary, so use these to compare, not to confirm.
       </p>
 
       {open && (

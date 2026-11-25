@@ -56,7 +56,7 @@ export default function UsersPage() {
       <PageHeader
         eyebrow="Team"
         title="Farm members"
-        description="Owners, managers and staff who can access this farm. Permissions are farm-scoped — adding someone here only grants access to this one farm."
+        description="Owners, managers and staff who can access this farm. Permissions are farm-scoped, so adding someone here only grants access to this one farm."
         actions={
           <Gate perm="staff_manage.create">
             <Button size="sm" className="h-10" onClick={() => setOpenInvite(true)}>
@@ -523,7 +523,7 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
                       ? 'Full access incl. billing + members.'
                       : r === 'manager'
                         ? 'Full access except owner-only actions.'
-                        : 'Custom permissions — pick below.'}
+                        : 'Custom permissions. Pick below.'}
                   </p>
                 </button>
               ))}

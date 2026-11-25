@@ -60,7 +60,7 @@ export function MarketingHero() {
             style={{ fontSize: 'var(--text-lead)' }}
           >
             Track every flock, every feed bag, every vaccine in minutes a day.
-            On the web in the office, on Android in the pen — one account,
+            On the web in the office, on Android in the pen. One account,
             always in sync.
           </p>
 

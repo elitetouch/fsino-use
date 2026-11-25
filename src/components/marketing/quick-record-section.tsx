@@ -10,7 +10,7 @@ import { QuickRecordDemo } from './quick-record-demo';
 const POINTS: ReadonlyArray<{ title: string; body: string }> = [
   {
     title: 'One sentence, every book',
-    body: 'Deaths, feed, what you spent and what you sold — all from the way a farmer already talks. The app sorts it; you tap save.',
+    body: 'Deaths, feed, what you spent and what you sold, all from the way a farmer already talks. The app sorts it. You tap save.',
   },
   {
     title: 'Nigerian English, Nigerian prices',
@@ -18,7 +18,7 @@ const POINTS: ReadonlyArray<{ title: string; body: string }> = [
   },
   {
     title: 'It tells you what it cost',
-    body: 'Not just that you spent money, but what it does to this cycle — per bird, and where your feed bill now stands.',
+    body: 'Not just that you spent money, but what it does to this cycle. Per bird, and where your feed bill now stands.',
   },
   {
     title: 'No signal, no problem',
@@ -45,7 +45,7 @@ export function QuickRecordSection() {
           </h2>
           <p className="mt-4 text-[1.0625rem] leading-relaxed text-[var(--color-brand-muted)]">
             Talk or type one sentence. Your mortality, feed, expenses and sales
-            all land in the right place — even with no network.
+            all land in the right place, even with no network.
           </p>
         </div>
 

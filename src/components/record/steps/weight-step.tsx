@@ -319,7 +319,7 @@ function WeightForm({
               />
               {showHigh && (
                 <AnomalyWarning>
-                  You entered a very heavy weight ({fmtKg(submitAvg!)} kg) — usual range is{' '}
+                  You entered a very heavy weight ({fmtKg(submitAvg!)} kg). Usual range is{' '}
                   {fmtRange(usual!)} kg. Did you mean {fmtKg(submitAvg! / 10)} kg?
                 </AnomalyWarning>
               )}
@@ -346,13 +346,13 @@ function WeightForm({
 
               {showHigh && (
                 <AnomalyWarning>
-                  Average is very heavy ({fmtKg(submitAvg!)} kg) — usual range is{' '}
+                  Average is very heavy ({fmtKg(submitAvg!)} kg). Usual range is{' '}
                   {fmtRange(usual!)} kg. Double-check the figures.
                 </AnomalyWarning>
               )}
               {showLow && (
                 <AnomalyWarning>
-                  Average is very light ({fmtKg(submitAvg!)} kg) — usual range is{' '}
+                  Average is very light ({fmtKg(submitAvg!)} kg). Usual range is{' '}
                   {fmtRange(usual!)} kg. Double-check the figures.
                 </AnomalyWarning>
               )}
@@ -394,7 +394,7 @@ function WeightForm({
         <p>
           Under <strong>Daily record preferences</strong> you can choose
           between entering your own self-calculated average or entering the
-          weight of five birds — in which case the app calculates the average
+          weight of five birds, in which case the app calculates the average
           for you. Five-bird mode is more accurate because each entry has a
           visible effect on the running average.
         </p>

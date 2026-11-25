@@ -105,7 +105,7 @@ export default function WelcomePage() {
             style={{ fontSize: 'var(--text-lead)' }}
           >
             Welcome to the farmer community. Let&rsquo;s set up your farm, pens
-            and flocks — three quick steps and you&rsquo;re live.
+            and flocks. Three quick steps and you&rsquo;re live.
           </p>
 
           <div className="mt-8 flex flex-col gap-3">

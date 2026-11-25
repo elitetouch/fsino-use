@@ -23,7 +23,7 @@ const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Farm Support Innovation';
 export const metadata: Metadata = {
   title: { default: appName, template: `%s · ${appName}` },
   description:
-    'Manage your poultry farm with ease. Track flocks, vaccinations, feed and finances — works online and offline, built for African poultry farmers.',
+    'Manage your poultry farm with ease. Track flocks, vaccinations, feed and finances. Works online and offline, built for African poultry farmers.',
   applicationName: appName,
   manifest: '/manifest.webmanifest',
   appleWebApp: {

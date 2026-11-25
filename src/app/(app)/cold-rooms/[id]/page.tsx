@@ -70,7 +70,7 @@ export default function ColdRoomPage({ params }: { params: Promise<{ id: string 
             description={
               data.band.configured
                 ? `Holding ${data.band.min_c}°C to ${data.band.max_c}°C`
-                : 'No temperature band set — nothing is being watched yet.'
+                : 'No temperature band set, so nothing is being watched yet.'
             }
             actions={
               <Gate perm="pens.update">
@@ -248,7 +248,7 @@ function BandEditor({
       <h2 className="text-[15px] font-bold">What is stored in this room?</h2>
       <p className="mt-1 text-[12.5px] text-[var(--color-brand-muted)]">
         Pick what is inside and the right temperature band is applied. Getting this wrong is how
-        stock is lost — a chiller setting will damage yam, and a freezer setting will destroy
+        stock is lost. A chiller setting will damage yam, and a freezer setting will destroy
         vaccines.
       </p>
 

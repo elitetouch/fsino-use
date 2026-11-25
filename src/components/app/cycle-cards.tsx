@@ -2181,7 +2181,7 @@ function SuggestionsBanner({ suggestions }: { suggestions: VaccinationSuggestion
           </p>
           <p className="mt-0.5 text-[0.71875rem] leading-snug text-amber-800">
             We noticed these {suggestions.length === 1 ? 'is' : 'are'} given consistently
-            across your recent cycles — adopt {suggestions.length === 1 ? 'it' : 'them'} so
+            across your recent cycles. Adopt {suggestions.length === 1 ? 'it' : 'them'} so
             future flocks include {suggestions.length === 1 ? 'it' : 'them'} automatically.
           </p>
         </div>
@@ -2397,11 +2397,11 @@ function VaccinationStatusIndicator({ item }: { item: VaccinationItemDto }) {
     // accept the title prop directly).
     return (
       <span
-        title={item.critical ? 'Missed — critical vaccine' : 'Missed'}
+        title={item.critical ? 'Missed: critical vaccine' : 'Missed'}
         className="shrink-0"
       >
         <XIcon
-          aria-label={`Missed${item.critical ? ' — critical' : ''}`}
+          aria-label={`Missed${item.critical ? ': critical' : ''}`}
           className={cn(
             'h-5 w-5',
             item.critical ? 'text-rose-600' : 'text-rose-500',

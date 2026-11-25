@@ -344,7 +344,7 @@ function PurchasePoller({ onSuccess }: { onSuccess?: () => void }) {
         const p = res.purchase;
         if (p.status === 'success') {
           finalise(() => {
-            toast.success(`Purchase confirmed — ${p.quantity.toLocaleString()} ${p.tokenType}/${p.tier} tokens added.`);
+            toast.success(`Purchase confirmed. ${p.quantity.toLocaleString()} ${p.tokenType}/${p.tier} tokens added.`);
             onSuccessRef.current?.();
           });
           return;

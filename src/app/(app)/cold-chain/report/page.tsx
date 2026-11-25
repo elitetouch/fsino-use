@@ -150,7 +150,7 @@ export default function ColdChainReportPage() {
                       <ul className="mt-2 space-y-1">
                         {e.stock_affected.map((s) => (
                           <li key={s.batch_id} className="text-[12.5px]">
-                            {s.batch_code ? `${s.batch_code} — ` : ''}
+                            {s.batch_code ? `${s.batch_code} · ` : ''}
                             {s.label}
                             <span className="text-[var(--color-brand-muted)]">
                               {s.minutes !== null ? ` · ${mins(s.minutes)}` : ''}

@@ -63,7 +63,7 @@ export default function PrivacyPage() {
           rows={[
             [
               'Your account',
-              'Name, email address, phone number, and a profile photo if you add one. Your password is stored only as a cryptographic hash — we cannot read it, and neither can our staff.',
+              'Name, email address, phone number, and a profile photo if you add one. Your password is stored only as a cryptographic hash, so we cannot read it, and neither can our staff.',
             ],
             [
               'Your farm records',
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
             ],
             [
               'Payments',
-              'What you bought, when, and how much. Card and bank details are entered on the payment provider’s own page and never reach our servers — we receive only a reference and a result.',
+              'What you bought, when, and how much. Card and bank details are entered on the payment provider’s own page and never reach our servers. We receive only a reference and a result.',
             ],
             [
               'Devices',
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
             ],
             [
               'Disease check photos',
-              'Photographs of droppings you submit, with the result. See clause 5 — these are handled differently from everything else here.',
+              'Photographs of droppings you submit, with the result. See clause 5. These are handled differently from everything else here.',
             ],
             [
               'Support messages',
@@ -105,10 +105,10 @@ export default function PrivacyPage() {
         <Bullets
           items={[
             'To run the service: keep your records, calculate your figures, produce your reports.',
-            'To warn you about things on your farm — a mortality spike, an overdue vaccination, a cycle about to end.',
+            'To warn you about things on your farm: a mortality spike, an overdue vaccination, a cycle about to end.',
             'To take payment and to tell you when a subscription is expiring.',
             'To answer your questions when you contact support.',
-            'To keep the platform working and secure — fixing faults, blocking abuse.',
+            'To keep the platform working and secure: fixing faults, blocking abuse.',
             'To improve the disease checker, which is explained separately in clause 5.',
           ]}
         />
@@ -160,8 +160,8 @@ export default function PrivacyPage() {
             <>
               <strong>Our in-house veterinarian may review them.</strong> Confirming what a photo
               actually shows is how the tool is corrected, and if you ask for a consultation a vet
-              will read your cycle&rsquo;s records — bird age, mortality, vaccinations, medication
-              — alongside the photo.
+              will read your cycle&rsquo;s records (bird age, mortality, vaccinations, medication
+              ) alongside the photo.
             </>,
             <>
               <strong>We use them to improve the model.</strong> The tool is in beta and is
@@ -206,7 +206,7 @@ export default function PrivacyPage() {
         <Bullets
           items={[
             'Ask for a copy of the personal data we hold about you.',
-            'Ask us to correct anything that is wrong — most of it you can edit yourself in Profile and Settings.',
+            'Ask us to correct anything that is wrong. Most of it you can edit yourself in Profile and Settings.',
             'Ask us to delete your account and your data.',
             'Object to a particular use, including the use of your photographs described in clause 5.',
             'Complain to the Nigeria Data Protection Commission if you think we have got this wrong.',
@@ -229,7 +229,7 @@ export default function PrivacyPage() {
           items={[
             'Everything travels over an encrypted connection.',
             'Passwords are hashed, never stored in a form anyone can read.',
-            'Farm data is scoped per farm — a request for another farm’s records is refused by the server, not merely hidden by the app.',
+            'Farm data is scoped per farm, so a request for another farm’s records is refused by the server, not merely hidden by the app.',
             'Staff access is limited by role and is logged.',
           ]}
         />
