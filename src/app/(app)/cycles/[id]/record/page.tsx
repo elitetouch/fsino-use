@@ -312,7 +312,7 @@ export default function RecordWizardPage({ params }: { params: Promise<{ id: str
             // quick record and the wizard agree on what this farm
             // records. Without it quick record posted switched-off
             // events and the server refused them permanently.
-            enabled={prefs.data?.preferences.effectiveDailyRecord}
+            enabled={prefs.data?.preferences?.effectiveDailyRecord}
             // Same source the wizard's feed step pre-fills from, so a
             // quick record and a tapped-out one carry the ration and
             // brand forward identically.

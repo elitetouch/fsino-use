@@ -355,6 +355,36 @@ export interface ExpensePayload {
  * is exactly what made a cost projection read "USD 30,030" when the
  * farm had spent thirty thousand naira.
  */
+/** Units that are already their own plural. "50 kgs" is not English. */
+const UNCOUNTED_UNITS: readonly string[] = ['kg', 'g', 'ml'];
+
+/** Units the parser is allowed to put in a description. */
+const GOODS_UNITS: readonly string[] = [
+  'bag', 'crate', 'egg', 'litre', ...UNCOUNTED_UNITS,
+];
+
+/**
+ * "3 bags" for the ledger row, BUILT rather than copied.
+ *
+ * Nothing the farmer said reaches the API through here. The number is
+ * re-formatted from a parsed float and the unit has to be one of
+ * GOODS_UNITS, so a description is always digits, one space and a
+ * known word, whatever the speech recogniser heard. Passing the
+ * matched substring through instead would have been shorter and would
+ * have put raw dictation into a field the ledger renders.
+ */
+export function goodsDescription(qty: unknown, unit: unknown): string | undefined {
+  if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0 || qty > 100_000) {
+    return undefined;
+  }
+  if (typeof unit !== 'string' || !GOODS_UNITS.includes(unit)) return undefined;
+
+  // Whole bags stay whole; a half bag keeps the half.
+  const n = Number.isInteger(qty) ? String(qty) : qty.toFixed(2).replace(/0$/, '');
+  const plural = qty === 1 || UNCOUNTED_UNITS.includes(unit) ? '' : 's';
+  return `${n} ${unit}${plural}`;
+}
+
 export function buildExpensePayloads(
   fields: readonly ParsedField[],
   opts: {
@@ -376,9 +406,12 @@ export function buildExpensePayloads(
     const category =
       typeof raw === 'string' && EXPENSE_CATEGORY_VALUES.includes(raw) ? raw : 'other';
 
+    const description = goodsDescription(f.detail?.goodsQty, f.detail?.goodsUnit);
+
     out.push({
       ...(opts.flockId ? { flock_id: opts.flockId } : {}),
       category,
+      ...(description ? { description } : {}),
       // Money, rounded to the minor unit. A float from a multiplier
       // ("1.5m") can otherwise arrive as 1499999.9999999998.
       amount: Math.round(amount * 100) / 100,

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Mic, Check, AlertTriangle } from 'lucide-react';
 import { parseQuickRecord } from '@/lib/quick-record/parse';
-import { buildExpensePayloads } from '@/lib/quick-record/to-payloads';
+import { buildExpensePayloads, goodsDescription } from '@/lib/quick-record/to-payloads';
 import { moneyImpact } from '@/lib/quick-record/money-impact';
 import type { ParsedField } from '@/lib/quick-record/parse';
 
@@ -88,9 +88,14 @@ function chipText(f: ParsedField): string {
   const label = KIND_LABEL[f.kind] ?? f.kind;
   const isMoney = f.kind === 'expense' || f.kind === 'produce_sale';
   const value = isMoney ? money(f.value) : String(f.value);
+  // The goods ride along with the category, because "Feed · 10 bags"
+  // is the claim this section is making: the app heard the whole
+  // sentence, not just the number with a currency sign on it.
+  const goods = goodsDescription(f.detail?.goodsQty, f.detail?.goodsUnit);
   const detail =
     f.detail?.expenseCategory
-      ? (CATEGORY_LABEL[f.detail.expenseCategory] ?? f.detail.expenseCategory)
+      ? [CATEGORY_LABEL[f.detail.expenseCategory] ?? f.detail.expenseCategory, goods]
+          .filter(Boolean).join(' · ')
       : f.detail?.produceLabel ?? f.detail?.feedType ?? null;
   const unit = f.unit && f.unit !== 'eggs' ? ` ${f.unit}` : '';
   return `${label}: ${value}${unit}${detail ? ` · ${detail}` : ''}`;

@@ -16,7 +16,8 @@ import {
   type ParsedField,
 } from '@/lib/quick-record/parse';
 import {
-  buildQuickRecordPayloads, buildExpensePayloads, buildProduceSalePayloads, MAX_NOTE,
+  buildQuickRecordPayloads, buildExpensePayloads, buildProduceSalePayloads,
+  goodsDescription, MAX_NOTE,
 } from '@/lib/quick-record/to-payloads';
 import { useCreateExpense } from '@/lib/use-expense';
 import { moneyImpact } from '@/lib/quick-record/money-impact';
@@ -142,7 +143,14 @@ function detailText(field: ParsedField): string | null {
   const d = field.detail;
   if (!d) return null;
   if (d.expenseCategory) {
-    return EXPENSE_CATEGORY_LABEL[d.expenseCategory] ?? d.expenseCategory;
+    const cat = EXPENSE_CATEGORY_LABEL[d.expenseCategory] ?? d.expenseCategory;
+    // The goods are shown before saving, not only afterwards in the
+    // ledger, because "3 bags" is the part a farmer can check at a
+    // glance and the amount is the part they cannot.
+    // Same function that writes the ledger description, so the chip
+    // cannot promise a wording the saved row does not use.
+    const goods = goodsDescription(d.goodsQty, d.goodsUnit);
+    return goods ? `${cat} · ${goods}` : cat;
   }
   if (d.produceLabel) return d.produceLabel;
   if (d.vaccineName) return d.vaccineName;

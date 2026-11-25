@@ -77,7 +77,24 @@ const routes = (path) => {
   if (path.startsWith('/api/v1/pens')) return { pens: [PEN] };
   if (path.startsWith('/api/v1/billing/balances')) return { balances: [{ tokenType: 'broiler', tier: 'basic', balance: 900 }], freemium: { enabled: false, used: true } };
   if (path.startsWith('/api/v1/alerts')) return { alerts: [] };
-  if (path.startsWith('/api/v1/expenses')) return { expenses: [], totals: [] };
+  // Expenses are served back from what was POSTed, so a probe can
+  // check the LEDGER ROW and not merely the request body. A row that
+  // posts correctly and renders blank is the bug this stub missed.
+  if (path.startsWith('/api/v1/expenses')) {
+    return {
+      expenses: createdExpenses,
+      // Shape copied from ExpenseController::index. The page reads
+      // meta.pageTotals without a guard, so a stub that invents its
+      // own envelope sends it to the error boundary and the probe
+      // blames the feature.
+      meta: {
+        total: createdExpenses.length, perPage: 25, currentPage: 1, lastPage: 1,
+        pageTotals: createdExpenses.length
+          ? [{ currency: 'NGN', amount: createdExpenses.reduce((s, e) => s + e.amount, 0) }]
+          : [],
+      },
+    };
+  }
   if (path.includes('preferences')) {
     return {
       preferences: {
@@ -107,6 +124,9 @@ const routes = (path) => {
 /** Every write the server actually received — the point of the test. */
 const writes = [];
 
+/** POSTed expenses, shaped like ExpenseResource, for the list route. */
+const createdExpenses = [];
+
 createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
@@ -120,6 +140,7 @@ createServer((req, res) => {
   }
   if (req.url === '/__reset') {
     writes.length = 0;
+    createdExpenses.length = 0;
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end('[]');
   }
@@ -135,6 +156,20 @@ createServer((req, res) => {
         auth: req.headers.authorization ? 'bearer present' : 'MISSING',
         body: (() => { try { return JSON.parse(raw); } catch { return raw.slice(0, 200); } })(),
       });
+      const last = writes[writes.length - 1];
+      if (req.method === 'POST' && req.url.split('?')[0].endsWith('/api/v1/expenses')
+          && last.body && typeof last.body === 'object') {
+        createdExpenses.unshift({
+          id: 'exp-' + (createdExpenses.length + 1),
+          farmId: last.farm, flockId: last.body.flock_id ?? null,
+          category: last.body.category, amount: Number(last.body.amount),
+          currency: last.body.currency, expenseDate: last.body.expense_date,
+          vendor: last.body.vendor ?? null,
+          description: last.body.description ?? null,
+          createdByName: 'vinicius Okonmah', voidedAt: null,
+          createdAt: new Date().toISOString(),
+        });
+      }
       res.writeHead(201, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ data: { record: { id: 'rec-' + writes.length } } }));
     });
