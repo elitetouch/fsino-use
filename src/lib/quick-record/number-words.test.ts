@@ -22,7 +22,7 @@ describe('a number said as a word', () => {
   it('keeps the quantity on an expense', () => {
     expect(expense('bought three bags of feed for 45000')).toMatchObject({
       category: 'feed',
-      description: '3 bags',
+      description: '3 bags of feed',
       amount: 45000,
     });
   });
@@ -36,14 +36,14 @@ describe('a number said as a word', () => {
 
   it('reads "a bag" as one bag', () => {
     expect(expense('bought a bag of feed for 13000')).toMatchObject({
-      description: '1 bag',
+      description: '1 bag of feed',
       amount: 13000,
     });
   });
 
   it('adds up a compound', () => {
     expect(expense('bought twenty five bags of feed for 375000')).toMatchObject({
-      description: '25 bags',
+      description: '25 bags of feed',
       amount: 375000,
     });
   });
@@ -87,7 +87,7 @@ describe('what the number-word rule must not touch', () => {
 
   it('leaves a digit quantity exactly as it was', () => {
     expect(expense('bought 10 bags of feed for 250,000')).toMatchObject({
-      description: '10 bags',
+      description: '10 bags of feed',
       amount: 250_000,
     });
   });

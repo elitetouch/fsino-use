@@ -17,7 +17,7 @@ import {
 } from '@/lib/quick-record/parse';
 import {
   buildQuickRecordPayloads, buildExpensePayloads, buildProduceSalePayloads,
-  goodsDescription, MAX_NOTE,
+  goodsDescription, brandVendor, MAX_NOTE,
 } from '@/lib/quick-record/to-payloads';
 import { useCreateExpense } from '@/lib/use-expense';
 import { moneyImpact } from '@/lib/quick-record/money-impact';
@@ -146,11 +146,15 @@ function detailText(field: ParsedField): string | null {
     const cat = EXPENSE_CATEGORY_LABEL[d.expenseCategory] ?? d.expenseCategory;
     // The goods are shown before saving, not only afterwards in the
     // ledger, because "3 bags" is the part a farmer can check at a
-    // glance and the amount is the part they cannot.
-    // Same function that writes the ledger description, so the chip
-    // cannot promise a wording the saved row does not use.
+    // glance and the amount is the part they cannot. The brand goes
+    // with them: it is about to be written to the row's vendor, and a
+    // misheard brand is only correctable before it is saved.
+    //
+    // Asked WITHOUT the category, unlike the ledger row, because this
+    // chip already prints the category itself and "Feed · 2 bags of
+    // feed" says it twice.
     const goods = goodsDescription(d.goodsQty, d.goodsUnit);
-    return goods ? `${cat} · ${goods}` : cat;
+    return [cat, goods, brandVendor(d.feedBrandLabel)].filter(Boolean).join(' · ');
   }
   if (d.produceLabel) return d.produceLabel;
   if (d.vaccineName) return d.vaccineName;

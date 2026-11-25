@@ -179,7 +179,7 @@ describe('two costs in one sentence', () => {
       ['feed', 45000],
       ['fuel', 15000],
     ]);
-    expect(e[0]?.description).toBe('3 bags');
+    expect(e[0]?.description).toBe('3 bags of feed');
   });
 
   it('keeps the deaths alongside the money', () => {

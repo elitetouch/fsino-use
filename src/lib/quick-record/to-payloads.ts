@@ -26,6 +26,7 @@
  */
 
 import type { CreateDailyRecordPayload } from '@/lib/api';
+import { FEED_BRANDS } from './vocabulary';
 import type { ParsedField } from './parse';
 
 /**
@@ -339,6 +340,8 @@ export interface ExpensePayload {
   readonly currency: string;
   readonly expense_date: string;
   readonly description?: string;
+  /** The feed brand, when one was named. Always from FEED_BRANDS. */
+  readonly vendor?: string;
 }
 
 /**
@@ -364,6 +367,27 @@ const GOODS_UNITS: readonly string[] = [
 ];
 
 /**
+ * What to call the goods, per category, so a spoken row reads like a
+ * typed one.
+ *
+ * A farmer filling in Add expense by hand writes "2 bags of feed", not
+ * "2 bags", and the two sat side by side in the ledger looking like
+ * different kinds of record. Only the categories where the noun is
+ * natural are listed: "3 bags of equipment" is not a thing anyone
+ * says, so those keep the bare count.
+ *
+ * A Map, not an object, for the reason NUMBER_WORDS is one: the key
+ * reaches here from parsed speech, and on a plain object a lookup of
+ * "constructor" answers with a function instead of undefined.
+ */
+const GOODS_NOUN: ReadonlyMap<string, string> = new Map([
+  ['feed', 'feed'],
+  ['fuel', 'fuel'],
+  ['vaccine', 'vaccine'],
+  ['treatment', 'drugs'],
+]);
+
+/**
  * "3 bags" for the ledger row, BUILT rather than copied.
  *
  * Nothing the farmer said reaches the API through here. The number is
@@ -372,8 +396,18 @@ const GOODS_UNITS: readonly string[] = [
  * known word, whatever the speech recogniser heard. Passing the
  * matched substring through instead would have been shorter and would
  * have put raw dictation into a field the ledger renders.
+ *
+ * `category` is optional because the two callers want different
+ * lengths of the same fact. The ledger row says "2 bags of feed",
+ * which is how a farmer writes it by hand; the confirm chip already
+ * carries a Feed label of its own, so it asks without the category
+ * and gets "2 bags".
  */
-export function goodsDescription(qty: unknown, unit: unknown): string | undefined {
+export function goodsDescription(
+  qty: unknown,
+  unit: unknown,
+  category?: unknown,
+): string | undefined {
   if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0 || qty > 100_000) {
     return undefined;
   }
@@ -382,7 +416,21 @@ export function goodsDescription(qty: unknown, unit: unknown): string | undefine
   // Whole bags stay whole; a half bag keeps the half.
   const n = Number.isInteger(qty) ? String(qty) : qty.toFixed(2).replace(/0$/, '');
   const plural = qty === 1 || UNCOUNTED_UNITS.includes(unit) ? '' : 's';
-  return `${n} ${unit}${plural}`;
+  const noun = typeof category === 'string' ? GOODS_NOUN.get(category) : undefined;
+  return `${n} ${unit}${plural}${noun ? ` of ${noun}` : ''}`;
+}
+
+/**
+ * The brand, for the ledger's vendor column.
+ *
+ * Checked against the brand table by label rather than trusted from
+ * the field, on the same principle as GOODS_UNITS above: what reaches
+ * the API is a string this app shipped, never one the recogniser
+ * produced.
+ */
+export function brandVendor(label: unknown): string | undefined {
+  if (typeof label !== 'string') return undefined;
+  return FEED_BRANDS.some((b) => b.label === label) ? label : undefined;
 }
 
 export function buildExpensePayloads(
@@ -406,12 +454,17 @@ export function buildExpensePayloads(
     const category =
       typeof raw === 'string' && EXPENSE_CATEGORY_VALUES.includes(raw) ? raw : 'other';
 
-    const description = goodsDescription(f.detail?.goodsQty, f.detail?.goodsUnit);
+    // Written the way a farmer writes it on the Add expense form:
+    // "2 bags of feed" in the description, the brand in vendor. A
+    // spoken row and a typed one then read alike in the ledger.
+    const description = goodsDescription(f.detail?.goodsQty, f.detail?.goodsUnit, category);
+    const vendor = brandVendor(f.detail?.feedBrandLabel);
 
     out.push({
       ...(opts.flockId ? { flock_id: opts.flockId } : {}),
       category,
       ...(description ? { description } : {}),
+      ...(vendor ? { vendor } : {}),
       // Money, rounded to the minor unit. A float from a multiplier
       // ("1.5m") can otherwise arrive as 1499999.9999999998.
       amount: Math.round(amount * 100) / 100,
