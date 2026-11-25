@@ -225,6 +225,23 @@ function normalise(raw: string): string {
     // digit and exactly three more digits is removed, so "2 bags, 3
     // birds" is untouched.
     .replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
+    // "50kg" is one token to a regex, and every unit pattern in
+    // UNITS opens with \b, which never matches between a digit and a
+    // letter because both are word characters. So "50kg of feed"
+    // matched no unit and parsed to NOTHING, while "50 kg of feed"
+    // worked — a difference no farmer can see and none should have
+    // to. One space, inserted before any unit is read.
+    //
+    // The list is spelled out rather than taken from UNITS because
+    // the money multipliers live in the same shape: "45k" is
+    // forty-five thousand and "1.5m" is one and a half million, and
+    // neither k nor m is a unit, so neither is split. Bare "l" for
+    // litres is left out for the same reason in reverse: it would
+    // split any code that ends in one.
+    .replace(
+      /(\d)(kgs?|kilograms?|kilogrammes?|kilos?|grammes?|grams?|millilitres?|milliliters?|ml|litres?|liters?|lbs?|pounds?|bags?|sacks?|packs?|crates?|trays?|pieces?|pcs?|eggs?|g)\b/g,
+      '$1 $2',
+    )
     .replace(/\s+/g, ' ')
     .trim();
 }

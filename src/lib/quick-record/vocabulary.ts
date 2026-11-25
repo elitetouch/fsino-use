@@ -118,8 +118,16 @@ export const KEYWORDS: ReadonlyArray<{ kind: FieldKind; re: RegExp }> = [
     re: /\b(eggs?|crates?|trays?|collect(?:ed|ion)?|grit|grits|greats?|grades?|kreyts?)\b/,
   },
   {
+    // SAYING "weigh" IS A WEIGHT. Naming a kilogram is not, on its
+    // own: "gave them 50 kg of feed" is a feed record, and this
+    // entry used to claim it, because it sat above `feed` and `kgs?`
+    // matched. The farmer got a fifty-kilogram bird, which then fed
+    // the weight chart and the FCR that reads the latest weight off
+    // it. A bare unit is the weakest possible signal of intent, so
+    // the verb keeps this position and the unit drops below the
+    // things that are actually measured in kilograms.
     kind: 'weight',
-    re: /\b(weigh(?:ed|t|s|ing)?|kilos?|kgs?)\b/,
+    re: /\b(weigh(?:ed|t|s|ing)?)\b/,
   },
 
   // ── Consumables ─────────────────────────────────────────────────────
@@ -146,6 +154,14 @@ export const KEYWORDS: ReadonlyArray<{ kind: FieldKind; re: RegExp }> = [
     kind: 'water',
     // MISHEARD: "leaders"/"later" for litres.
     re: /\b(water|watered|drank|drink|drinking|litres?|liters?|leaders?)\b/,
+  },
+
+  // LAST, and only because nothing above claimed the clause. "2
+  // kilos" with no other noun is a bird weight; "2 kilos of feed" is
+  // feed and was matched as such several entries ago.
+  {
+    kind: 'weight',
+    re: /\b(kilos?|kgs?)\b/,
   },
 ];
 
@@ -390,12 +406,19 @@ export const UNITS: ReadonlyArray<{ re: RegExp; spec: UnitSpec }> = [
 /**
  * Why a bag of feed is never turned into kilograms.
  *
- * Nigerian feed bags are commonly 25kg, but they are not reliably so —
- * brands sell 10, 15, 20, 25 and 50kg sacks, and a farmer who mixes
- * their own fills whatever they have. Converting "2 bags" to "50kg"
- * would invent a figure the farmer never said and then feed it into
- * the feed-conversion ratio, which is exactly the kind of quiet wrong
- * number this parser is built to avoid.
+ * THE CONVERSION EXISTS, JUST NOT HERE. A branded bag is 25kg, and
+ * the server applies that when it needs kilograms: see
+ * FlockReportController::normaliseToKg, PeerCycleService::toKg and
+ * PenDashboardService::FEED_BAG_KG_DEFAULT, all three of them 25.
+ * FCR and lifetime feed therefore work on a record that says "bags".
+ *
+ * What this layer must not do is bake the assumption into the stored
+ * record. A farmer who mixes their own fills whatever sack they have,
+ * and brands do sell 10, 15, 20 and 50kg. Writing "50kg" into a row
+ * where the farmer said "2 bags" throws away the only true thing we
+ * were told and makes the guess unreviewable afterwards. Kept as
+ * bags, the assumption stays in one server-side place where it can be
+ * corrected, per farm, without rewriting anybody's history.
  *
  * So bags stay bags — the feed endpoint accepts unit:'bags' natively.
  * A farmer who wants kilograms says kilograms ("50kg of feed"), and one
