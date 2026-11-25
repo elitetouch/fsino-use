@@ -124,6 +124,10 @@ export interface ParsedField {
     readonly brandStated?: boolean;
     /** expense — which of the backend's categories the money went to. */
     readonly expenseCategory?: string;
+    /** expense — how much was bought, e.g. 3 for "3 bags of feed". */
+    readonly goodsQty?: number;
+    /** expense — the unit bought, singular, e.g. 'bag'. */
+    readonly goodsUnit?: string;
     /** produce_sale — the allowlisted item, e.g. 'eggs'. */
     readonly produceItem?: string;
     /** produce_sale — what to call it on the chip. */
@@ -341,6 +345,38 @@ function readAmount(clause: string): number | undefined {
 function readUnit(clause: string): UnitSpec | null {
   for (const { re, spec } of UNITS) {
     if (re.test(clause)) return spec;
+  }
+  return null;
+}
+
+/**
+ * What was bought, as a quantity and a unit: the "3 bags" in
+ * "3 bags of feed for 45000".
+ *
+ * An expense row is filed by amount and category, so the goods the
+ * money bought were being dropped on the floor. The ledger then shows
+ * a FEED chip, ₦45,000, and an empty description, which is strictly
+ * less than the farmer said and less than the manual form captures.
+ *
+ * THE NUMBER MUST TOUCH THE UNIT. `readNumber` takes the first number
+ * in the clause, which for an expense is the quantity sometimes and
+ * the price other times ("spent 45000 on feed"), and a price filed as
+ * a quantity would read "45000 bags". Requiring the unit word to
+ * follow the digits immediately is what separates them: a price is
+ * written "for 45000" or "45000 naira", and naira is not a unit here.
+ *
+ * Returns the parts, never a built string, so the caller decides what
+ * reaches the API.
+ */
+function readGoodsQuantity(clause: string): { qty: number; label: string } | null {
+  for (const { re, spec } of UNITS) {
+    // The unit table's own pattern, anchored to digits before it.
+    const body = re.source.replace(/^\\b|\\b$/g, '');
+    const m = clause.match(new RegExp(String.raw`\b(\d{1,6}(?:\.\d{1,2})?)\s*${body}`));
+    if (!m) continue;
+    const qty = Number.parseFloat(m[1] as string);
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+    return { qty, label: spec.label };
   }
   return null;
 }
@@ -605,6 +641,7 @@ function buildField(
     if (amount === undefined) return null;
 
     const category = readExpenseCategory(clause);
+    const goods = readGoodsQuantity(clause);
 
     // A suspiciously small amount is almost always a mis-heard "45k".
     // Warned, not blocked: a farmer really can buy a 50-naira bulb,
@@ -621,7 +658,12 @@ function buildField(
           ? 'Could not tell what this was for, so it goes under Other'
           : undefined,
       sourceText: clause,
-      detail: { expenseCategory: category },
+      detail: {
+        expenseCategory: category,
+        // Optional on purpose: "spent 45000 on feed" names no goods,
+        // and an absent quantity is better than an invented one.
+        ...(goods ? { goodsQty: goods.qty, goodsUnit: goods.label } : {}),
+      },
     };
   }
 

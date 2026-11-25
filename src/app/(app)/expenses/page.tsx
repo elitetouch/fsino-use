@@ -75,7 +75,12 @@ export default function ExpensesPage() {
   });
 
   const rows = expenses.data?.expenses ?? [];
-  const totals = expenses.data?.meta.pageTotals ?? [];
+  // `meta?`, not `meta`. The optional chain stops at `data`, so a
+  // response or a restored cache entry that carries rows but no meta
+  // threw here and took the whole screen to the error boundary. The
+  // query cache is persisted now, which means one bad shape on disk
+  // outlives the reload that would otherwise have cleared it.
+  const totals = expenses.data?.meta?.pageTotals ?? [];
 
   // Vendors already recorded, offered back on the next entry so the
   // same supplier is spelled the same way twice. Drawn from the page's
