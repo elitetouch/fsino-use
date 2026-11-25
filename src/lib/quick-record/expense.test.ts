@@ -165,3 +165,35 @@ describe('the payload boundary', () => {
     expect(buildExpensePayloads(fields, MONEY)[0]).not.toHaveProperty('flock_id');
   });
 });
+
+describe('two costs in one sentence', () => {
+  const expensesOf = (text: string) =>
+    buildExpensePayloads(parseQuickRecord(text).fields, MONEY);
+
+  // One field per kind is right for a count — "10 died and 5 died" is
+  // a correction. It was wrong for money: the fuel was dropped out of
+  // the ledger and offered as a note.
+  it('keeps both when the categories differ', () => {
+    const e = expensesOf('bought 3 bags of feed for 45000 and bought fuel for 15000');
+    expect(e.map((x) => [x.category, x.amount])).toEqual([
+      ['feed', 45000],
+      ['fuel', 15000],
+    ]);
+    expect(e[0]?.description).toBe('3 bags');
+  });
+
+  it('keeps the deaths alongside the money', () => {
+    const text = '15 birds died and I bought 3 bags of feed for 45000 and paid 15000 for fuel';
+    const kinds = parseQuickRecord(text).fields.map((f) => f.kind);
+    expect(kinds).toEqual(['dead', 'expense', 'expense']);
+  });
+
+  // A repeat of the SAME category is still read as a repeat, which is
+  // the behaviour that stops a dictation stutter becoming two rows.
+  it('still collapses a repeat of the same category', () => {
+    const text = 'bought feed for 45000 and bought feed for 45000';
+    expect(expensesOf(text)).toHaveLength(1);
+    // Not silently: the farmer is offered the dropped clause as a note.
+    expect(parseQuickRecord(text).leftover).toContain('bought feed for 45000');
+  });
+});

@@ -202,6 +202,47 @@ export interface ParseContext {
   readonly aliases?: ReadonlyMap<string, FieldKind>;
 }
 
+/**
+ * The unit nouns `normalise` works around, as one alternation.
+ *
+ * Spelled out rather than taken from UNITS because the money
+ * multipliers live in the same shape: "45k" is forty-five thousand and
+ * "1.5m" is one and a half million, and neither k nor m is a unit, so
+ * neither may be touched. Bare "l" for litres is left out for the same
+ * reason in reverse: it would split any code that ends in one.
+ */
+const UNIT_NOUNS =
+  'kgs?|kilograms?|kilogrammes?|kilos?|grammes?|grams?|millilitres?|milliliters?|ml|litres?|liters?|lbs?|pounds?|bags?|sacks?|packs?|crates?|trays?|pieces?|pcs?|eggs?|g';
+
+/** "50kg" → "50 kg", so a unit written against its number is still a unit. */
+const DIGIT_UNIT_RE = new RegExp(String.raw`(\d)(${UNIT_NOUNS})\b`, 'g');
+
+/**
+ * A number word sitting on a unit: "three bags", "a crate".
+ *
+ * ONLY in front of a unit, which is what makes this safe. The map
+ * behind it reads "a" as one, and a farmer's sentence is full of the
+ * other kind of "a" — converting them all would turn "gave them a
+ * drink" into a number. In front of a bag it can only be a count.
+ *
+ * "hundred" is left out: "two hundred bags" would become "2 100 bags",
+ * which is worse than the two bags it reads as today.
+ */
+const WORD_UNITS =
+  'a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety';
+const WORD_UNIT_RE = new RegExp(String.raw`\b(${WORD_UNITS})\s+(${UNIT_NOUNS})\b`, 'g');
+
+/**
+ * "twenty five" → 25, before anything else reads a number.
+ *
+ * Generic rather than unit-bound, because the halves are unambiguous
+ * together: no sentence means "twenty" and "five" as two separate
+ * figures. It also repairs the money path on the way through, where
+ * "twenty five thousand" was reading as twenty.
+ */
+const TENS_COMPOUND_RE =
+  /\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\s+(one|two|three|four|five|six|seven|eight|nine)\b/g;
+
 /** Strip anything that is not plain sentence material, then cap length. */
 function normalise(raw: string): string {
   return raw
@@ -225,23 +266,31 @@ function normalise(raw: string): string {
     // digit and exactly three more digits is removed, so "2 bags, 3
     // birds" is untouched.
     .replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
+    // DICTATION WRITES SMALL NUMBERS AS WORDS. "bought three bags of
+    // feed for 45000" is the same sentence as "bought 3 bags", and it
+    // was losing the three entirely: the quantity reader needs digits,
+    // so the ledger row said ₦45,000 and nothing about what it bought.
+    // Worse, with no buying verb — "three bags of feed for 45000" —
+    // the only digits in the clause were the price, and the feed
+    // record came out as FORTY-FIVE THOUSAND BAGS, a number that
+    // reaches FCR.
+    //
+    // Both halves are repaired here, where every reader sees the same
+    // text, rather than in each reader separately.
+    .replace(TENS_COMPOUND_RE, (_m, tens: string, unit: string) =>
+      String((NUMBER_WORDS.get(tens) ?? 0) + (NUMBER_WORDS.get(unit) ?? 0)),
+    )
+    .replace(WORD_UNIT_RE, (m, word: string, unit: string) => {
+      const n = NUMBER_WORDS.get(word);
+      return n === undefined ? m : `${n} ${unit}`;
+    })
     // "50kg" is one token to a regex, and every unit pattern in
     // UNITS opens with \b, which never matches between a digit and a
     // letter because both are word characters. So "50kg of feed"
     // matched no unit and parsed to NOTHING, while "50 kg of feed"
     // worked — a difference no farmer can see and none should have
     // to. One space, inserted before any unit is read.
-    //
-    // The list is spelled out rather than taken from UNITS because
-    // the money multipliers live in the same shape: "45k" is
-    // forty-five thousand and "1.5m" is one and a half million, and
-    // neither k nor m is a unit, so neither is split. Bare "l" for
-    // litres is left out for the same reason in reverse: it would
-    // split any code that ends in one.
-    .replace(
-      /(\d)(kgs?|kilograms?|kilogrammes?|kilos?|grammes?|grams?|millilitres?|milliliters?|ml|litres?|liters?|lbs?|pounds?|bags?|sacks?|packs?|crates?|trays?|pieces?|pcs?|eggs?|g)\b/g,
-      '$1 $2',
-    )
+    .replace(DIGIT_UNIT_RE, '$1 $2')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -862,6 +911,13 @@ export function parseQuickRecord(
   // dictation, and silently summing them into 15 deaths would be the
   // worst possible guess.
   const seen = new Set<FieldKind>();
+  // MONEY IS THE EXCEPTION, and it has to be. "Bought 3 bags of feed
+  // for 45000 and bought fuel for 15000" is two different costs, not
+  // one cost said twice, and one-per-kind kept the feed and pushed the
+  // fuel out of the ledger and into the leftover note. Deduped per
+  // category instead, so a genuine repeat of the same category is
+  // still read as a repeat.
+  const spent = new Set<string>();
 
   for (const clause of clauses) {
     const trimmed = clause.trim();
@@ -870,7 +926,8 @@ export function parseQuickRecord(
     const known = classifyClause(trimmed);
     const learned = known === null ? classifyByAlias(trimmed, ctx.aliases) : null;
     const kind = known ?? learned;
-    if (kind === null || seen.has(kind)) {
+    const category = kind === 'expense' ? readExpenseCategory(trimmed) : null;
+    if (kind === null || (category !== null ? spent.has(category) : seen.has(kind))) {
       unmatched.push(trimmed);
       continue;
     }
@@ -916,7 +973,8 @@ export function parseQuickRecord(
             caution: 'Understood from a word you taught this app. Check it',
           };
 
-    seen.add(kind);
+    if (category !== null) spent.add(category);
+    else seen.add(kind);
     fields.push(field);
   }
 
