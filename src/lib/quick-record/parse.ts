@@ -397,6 +397,37 @@ function readExpenseCategory(clause: string): string {
   return 'other';
 }
 
+/**
+ * A brand that is confident enough to print, or null.
+ *
+ * Consulted only for feed and for the unknown category, so a named
+ * product cannot stamp a brand on a wage or a repair. An uncertain
+ * match ("chicken feed" read as Chikun) is worth a question on a feed
+ * record, where the brand is the point, and not worth printing on a
+ * cost row where it is a label.
+ */
+function readExpenseBrand(clause: string, category: string) {
+  if (category !== 'feed' && category !== 'other') return null;
+  const brand = readBrand(clause);
+  return brand !== null && !brand.uncertain ? brand : null;
+}
+
+/**
+ * The category, after a named brand has had its say.
+ *
+ * "Bought 2 bags of New Hope for 25000" says feed without using the
+ * word, and landed under Other with a "could not tell what this was
+ * for" caution. Nobody buys a bag of a poultry feed brand and means
+ * anything else, so a confident brand decides an otherwise unknown
+ * row. It can only ever move `other` — a clause that named fuel or
+ * wages keeps what it named.
+ */
+function expenseCategoryOf(clause: string): string {
+  const stated = readExpenseCategory(clause);
+  if (stated !== 'other') return stated;
+  return readExpenseBrand(clause, stated) === null ? stated : 'feed';
+}
+
 function readAmount(clause: string): number | undefined {
   const m = clause.match(/\bfor\s+(\d{1,9})(?:\.(\d{1,2}))?\b/);
   if (!m) return undefined;
@@ -706,8 +737,11 @@ function buildField(
     // the belt to that brace, and it must never invent a zero.
     if (amount === undefined) return null;
 
-    const category = readExpenseCategory(clause);
+    const category = expenseCategoryOf(clause);
     const goods = readGoodsQuantity(clause);
+    // The brand goes to the ledger's vendor field, the same box a
+    // farmer fills in by hand on the Add expense form.
+    const namedBrand = readExpenseBrand(clause, category);
 
     // A suspiciously small amount is almost always a mis-heard "45k".
     // Warned, not blocked: a farmer really can buy a 50-naira bulb,
@@ -729,6 +763,9 @@ function buildField(
         // Optional on purpose: "spent 45000 on feed" names no goods,
         // and an absent quantity is better than an invented one.
         ...(goods ? { goodsQty: goods.qty, goodsUnit: goods.label } : {}),
+        ...(namedBrand
+          ? { feedBrand: namedBrand.value, feedBrandLabel: namedBrand.label }
+          : {}),
       },
     };
   }
@@ -926,7 +963,7 @@ export function parseQuickRecord(
     const known = classifyClause(trimmed);
     const learned = known === null ? classifyByAlias(trimmed, ctx.aliases) : null;
     const kind = known ?? learned;
-    const category = kind === 'expense' ? readExpenseCategory(trimmed) : null;
+    const category = kind === 'expense' ? expenseCategoryOf(trimmed) : null;
     if (kind === null || (category !== null ? spent.has(category) : seen.has(kind))) {
       unmatched.push(trimmed);
       continue;
