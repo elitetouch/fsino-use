@@ -12,6 +12,7 @@ import {
 } from '@/components/record/wizard-shell';
 import { Dropdown, FieldStack, FOCUS_INPUT } from '@/components/record/inputs';
 import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
+import { VACCINE_OPTIONS } from '@/lib/health-vocabulary';
 
 /**
  * Step 3 — Vaccination.
@@ -29,16 +30,11 @@ import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
 /**
  * Curated vaccine list — common Nigerian broiler vaccines from the
  * figma. "Other" reveals a free-text input.
+ *
+ * Shared with quick record's picker, so a vaccine named by voice and
+ * one picked here reach the medical record under the same words.
  */
-const VACCINES = [
-  { value: 'gumboro',      label: 'Gumboro' },
-  { value: 'newcastle',    label: 'Newcastle (Lasota)' },
-  { value: 'infectious_bronchitis', label: 'Infectious bronchitis' },
-  { value: 'fowl_pox',     label: 'Fowl pox' },
-  { value: 'marek',        label: 'Marek' },
-  { value: 'coccidiosis',  label: 'Coccidiosis' },
-  { value: 'other',        label: 'Other (type in)' },
-] as const;
+const VACCINES = VACCINE_OPTIONS;
 type Vaccine = (typeof VACCINES)[number]['value'];
 
 interface VaccinationStepProps {

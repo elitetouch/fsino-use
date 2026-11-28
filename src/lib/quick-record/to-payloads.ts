@@ -222,7 +222,10 @@ export function buildQuickRecordPayloads(
           ...(usableQuantity(f.value) && f.value > 0
             ? { quantity: f.value, unit: 'ml' }
             : {}),
-          payload: { vaccine_name: name },
+          payload: {
+            vaccine_name: name,
+            ...protocolRef(f.detail?.protocolItemId),
+          },
         });
         break;
       }
@@ -235,6 +238,14 @@ export function buildQuickRecordPayloads(
           record_date: recordDate,
           payload: {
             treatment_type: type,
+            // The wizard requires a reason and quick record had no way
+            // to give one, so a spoken treatment landed in the medical
+            // record saying nothing about why. Written only when the
+            // protocol row says what it is for — never guessed.
+            ...(typeof f.detail?.treatmentReason === 'string'
+              ? { reason: f.detail.treatmentReason }
+              : {}),
+            ...protocolRef(f.detail?.protocolItemId),
             // A number in a treatment clause is the birds affected.
             ...(usableCount(f.value) && f.value > 0
               ? { birds_affected: f.value, all_birds: false }
@@ -358,6 +369,22 @@ export interface ExpensePayload {
  * is exactly what made a cost projection read "USD 30,030" when the
  * farm had spent thirty thousand naira.
  */
+/**
+ * Which protocol row a health record was, recorded alongside the name.
+ *
+ * The server matches records to schedule rows by name and will keep
+ * doing so; this is provenance, so a later reader can tell which
+ * scheduled dose an entry was without re-running that match. Shaped
+ * like a uuid or it is not written, because the only thing worse than
+ * no provenance is provenance pointing somewhere else.
+ */
+function protocolRef(id: unknown): { protocol_item_id: string } | Record<string, never> {
+  if (typeof id !== 'string') return {};
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    ? { protocol_item_id: id }
+    : {};
+}
+
 /** Units that are already their own plural. "50 kgs" is not English. */
 const UNCOUNTED_UNITS: readonly string[] = ['kg', 'g', 'ml'];
 

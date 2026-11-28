@@ -21,8 +21,10 @@ import {
 } from '@/lib/quick-record/to-payloads';
 import { useCreateExpense } from '@/lib/use-expense';
 import { moneyImpact } from '@/lib/quick-record/money-impact';
-import { useQueryClient } from '@tanstack/react-query';
-import type { FlockFinanceDto } from '@/lib/api';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { endpoints, type FlockFinanceDto, type FlockScheduleItemDto } from '@/lib/api';
+import { scheduleChoices, reasonForTarget } from '@/lib/quick-record/protocol';
+import { VACCINE_LABELS, TREATMENT_LABELS } from '@/lib/health-vocabulary';
 import { DEFAULT_CURRENCY } from '@/lib/currencies';
 import { enabledKinds, notTrackedReason } from '@/lib/quick-record/enabled-kinds';
 import { apiErrorMessage, type DailyRecordPrefs } from '@/lib/api';
@@ -192,6 +194,26 @@ export function QuickRecord({
   const createExpense = useCreateExpense();
   const qc = useQueryClient();
 
+  /**
+   * This cycle's own vaccination and treatment protocol.
+   *
+   * Small, and it barely changes within a cycle, so it is held for the
+   * session and served from the offline cache afterwards. FAILURE IS
+   * SILENT BY DESIGN: on an older server this endpoint does not exist
+   * yet, and a farmer recording mortality must not be stopped by a
+   * missing protocol. Without it quick record behaves exactly as it
+   * did before — the shipped vocabulary, no schedule names.
+   */
+  const schedule = useQuery({
+    queryKey: ['flock-vaccination-schedule', flockId],
+    queryFn: () => endpoints.flockVaccinationSchedule(flockId),
+    enabled: flockId !== '',
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+  });
+  const protocol: readonly FlockScheduleItemDto[] | undefined =
+    schedule.data?.schedule;
+
   // This farmer's learned words, loaded once. Failure is silent and
   // harmless — an empty map just means the shipped vocabulary alone.
   const [aliases, setAliases] = useState<ReadonlyMap<string, FieldKind>>(new Map());
@@ -230,7 +252,7 @@ export function QuickRecord({
       // the actual parse, so the reading that mentioned eggs could
       // beat the one that mentioned the vaccine, and the vaccine was
       // lost.
-      const ctx = { currentBirds, aliases, productionType };
+      const ctx = { currentBirds, aliases, productionType, schedule: protocol, today: recordDate };
 
       // ONLY high-confidence fields count, and alternative 0 has to be
       // beaten outright to be displaced.
@@ -260,8 +282,9 @@ export function QuickRecord({
       });
       setRemoved(new Set());
     setEdited(new Map());
+    setPicked(new Map());
     },
-    [currentBirds, aliases, productionType],
+    [currentBirds, aliases, productionType, protocol, recordDate],
   );
 
   const dictation = useDictation(appendDictated);
@@ -272,9 +295,15 @@ export function QuickRecord({
   // debounce would open between what is typed and what would be saved.
 
   const parsed = useMemo(() => {
-    const result = parseQuickRecord(text, { currentBirds, aliases, productionType });
+    const result = parseQuickRecord(text, {
+      currentBirds, aliases, productionType,
+      // The farm's own protocol, so "vitamin" resolves to the row the
+      // farmer is scheduled to give rather than to the word.
+      schedule: protocol,
+      today: recordDate,
+    });
     return { ...result, fields: applyCarryForward(result.fields, lastFeed ?? null) };
-  }, [text, currentBirds, lastFeed, aliases, productionType]);
+  }, [text, currentBirds, lastFeed, aliases, productionType, protocol, recordDate]);
 
   const moment = momentOverride ?? parsed.moment;
 
@@ -295,6 +324,16 @@ export function QuickRecord({
   const [edited, setEdited] = useState<ReadonlyMap<number, number>>(new Map());
 
   /**
+   * A vaccine or treatment the farmer named themselves.
+   *
+   * Keyed like `edited`, and cleared with it, because both are keyed
+   * by position in the parse and the positions move when the text
+   * does. A pick is the farmer's own word on what went into the
+   * flock, so it overrides the sentence rather than merging with it.
+   */
+  const [picked, setPicked] = useState<ReadonlyMap<number, PickedHealth>>(new Map());
+
+  /**
    * Accept a hand-typed value, or ignore it.
    *
    * The same bounds the parser applies, applied again — a typed value
@@ -309,7 +348,25 @@ export function QuickRecord({
 
   const withEdits = parsed.fields.map((f, i) => {
     const override = edited.get(i);
-    return override === undefined ? f : { ...f, value: override };
+    const base = override === undefined ? f : { ...f, value: override };
+    const choice = picked.get(i);
+    if (choice === undefined) return base;
+    // Named by hand, so nothing is left to check: the caution and the
+    // low-confidence mark both came from not knowing what this was.
+    return {
+      ...base,
+      confidence: 'high' as const,
+      caution: undefined,
+      detail: {
+        ...base.detail,
+        ...(base.kind === 'vaccination'
+          ? { vaccineName: choice.name }
+          : { treatmentType: choice.name }),
+        protocolItemId: choice.itemId,
+        protocolDosage: choice.dosage,
+        treatmentReason: choice.reason,
+      },
+    };
   });
 
   /*
@@ -346,7 +403,23 @@ export function QuickRecord({
   );
   const hasLowConfidence = kept.some((f) => f.confidence === 'low');
   const note = keepNote ? parsed.leftover : '';
-  const canSave = !saving && (kept.length > 0 || note.trim() !== '');
+
+  /**
+   * A health entry with no name on it cannot be saved.
+   *
+   * It used to be saved in the sense that the button worked, the
+   * toast said so, and the payload builder then dropped the record on
+   * the floor because it had no vaccine or treatment to name. The
+   * farmer was told they had logged a vaccination they had not. Now
+   * the chip asks, and the button waits.
+   */
+  const unnamed = kept.filter(
+    (f) =>
+      (f.kind === 'vaccination' && !f.detail?.vaccineName)
+      || (f.kind === 'treatment' && !f.detail?.treatmentType),
+  );
+  const canSave =
+    !saving && unnamed.length === 0 && (kept.length > 0 || note.trim() !== '');
 
   // The button names what pressing it will actually do. While the box is
   // empty it must not read "Save note" — that promises an action that is
@@ -364,6 +437,7 @@ export function QuickRecord({
     setText('');
     setRemoved(new Set());
     setEdited(new Map());
+    setPicked(new Map());
   };
 
   const save = async () => {
@@ -476,6 +550,7 @@ export function QuickRecord({
             setText(e.target.value.slice(0, MAX_INPUT));
             setRemoved(new Set());
     setEdited(new Map());
+    setPicked(new Map());
           }}
           maxLength={MAX_INPUT}
           rows={3}
@@ -585,6 +660,14 @@ export function QuickRecord({
                     setRemoved((prev) => new Set(prev).add(i))
                   }
                   onValue={(raw) => setValueAt(i, raw)}
+                  choices={
+                    field.kind === 'vaccination' || field.kind === 'treatment'
+                      ? scheduleChoices(protocol, recordDate, field.kind)
+                      : []
+                  }
+                  onPick={(choice) =>
+                    setPicked((prev) => new Map(prev).set(i, choice))
+                  }
                 />
               </li>
             ),
@@ -723,17 +806,34 @@ export function QuickRecord({
  * produced this number — that is what makes a wrong parse obvious at a
  * glance instead of after the flock count drifts.
  */
+/** A vaccine or treatment the farmer chose by hand. */
+export interface PickedHealth {
+  readonly name: string;
+  readonly itemId?: string;
+  readonly dosage?: string;
+  readonly reason?: string;
+}
+
 function Chip({
   field,
   onRemove,
   onValue,
+  choices,
+  onPick,
 }: {
   field: ParsedField;
   onRemove: () => void;
   /** Raw input string; the caller validates before accepting it. */
   onValue: (raw: string) => void;
+  /** This flock's protocol rows of this kind, nearest its age first. */
+  choices: readonly FlockScheduleItemDto[];
+  onPick: (choice: PickedHealth) => void;
 }) {
   const low = field.confidence === 'low';
+  const isHealth = field.kind === 'vaccination' || field.kind === 'treatment';
+  const named = field.kind === 'vaccination'
+    ? field.detail?.vaccineName
+    : field.detail?.treatmentType;
   const showsValue =
     field.value > 0 || (field.kind !== 'vaccination' && field.kind !== 'treatment');
   const detail = detailText(field);
@@ -821,6 +921,103 @@ function Chip({
       {field.caution && (
         <span className="text-[11px] font-medium text-amber-800">{field.caution}</span>
       )}
+      {/* What the protocol says to give, shown while it can still be
+          acted on. A farmer holding the sachet is the only person who
+          can check the dose, and this is the moment they are holding
+          it. Never saved — the protocol owns it. */}
+      {field.detail?.protocolDosage && (
+        <span className="text-[11px] text-[var(--color-brand-muted)]">
+          {field.detail.protocolDosage}
+        </span>
+      )}
+      {isHealth && (
+        <HealthPicker
+          kind={field.kind}
+          current={named}
+          choices={choices}
+          onPick={onPick}
+        />
+      )}
     </span>
   );
+}
+
+/**
+ * Pick the vaccine or treatment, from this flock's own protocol first.
+ *
+ * THE PROTOCOL ROWS COME FIRST AND ARE LABELLED BY WHEN THEY ARE DUE,
+ * because the farmer is standing in the pen giving something today,
+ * and the thing due today is almost always what they mean. The
+ * shipped list is underneath for anything given off protocol.
+ *
+ * Writing the row's own name is the whole point: the dashboard counts
+ * a dose as given by matching the record's name against the schedule,
+ * so a name chosen here is what makes the scheduled dose go green.
+ */
+function HealthPicker({
+  kind,
+  current,
+  choices,
+  onPick,
+}: {
+  kind: 'vaccination' | 'treatment';
+  current: string | undefined;
+  choices: readonly FlockScheduleItemDto[];
+  onPick: (choice: PickedHealth) => void;
+}) {
+  const generic = kind === 'vaccination' ? VACCINE_LABELS : TREATMENT_LABELS;
+  const label = kind === 'vaccination' ? 'Vaccine' : 'Treatment';
+
+  return (
+    <select
+      value={current ?? ''}
+      aria-label={`${label} given`}
+      onChange={(e) => {
+        const name = e.target.value;
+        if (name === '') return;
+        const row = choices.find((c) => c.name === name);
+        onPick({
+          name,
+          itemId: row?.id,
+          dosage: row?.dosage ?? undefined,
+          reason: reasonForTarget(row?.diseaseTarget),
+        });
+      }}
+      className="mt-1 max-w-[18rem] rounded border border-[var(--color-brand-input-border)] bg-white px-1.5 py-1 text-[11px] font-medium focus:border-[var(--color-brand-primary)] focus:outline-none"
+    >
+      {current === undefined && <option value="">Pick the {label.toLowerCase()}</option>}
+      {choices.length > 0 && (
+        <optgroup label="Your protocol">
+          {choices.map((c) => (
+            <option key={c.id} value={c.name}>
+              {c.name}
+              {dueLabel(c)}
+            </option>
+          ))}
+        </optgroup>
+      )}
+      <optgroup label="Other">
+        {generic.map((g) => (
+          <option key={g} value={g}>{g}</option>
+        ))}
+        {/* The parser's own reading, kept selectable so choosing the
+            dropdown and changing your mind is not a one-way door. */}
+        {current !== undefined && !generic.includes(current)
+          && !choices.some((c) => c.name === current) && (
+          <option value={current}>{current}</option>
+        )}
+      </optgroup>
+    </select>
+  );
+}
+
+/** " · due today", " · 3 days away", " · was due 2 days ago". */
+function dueLabel(item: FlockScheduleItemDto): string {
+  const today = Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
+  const when = Date.parse(`${item.scheduledDate}T00:00:00Z`);
+  if (!Number.isFinite(when) || !Number.isFinite(today)) return '';
+  const days = Math.round((when - today) / 86_400_000);
+  if (days === 0) return ' · due today';
+  if (days > 0) return ` · in ${days} day${days === 1 ? '' : 's'}`;
+  return ` · was due ${-days} day${days === -1 ? '' : 's'} ago`;
 }
