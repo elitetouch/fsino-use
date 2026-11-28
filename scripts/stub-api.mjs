@@ -61,6 +61,43 @@ const routes = (path) => {
     };
   }
   if (path.startsWith('/api/v1/flocks/') && path.includes('/daily-records')) return { records: [] };
+  // This cycle's protocol, rows copied from VaccinationProtocolSeeder
+  // so the probe exercises the names a real farm actually has.
+  if (path.startsWith('/api/v1/flocks/') && path.includes('/vaccination-schedule')) {
+    const day = (n) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    };
+    return {
+      schedule: [
+        {
+          id: '11111111-1111-4111-8111-111111111111', kind: 'treatment',
+          name: 'Glucose + Multivitamin (anti-stress)', diseaseTarget: 'antistress',
+          vaccineStrain: null, altNames: ['Vitalyte', 'Stress Pack', 'Anti-stress'],
+          method: 'drinking_water', dosage: '50g glucose + 5g multivit per 5 L water',
+          ageDays: 1, scheduledDate: day(0), windowDays: 0, critical: false,
+          completedAt: null, skipped: false,
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222', kind: 'vaccine',
+          name: 'Newcastle Disease Booster (Lasota)', diseaseTarget: 'newcastle',
+          vaccineStrain: 'Lasota', altNames: ['Lasota', 'NDV Lasota'],
+          method: 'drinking_water', dosage: '1 dose per bird in withdrawn water',
+          ageDays: 10, scheduledDate: day(-1), windowDays: 1, critical: true,
+          completedAt: null, skipped: false,
+        },
+        {
+          id: '33333333-3333-4333-8333-333333333333', kind: 'treatment',
+          name: 'Anticoccidial (Amprolium)', diseaseTarget: 'coccidiosis',
+          vaccineStrain: null, altNames: ['Amprolium', 'Embazin'],
+          method: 'drinking_water', dosage: 'Amprolium 20% per label, 3-5 days',
+          ageDays: 14, scheduledDate: day(7), windowDays: 1, critical: true,
+          completedAt: null, skipped: false,
+        },
+      ],
+    };
+  }
   if (path.includes('/finance')) {
     return {
       flock: { id: 'cycle-1', name: 'Batch A', placedBirds: 500, currentBirds: 480, productionType: 'broiler' },

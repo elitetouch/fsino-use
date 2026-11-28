@@ -12,6 +12,7 @@ import {
   Dropdown, FieldStack, FOCUS_INPUT, FOCUS_WRAPPER,
 } from '@/components/record/inputs';
 import { EntryPicker, useEntryChoice } from '@/components/record/entry-picker';
+import { TREATMENT_OPTIONS, TREATMENT_REASONS } from '@/lib/health-vocabulary';
 import { cn } from '@/lib/utils';
 
 /**
@@ -27,26 +28,12 @@ import { cn } from '@/lib/utils';
  * Select 'All birds' in case you wish to select all of them").
  */
 
-const TREATMENT_TYPES = [
-  { value: 'anti_biotics',  label: 'Anti-biotics' },
-  { value: 'anti_fungals',  label: 'Anti-fungals' },
-  { value: 'anti_virals',   label: 'Anti-virals' },
-  { value: 'dewormer',      label: 'Dewormer' },
-  { value: 'multivitamins', label: 'Multivitamins' },
-  { value: 'probiotics',    label: 'Probiotics' },
-  { value: 'other',         label: 'Other (type in)' },
-] as const;
+// Shared with quick record's picker, so a treatment named by voice
+// and one picked here reach the medical record under the same words.
+const TREATMENT_TYPES = TREATMENT_OPTIONS;
 type TreatmentType = (typeof TREATMENT_TYPES)[number]['value'];
 
-const REASONS = [
-  { value: 'prophylactic',   label: 'Prophylactic / routine' },
-  { value: 'respiratory',    label: 'Respiratory illness' },
-  { value: 'digestive',      label: 'Digestive illness' },
-  { value: 'parasites',      label: 'Internal / external parasites' },
-  { value: 'stress',         label: 'Stress (heat, transport, etc.)' },
-  { value: 'post_vaccine',   label: 'Post-vaccine support' },
-  { value: 'other',          label: 'Other (type in)' },
-] as const;
+const REASONS = TREATMENT_REASONS;
 type Reason = (typeof REASONS)[number]['value'];
 
 interface TreatmentStepProps {

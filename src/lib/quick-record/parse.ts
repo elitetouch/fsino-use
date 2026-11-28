@@ -53,6 +53,8 @@ import {
   type FieldKind,
   type UnitSpec,
 } from './vocabulary';
+import { matchProtocol, reasonForTarget, type ProtocolMatch } from './protocol';
+import type { FlockScheduleItemDto } from '@/lib/api';
 
 /**
  * Longest input we will look at.
@@ -122,6 +124,20 @@ export interface ParsedField {
      * answer a question the farmer has already answered.
      */
     readonly brandStated?: boolean;
+    /**
+     * vaccination / treatment — the protocol row this resolved to.
+     *
+     * Written into the record's payload so a later reader can tell
+     * which scheduled dose a entry was, without re-running a fuzzy
+     * name match over it.
+     */
+    readonly protocolItemId?: string;
+    /** vaccination / treatment — what the protocol says to give. */
+    readonly protocolDosage?: string;
+    /** vaccination / treatment — true when today is inside its window. */
+    readonly protocolDue?: boolean;
+    /** treatment — the wizard's own reason label, from the protocol. */
+    readonly treatmentReason?: string;
     /** expense — which of the backend's categories the money went to. */
     readonly expenseCategory?: string;
     /** expense — how much was bought, e.g. 3 for "3 bags of feed". */
@@ -200,6 +216,19 @@ export interface ParseContext {
    * why that stays true however long the alias has existed.
    */
   readonly aliases?: ReadonlyMap<string, FieldKind>;
+  /**
+   * This flock's own vaccination and treatment protocol.
+   *
+   * The farm's real vocabulary, and it outranks the shipped tables
+   * wherever it matches: a row the farmer is actually scheduled to
+   * give is a better reading of "I gave them vitamin" than a generic
+   * word, and writing the row's own name is what lets the dashboard
+   * tick the dose off. Absent on the landing-page demo and whenever
+   * the schedule has not loaded, in which case nothing here changes.
+   */
+  readonly schedule?: readonly FlockScheduleItemDto[];
+  /** Today, as YYYY-MM-DD, for deciding what was due. */
+  readonly today?: string;
 }
 
 /**
@@ -324,6 +353,52 @@ function readNumber(clause: string): number | null {
 /** The single gate every number passes before it can reach a field. */
 function isUsable(n: number): boolean {
   return Number.isFinite(n) && n >= 0 && n <= MAX_VALUE;
+}
+
+/**
+ * The date the protocol is read against.
+ *
+ * Passed in by the caller so a parse is reproducible; the clock is
+ * only a fallback for callers that hold no date, and with no schedule
+ * loaded it is never consulted at all.
+ */
+function today(ctx: ParseContext): string {
+  return ctx.today ?? new Date().toISOString().slice(0, 10);
+}
+
+/** The protocol row carried onto the field, for the chip and the payload. */
+function protocolDetail(m: ProtocolMatch | null) {
+  if (m === null) return {};
+  return {
+    protocolItemId: m.id,
+    protocolDue: m.due,
+    ...(m.dosage ? { protocolDosage: m.dosage } : {}),
+  };
+}
+
+/**
+ * What the farmer is asked to look at before saving a health record.
+ *
+ * Three things are worth stopping for, and nothing else is. A name we
+ * could not place, because a vaccine guessed at is worse than a
+ * vaccine asked about. A dose that is already recorded, because the
+ * second one is either a real second dose or a double entry and only
+ * the farmer knows which. And a dose given EARLY, which is a real
+ * decision; given late is ordinary farming and gets no warning.
+ */
+function cautionFor(
+  m: ProtocolMatch | null,
+  name: string | undefined,
+  label: string,
+): string | undefined {
+  if (!name) return `${label} not recognised. Pick it before saving`;
+  if (m === null) return undefined;
+  if (m.done) return 'Already recorded for this cycle. This adds another dose';
+  if (m.daysFromToday > 0) {
+    const d = m.daysFromToday;
+    return `Not due for ${d} more day${d === 1 ? '' : 's'}. Check before saving`;
+  }
+  return undefined;
 }
 
 /** Money following "for" — "sold 20 birds for 15000". */
@@ -689,7 +764,12 @@ function buildField(
   // most farmers never say it. Requiring a count here would reject the
   // commonest health entry on a Nigerian poultry farm.
   if (kind === 'vaccination') {
-    const vaccineName = readFrom(clause, VACCINES);
+    // THE FARM'S OWN PROTOCOL FIRST. "Lasota" from the shipped table
+    // is a word; "Newcastle Disease Booster (Lasota)" is the dose this
+    // flock is scheduled to receive, and only the second one lets the
+    // dashboard mark it given.
+    const scheduled = matchProtocol(clause, ctx.schedule, today(ctx));
+    const vaccineName = scheduled?.name ?? readFrom(clause, VACCINES);
     const dose = readNumber(clause);
     const doseUnit = readUnit(clause);
     return {
@@ -699,9 +779,41 @@ function buildField(
       value: dose !== null && doseUnit?.apiUnit === 'ml' ? dose : 0,
       unit: doseUnit?.apiUnit === 'ml' ? 'ml' : undefined,
       confidence: vaccineName ? 'high' : 'low',
-      caution: vaccineName ? undefined : 'Vaccine name not recognised. Check it before saving',
+      caution: cautionFor(scheduled, vaccineName, 'Vaccine'),
       sourceText: clause,
-      detail: vaccineName ? { vaccineName } : undefined,
+      detail: vaccineName
+        ? { vaccineName, ...protocolDetail(scheduled) }
+        : undefined,
+    };
+  }
+
+  // Treatment, like vaccination, is a fact without a count: "treated
+  // for coccidiosis" names no number and is still a record. Handled
+  // here rather than down the numeric path so both forms resolve
+  // against the protocol in one place.
+  if (kind === 'treatment') {
+    const scheduled = matchProtocol(clause, ctx.schedule, today(ctx));
+    const treatmentType = scheduled?.name ?? readFrom(clause, TREATMENT_TYPES);
+    const birds = readNumber(clause);
+    const caution = cautionFor(scheduled, treatmentType, 'Treatment');
+    // The wizard makes the reason a required field and quick record
+    // never captured one, so every spoken treatment reached the
+    // medical record with nothing to say why. The protocol knows.
+    const reason = reasonForTarget(scheduled?.diseaseTarget);
+    return {
+      kind,
+      // A number in a treatment clause is the birds affected.
+      value: birds !== null && isUsable(birds) ? birds : 0,
+      confidence: treatmentType && caution === undefined ? 'high' : 'low',
+      caution,
+      sourceText: clause,
+      detail: treatmentType
+        ? {
+            treatmentType,
+            ...protocolDetail(scheduled),
+            ...(reason ? { treatmentReason: reason } : {}),
+          }
+        : undefined,
     };
   }
 
@@ -771,24 +883,7 @@ function buildField(
   }
 
   const raw = readNumber(clause);
-  if (raw === null) {
-    // Treatment, like vaccination, is a fact without a count: "treated
-    // for coccidiosis" names no number and is still a record.
-    if (kind === 'treatment') {
-      const treatmentType = readFrom(clause, TREATMENT_TYPES);
-      return {
-        kind,
-        value: 0,
-        confidence: treatmentType ? 'high' : 'low',
-        caution: treatmentType
-          ? undefined
-          : 'Treatment type not recognised. Check it before saving',
-        sourceText: clause,
-        detail: treatmentType ? { treatmentType } : undefined,
-      };
-    }
-    return null;
-  }
+  if (raw === null) return null;
 
   // "egg weight 60 grams" contains the word "egg", which the unit
   // table matches before it reaches grams — so the chip read "60 eggs"
@@ -900,7 +995,6 @@ function buildField(
     feedBrandLabel: brand?.label,
     brandStated: brandStated ? true : undefined,
     eggSize: kind === 'eggs' ? readFrom(clause, EGG_SIZES) : undefined,
-    treatmentType: kind === 'treatment' ? readFrom(clause, TREATMENT_TYPES) : undefined,
   };
   const hasDetail = Object.values(detail).some((v) => v !== undefined);
 
@@ -961,8 +1055,19 @@ export function parseQuickRecord(
     if (trimmed === '') continue;
 
     const known = classifyClause(trimmed);
-    const learned = known === null ? classifyByAlias(trimmed, ctx.aliases) : null;
-    const kind = known ?? learned;
+    // THE PROTOCOL IS VOCABULARY TOO. "Gave them oxytet" names no word
+    // the shipped tables know, and it is a treatment this flock is
+    // scheduled to receive. Consulted after the shipped vocabulary so
+    // a protocol name can never steal a sentence that was already
+    // understood, and before learned aliases because the farm's own
+    // protocol is stronger evidence than a word taught in passing.
+    const scheduled = known === null
+      ? matchProtocol(trimmed, ctx.schedule, today(ctx))?.kind ?? null
+      : null;
+    const learned = known === null && scheduled === null
+      ? classifyByAlias(trimmed, ctx.aliases)
+      : null;
+    const kind = known ?? scheduled ?? learned;
     const category = kind === 'expense' ? expenseCategoryOf(trimmed) : null;
     if (kind === null || (category !== null ? spent.has(category) : seen.has(kind))) {
       unmatched.push(trimmed);
@@ -985,10 +1090,28 @@ export function parseQuickRecord(
       continue;
     }
 
-    const built = buildField(trimmed, kind, ctx);
+    let effective = kind;
+    let built = buildField(trimmed, kind, ctx);
     if (built === null) {
-      unmatched.push(trimmed);
-      continue;
+      // THE VOCABULARY CLAIMED IT AND THEN MADE NOTHING OF IT.
+      // "Gave them stress pack" reads as feed, because a pack is a
+      // container, and feed with no number is not a record — so the
+      // sentence fell through to the note while the protocol had a
+      // row called "Glucose + Multivitamin (anti-stress)" whose alt
+      // name is exactly what was said. The protocol gets the clause
+      // rather than the farmer losing it.
+      const second = kind === 'treatment' || kind === 'vaccination'
+        ? null
+        : matchProtocol(trimmed, ctx.schedule, today(ctx))?.kind ?? null;
+      const rebuilt = second === null || seen.has(second)
+        ? null
+        : buildField(trimmed, second, ctx);
+      if (rebuilt === null || second === null) {
+        unmatched.push(trimmed);
+        continue;
+      }
+      effective = second;
+      built = rebuilt;
     }
 
     // A field recognised only through a learned word is ALWAYS flagged,
@@ -1011,7 +1134,7 @@ export function parseQuickRecord(
           };
 
     if (category !== null) spent.add(category);
-    else seen.add(kind);
+    else seen.add(effective);
     fields.push(field);
   }
 

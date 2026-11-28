@@ -1042,6 +1042,20 @@ export const endpoints = {
       api.patch(`/flocks/${flockId}/sales/${recordId}/price`, { amount }),
     ),
 
+  /**
+   * This cycle's own protocol, vaccines and treatments both.
+   *
+   * Read by the record screen so a spoken "I gave them vitamin" can be
+   * resolved to the row it means and saved under that row's own name.
+   * The dashboard card carries the same rows, but fetching a whole
+   * dashboard on a phone to name a vaccine is not a trade worth
+   * making.
+   */
+  flockVaccinationSchedule: (flockId: string) =>
+    unwrap<{ schedule: FlockScheduleItemDto[] }>(
+      api.get(`/flocks/${flockId}/vaccination-schedule`),
+    ),
+
   // ───────────── Farm vaccination-protocol extras ─────────────
   /**
    * Per-farm vaccination protocol extras. Backs the
@@ -2358,6 +2372,31 @@ export type VaccinationSuggestionDto = {
   eventType: 'vaccination' | 'treatment' | 'medication';
   ageDays: number;     // bird age the farmer typically gave it
   cycleCount: number;  // distinct past cycles the pattern was seen in
+};
+
+/**
+ * One row of a flock's materialized protocol.
+ *
+ * Mirrors FlockVaccinationScheduleController::index. `kind` is the
+ * backend's own word ('vaccine' / 'treatment' / 'medication'), not the
+ * record event type, and `altNames` holds what farmers actually say:
+ * "Oxytet", "Vitalyte", "Amprolium".
+ */
+export type FlockScheduleItemDto = {
+  id: string;
+  kind: string;
+  name: string;
+  diseaseTarget: string | null;
+  vaccineStrain: string | null;
+  altNames: string[];
+  method: string | null;
+  dosage: string | null;
+  ageDays: number;
+  scheduledDate: string;
+  windowDays: number;
+  critical: boolean;
+  completedAt: string | null;
+  skipped: boolean;
 };
 
 /**
